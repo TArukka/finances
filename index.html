@@ -1635,8 +1635,6 @@ function saveGhCfgToStorage(cfg) {
     localStorage.setItem(GH_CFG_KEY, JSON.stringify(cfg));
 }
 
-// State for the current SHA of the file (needed for GitHub PUT updates)
-let _ghFileSha = null;
 let _ghSyncing = false;
 let _ghConfigOpen = false;
 
@@ -1650,19 +1648,17 @@ function setGhStatus(state, text) {
 function updateLastSync(ts) {
     const el = document.getElementById('ghLastSync');
     if (!ts) { el.textContent = ''; return; }
-    const d = new Date(ts);
-    el.textContent = 'Última sync: ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    el.textContent = 'Última sync: ' + new Date(ts).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 }
 
 function toggleGhConfig() {
     _ghConfigOpen = !_ghConfigOpen;
-    const cfg = document.getElementById('ghConfig');
-    cfg.classList.toggle('open', _ghConfigOpen);
+    document.getElementById('ghConfig').classList.toggle('open', _ghConfigOpen);
     if (_ghConfigOpen) {
-        const saved = getGhCfg();
-        document.getElementById('ghRepo').value  = saved.repo  || '';
-        document.getElementById('ghToken').value = saved.token || '';
-        document.getElementById('ghFile').value  = saved.file  || 'finances-data.json';
+        const s = getGhCfg();
+        document.getElementById('ghRepo').value  = s.repo  || '';
+        document.getElementById('ghToken').value = s.token || '';
+        document.getElementById('ghFile').value  = s.file  || 'finances-data.json';
     }
 }
 
@@ -1672,7 +1668,6 @@ function saveGhConfig() {
     const file  = document.getElementById('ghFile').value.trim() || 'finances-data.json';
     if (!repo || !token) return toast('⚠️ Preencha repositório e token.', '#b45309');
     saveGhCfgToStorage({repo, token, file});
-    _ghFileSha = null; // reset SHA so we fetch fresh
     toggleGhConfig();
     toast('✔ Configuração salva!');
     setGhStatus('idle', 'Conectado · ' + repo);
@@ -1681,135 +1676,144 @@ function saveGhConfig() {
 
 function initGhStatus() {
     const cfg = getGhCfg();
-    if (cfg.repo && cfg.token) {
-        setGhStatus('idle', 'Conectado · ' + cfg.repo);
-        updateLastSync(cfg.lastSync);
-    } else {
-        setGhStatus('idle', 'Não configurado');
+    setGhStatus('idle', cfg.repo && cfg.token ? 'Conectado · ' + cfg.repo : 'Não configurado');
+    if (cfg.lastSync) updateLastSync(cfg.lastSync);
+}
+
+// Returns the API URL with mandatory cache-bust to always bypass CDN cache
+function ghUrl() {
+    const cfg = getGhCfg();
+    if (!cfg.repo || !cfg.token) return null;
+    return `https://api.github.com/repos/${cfg.repo}/contents/${cfg.file || 'finances-data.json'}?t=${Date.now()}`;
+}
+function ghHeaders() {
+    return {
+        'Authorization': 'token ' + getGhCfg().token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Cache-Control': 'no-cache'
+    };
+}
+
+// ── Fetch current file SHA from GitHub (always fresh) ───────────────────────
+// Returns {sha, exists} — sha is null if file doesn't exist yet
+async function fetchCurrentSha() {
+    const res = await fetch(ghUrl(), { headers: ghHeaders() });
+    if (res.status === 404) return { sha: null, exists: false };
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    return { sha: j.sha, exists: true };
+}
+
+// ── Download data from GitHub and apply locally (no upload triggered) ────────
+async function pullFromGitHub() {
+    const url = ghUrl();
+    if (!url) return false;
+    const res = await fetch(url, { headers: ghHeaders() });
+    if (res.status === 404) return false; // nothing to pull yet
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const raw = JSON.parse(atob(json.content.replace(/\n/g, '')));
+    // Apply to memory + localStorage without triggering another GitHub push
+    if (raw.t) { tx    = raw.t.map(t => ({pagamento: t.tipo==='saida'?'debito':null,...t})); localStorage.setItem('fin5_data',  JSON.stringify(tx)); }
+    if (raw.c) { cats  = raw.c;  localStorage.setItem('fin5_cats',  JSON.stringify(cats)); }
+    if (raw.g) { goals = raw.g;  localStorage.setItem('fin5_goals', JSON.stringify(goals)); }
+    return true;
+}
+
+// ── Upload local data to GitHub ──────────────────────────────────────────────
+// Always fetches the current SHA first so it never fails with 409/422
+async function pushToGitHub() {
+    const url = ghUrl();
+    if (!url) return;
+    const cfg = getGhCfg();
+
+    // Step 1: get the latest SHA from GitHub (required to update existing file)
+    const { sha } = await fetchCurrentSha();
+
+    // Step 2: build and send the PUT
+    const payload = { t: tx, c: cats, g: goals };
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+    const body    = { message: '💰 ' + new Date().toLocaleString('pt-BR'), content };
+    if (sha) body.sha = sha; // omit sha only if file is brand-new
+
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'HTTP ' + res.status);
     }
 }
 
-// Build GitHub API URL for the data file
-function ghApiUrl() {
+// ── Sync = push local → then pull remote ─────────────────────────────────────
+// This guarantees: (a) local data is saved, (b) any remote changes are applied
+async function syncNow() {
     const cfg = getGhCfg();
-    if (!cfg.repo || !cfg.token) return null;
-    return `https://api.github.com/repos/${cfg.repo}/contents/${cfg.file || 'finances-data.json'}`;
-}
-
-// Fetch data from GitHub and merge into local state
-async function loadFromGitHub() {
-    const url = ghApiUrl();
-    if (!url) return;
-    const cfg = getGhCfg();
-    setGhStatus('syncing', 'Carregando...');
+    if (!cfg.repo || !cfg.token) { toggleGhConfig(); return; }
+    if (_ghSyncing) return;
+    _ghSyncing = true;
+    setGhStatus('syncing', 'Sincronizando...');
     try {
-        const res = await fetch(url, {
-            headers: {
-                'Authorization': 'token ' + cfg.token,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-        if (res.status === 404) {
-            // File doesn't exist yet — will be created on first save
-            setGhStatus('ok', 'Pronto (arquivo novo)');
-            _ghFileSha = null;
-            return;
-        }
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const json = await res.json();
-        _ghFileSha = json.sha;
-        const raw = JSON.parse(atob(json.content.replace(/\n/g,'')));
-        // Merge remote → local
-        if (raw.t) { tx = raw.t.map(t => ({pagamento: t.tipo==='saida'?'debito':null, ...t})); save(); }
-        if (raw.c) { cats = raw.c; localStorage.setItem('fin5_cats', JSON.stringify(cats)); }
-        if (raw.g) { goals = raw.g; saveGoals(); }
-        setGhStatus('ok', 'Sincronizado · ' + cfg.repo);
+        // Push first (so this computer's data is never lost)
+        await pushToGitHub();
+        // Then pull (to get changes from other computers)
+        const pulled = await pullFromGitHub();
         const now = Date.now();
         saveGhCfgToStorage({...cfg, lastSync: now});
         updateLastSync(now);
         atualizar(); renderGoals();
-        toast('☁️ Dados carregados do GitHub!', '#16a34a');
+        setGhStatus('ok', 'Sincronizado · ' + cfg.repo);
+        toast(pulled ? '☁️ Sincronizado com GitHub!' : '☁️ Dados enviados!', '#16a34a');
     } catch(e) {
-        setGhStatus('err', 'Erro ao carregar');
-        toast('❌ GitHub: ' + e.message, '#dc2626');
-    }
-}
-
-// Push all data to GitHub
-async function saveToGitHub() {
-    if (_ghSyncing) return;
-    const url = ghApiUrl();
-    if (!url) return; // not configured, skip silently
-    const cfg = getGhCfg();
-    _ghSyncing = true;
-    setGhStatus('syncing', 'Salvando...');
-    try {
-        const payload = {t: tx, c: cats, g: goals};
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
-        const body = {
-            message: '💰 Atualização: ' + new Date().toLocaleString('pt-BR'),
-            content,
-            ..._ghFileSha ? {sha: _ghFileSha} : {}
-        };
-        const res = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': 'token ' + cfg.token,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            // If SHA conflict (someone else updated), fetch fresh SHA and retry once
-            if (res.status === 409 || (err.message && err.message.includes('sha'))) {
-                _ghFileSha = null;
-                await refreshGhSha();
-                _ghSyncing = false;
-                return saveToGitHub();
-            }
-            throw new Error(err.message || 'HTTP ' + res.status);
-        }
-        const result = await res.json();
-        _ghFileSha = result.content.sha;
-        const now = Date.now();
-        saveGhCfgToStorage({...cfg, lastSync: now});
-        updateLastSync(now);
-        setGhStatus('ok', 'Salvo · ' + cfg.repo);
-    } catch(e) {
-        setGhStatus('err', 'Erro ao salvar');
+        setGhStatus('err', 'Erro na sync');
         toast('❌ GitHub: ' + e.message, '#dc2626');
     } finally {
         _ghSyncing = false;
     }
 }
 
-async function refreshGhSha() {
-    const url = ghApiUrl();
-    if (!url) return;
-    const cfg = getGhCfg();
-    try {
-        const res = await fetch(url, { headers: { 'Authorization': 'token ' + cfg.token } });
-        if (res.ok) { const j = await res.json(); _ghFileSha = j.sha; }
-    } catch {}
-}
-
-async function syncNow() {
-    const cfg = getGhCfg();
-    if (!cfg.repo || !cfg.token) {
-        toggleGhConfig();
-        return;
-    }
-    await loadFromGitHub();
-}
-
-// ── OVERRIDE save() to also push to GitHub ───────────────────────────────────
-// Debounced GitHub save (avoid flooding on rapid edits)
+// ── Auto-save: debounced push after every local change ───────────────────────
 let _ghSaveTimer = null;
-function scheduleGhSave() {
+async function scheduleGhSave() {
     clearTimeout(_ghSaveTimer);
-    _ghSaveTimer = setTimeout(saveToGitHub, 1500);
+    _ghSaveTimer = setTimeout(async () => {
+        const cfg = getGhCfg();
+        if (!cfg.repo || !cfg.token || _ghSyncing) return;
+        setGhStatus('syncing', 'Salvando...');
+        try {
+            await pushToGitHub();
+            const now = Date.now();
+            saveGhCfgToStorage({...cfg, lastSync: now});
+            updateLastSync(now);
+            setGhStatus('ok', 'Salvo · ' + cfg.repo);
+        } catch(e) {
+            setGhStatus('err', 'Erro ao salvar');
+            toast('❌ Auto-save: ' + e.message, '#dc2626');
+        }
+    }, 2000);
+}
+
+// ── On startup: pull latest data from GitHub ─────────────────────────────────
+async function loadFromGitHub() {
+    const cfg = getGhCfg();
+    if (!cfg.repo || !cfg.token) return;
+    setGhStatus('syncing', 'Carregando...');
+    try {
+        const pulled = await pullFromGitHub();
+        if (pulled) {
+            const now = Date.now();
+            saveGhCfgToStorage({...cfg, lastSync: now});
+            updateLastSync(now);
+            atualizar(); renderGoals();
+            toast('☁️ Dados carregados do GitHub!', '#16a34a');
+        }
+        setGhStatus('ok', 'Conectado · ' + cfg.repo);
+    } catch(e) {
+        setGhStatus('err', 'Erro ao carregar');
+        toast('❌ GitHub: ' + e.message, '#dc2626');
+    }
 }
 
 init();
