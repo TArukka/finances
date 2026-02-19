@@ -423,17 +423,16 @@
                 </div>
                 <div class="gh-last-sync" id="ghLastSync"></div>
                 <div class="gh-config" id="ghConfig">
-                    <div class="field" style="margin:0">
-                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Usuário/Repositório</label>
-                        <input type="text" id="ghRepo" placeholder="usuario/nome-do-repo">
+                    <div style="font-size:10px;color:var(--text-3);background:var(--border-light);padding:7px 9px;border-radius:6px;line-height:1.5;margin-bottom:4px">
+                        Crie um <strong>Gist secreto</strong> em gist.github.com (qualquer nome de arquivo). Cole o ID do Gist e um token PAT com escopo <strong>gist</strong>.
                     </div>
                     <div class="field" style="margin:0">
-                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Token (PAT)</label>
+                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Gist ID</label>
+                        <input type="text" id="ghGistId" placeholder="ex: a1b2c3d4e5f67890abcd">
+                    </div>
+                    <div class="field" style="margin:0">
+                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Token PAT (escopo: gist)</label>
                         <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-                    </div>
-                    <div class="field" style="margin:0">
-                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Arquivo no repo</label>
-                        <input type="text" id="ghFile" placeholder="finances-data.json">
                     </div>
                     <div class="gh-btn-row">
                         <button class="gh-btn secondary" onclick="toggleGhConfig()">Cancelar</button>
@@ -1625,7 +1624,16 @@ function confirmarAporte() {
 }
 
 
-// ── GITHUB SYNC ────────────────────────────────────────────────────────────────
+// ── GITHUB SYNC (via Gist API — sem SHA, sem conflitos) ──────────────────────
+// Por que Gist? A API de Gists usa PATCH simples para atualizar — não precisa
+// de SHA, não tem conflito 409/422, funciona perfeitamente de arquivos locais.
+//
+// Configuração necessária:
+//   1. Acesse gist.github.com e crie um Gist secreto (qualquer arquivo, ex: data.json)
+//   2. Copie o ID do Gist da URL: gist.github.com/usuario/<GIST_ID>
+//   3. Gere um PAT em github.com/settings/tokens com escopo "gist"
+//   4. Cole o Gist ID e o token no painel de configuração do app
+
 const GH_CFG_KEY = 'fin5_gh_config';
 
 function getGhCfg() {
@@ -1635,20 +1643,17 @@ function saveGhCfgToStorage(cfg) {
     localStorage.setItem(GH_CFG_KEY, JSON.stringify(cfg));
 }
 
-let _ghSyncing = false;
+let _ghSyncing  = false;
 let _ghConfigOpen = false;
+const GIST_FILENAME = 'finances-data.json';
 
 function setGhStatus(state, text) {
-    const dot = document.getElementById('ghDot');
-    const txt = document.getElementById('ghStatusText');
-    dot.className = 'gh-dot ' + state;
-    txt.textContent = text;
+    document.getElementById('ghDot').className = 'gh-dot ' + state;
+    document.getElementById('ghStatusText').textContent = text;
 }
-
 function updateLastSync(ts) {
     const el = document.getElementById('ghLastSync');
-    if (!ts) { el.textContent = ''; return; }
-    el.textContent = 'Última sync: ' + new Date(ts).toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    el.textContent = ts ? 'Última sync: ' + new Date(ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '';
 }
 
 function toggleGhConfig() {
@@ -1656,176 +1661,163 @@ function toggleGhConfig() {
     document.getElementById('ghConfig').classList.toggle('open', _ghConfigOpen);
     if (_ghConfigOpen) {
         const s = getGhCfg();
-        document.getElementById('ghRepo').value  = s.repo  || '';
-        document.getElementById('ghToken').value = s.token || '';
-        document.getElementById('ghFile').value  = s.file  || 'finances-data.json';
+        document.getElementById('ghGistId').value = s.gistId || '';
+        document.getElementById('ghToken').value  = s.token  || '';
     }
 }
 
 function saveGhConfig() {
-    const repo  = document.getElementById('ghRepo').value.trim();
-    const token = document.getElementById('ghToken').value.trim();
-    const file  = document.getElementById('ghFile').value.trim() || 'finances-data.json';
-    if (!repo || !token) return toast('⚠️ Preencha repositório e token.', '#b45309');
-    saveGhCfgToStorage({repo, token, file});
+    const gistId = document.getElementById('ghGistId').value.trim();
+    const token  = document.getElementById('ghToken').value.trim();
+    if (!gistId || !token) return toast('⚠️ Preencha o Gist ID e o token.', '#b45309');
+    saveGhCfgToStorage({ gistId, token });
     toggleGhConfig();
     toast('✔ Configuração salva!');
-    setGhStatus('idle', 'Conectado · ' + repo);
+    setGhStatus('idle', 'Gist configurado');
     syncNow();
 }
 
 function initGhStatus() {
     const cfg = getGhCfg();
-    setGhStatus('idle', cfg.repo && cfg.token ? 'Conectado · ' + cfg.repo : 'Não configurado');
+    setGhStatus('idle', cfg.gistId ? 'Gist: ' + cfg.gistId.slice(0, 8) + '…' : 'Não configurado');
     if (cfg.lastSync) updateLastSync(cfg.lastSync);
 }
 
-// ── Encoding helpers (suporte total a emojis e acentos) ──────────────────────
-// btoa/atob nativos só suportam Latin-1 — usamos TextEncoder/TextDecoder
+// ── Helpers de encoding UTF-8 ─────────────────────────────────────────────────
 function toBase64(str) {
     const bytes = new TextEncoder().encode(str);
     let bin = '';
     bytes.forEach(b => bin += String.fromCharCode(b));
     return btoa(bin);
 }
-function fromBase64(b64) {
-    const bin   = atob(b64.replace(/\n/g, ''));
-    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
-}
 
-// ── URLs e headers ────────────────────────────────────────────────────────────
-function ghUrlWrite() {
+// ── API Gist ──────────────────────────────────────────────────────────────────
+function gistHeaders() {
+    return {
+        'Authorization': 'token ' + getGhCfg().token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+    };
+}
+function gistUrl() {
     const cfg = getGhCfg();
-    if (!cfg.repo || !cfg.token) return null;
-    return `https://api.github.com/repos/${cfg.repo}/contents/${cfg.file || 'finances-data.json'}`;
-}
-function ghUrlRead() {
-    const url = ghUrlWrite();
-    return url ? `${url}?_=${Date.now()}` : null; // cache-bust só no GET
-}
-function ghHeaders(isWrite = false) {
-    const h = { 'Authorization': 'token ' + getGhCfg().token, 'Accept': 'application/vnd.github.v3+json' };
-    if (!isWrite) h['Cache-Control'] = 'no-cache';
-    if (isWrite)  h['Content-Type']  = 'application/json';
-    return h;
+    return cfg.gistId ? `https://api.github.com/gists/${cfg.gistId}` : null;
 }
 
-// ── Busca SHA atual (necessário para sobrescrever arquivo existente) ──────────
-async function fetchCurrentSha() {
-    const res = await fetch(ghUrlRead(), { headers: ghHeaders(false) });
-    if (res.status === 404) return null;       // arquivo ainda não existe
-    if (!res.ok) throw new Error('Erro ao ler SHA: HTTP ' + res.status);
-    return (await res.json()).sha;
-}
-
-// ── Download: GitHub → local (sem disparar re-upload) ────────────────────────
+// ── Pull: baixa dados do Gist e aplica localmente ────────────────────────────
 async function pullFromGitHub() {
-    const url = ghUrlRead();
+    const url = gistUrl();
     if (!url) return false;
-    const res = await fetch(url, { headers: ghHeaders(false) });
+    // ?t= evita cache do browser sem afetar a API do Gist
+    const res = await fetch(url + '?t=' + Date.now(), { headers: gistHeaders() });
     if (res.status === 404) return false;
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const json = await res.json();
-    const raw  = JSON.parse(fromBase64(json.content)); // decode UTF-8 correto
-    if (raw.t) { tx    = raw.t.map(t => ({pagamento: t.tipo==='saida'?'debito':null,...t})); localStorage.setItem('fin5_data',  JSON.stringify(tx)); }
-    if (raw.c) { cats  = raw.c;  localStorage.setItem('fin5_cats',  JSON.stringify(cats)); }
-    if (raw.g) { goals = raw.g;  localStorage.setItem('fin5_goals', JSON.stringify(goals)); }
+    if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error((e.message || 'HTTP ' + res.status) + ' (pull)');
+    }
+    const gist = await res.json();
+    const file = gist.files && gist.files[GIST_FILENAME];
+    if (!file) return false; // arquivo ainda não foi criado no Gist
+    const raw = JSON.parse(file.content);
+    if (raw.t) { tx    = raw.t.map(t => ({pagamento: t.tipo==='saida'?'debito':null, ...t})); localStorage.setItem('fin5_data',  JSON.stringify(tx)); }
+    if (raw.c) { cats  = raw.c; localStorage.setItem('fin5_cats',  JSON.stringify(cats)); }
+    if (raw.g) { goals = raw.g; localStorage.setItem('fin5_goals', JSON.stringify(goals)); }
     return true;
 }
 
-// ── Upload: local → GitHub ────────────────────────────────────────────────────
-// Mutex: só um push por vez. Se já estiver rodando, re-agenda para depois.
+// ── Push: envia dados locais para o Gist (PATCH — sem SHA) ───────────────────
 let _pushing = false;
 async function pushToGitHub() {
-    if (_pushing) return;                      // evita uploads concorrentes
-    const url = ghUrlWrite();
+    if (_pushing) return;
+    const url = gistUrl();
     if (!url) return;
     _pushing = true;
     try {
-        const sha     = await fetchCurrentSha(); // sempre pega SHA atual
-        const json    = JSON.stringify({ t: tx, c: cats, g: goals }, null, 2);
-        const content = toBase64(json);          // encode UTF-8 correto
-        const body    = { message: '💰 ' + new Date().toLocaleString('pt-BR'), content };
-        if (sha) body.sha = sha;                 // necessário para atualizar arquivo existente
-
+        const content = JSON.stringify({ t: tx, c: cats, g: goals }, null, 2);
+        const body = {
+            description: '💰 Finances sync ' + new Date().toLocaleString('pt-BR'),
+            files: { [GIST_FILENAME]: { content } }   // PATCH simples, sem SHA
+        };
         const res = await fetch(url, {
-            method: 'PUT',
-            headers: ghHeaders(true),
+            method: 'PATCH',
+            headers: gistHeaders(),
             body: JSON.stringify(body)
         });
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || 'HTTP ' + res.status);
+            const e = await res.json().catch(() => ({}));
+            throw new Error((e.message || 'HTTP ' + res.status) + ' (push)');
         }
     } finally {
         _pushing = false;
     }
 }
 
-// ── Sincronizar (botão): push → pull ─────────────────────────────────────────
+// ── Sync manual (botão): push → pull ─────────────────────────────────────────
 async function syncNow() {
     const cfg = getGhCfg();
-    if (!cfg.repo || !cfg.token) { toggleGhConfig(); return; }
+    if (!cfg.gistId || !cfg.token) { toggleGhConfig(); return; }
     if (_ghSyncing) return;
     _ghSyncing = true;
     setGhStatus('syncing', 'Sincronizando...');
     try {
-        await pushToGitHub();
-        const pulled = await pullFromGitHub();
+        await pushToGitHub();          // sobe dados locais
+        const pulled = await pullFromGitHub();  // baixa dados remotos
         const now = Date.now();
-        saveGhCfgToStorage({...cfg, lastSync: now});
+        saveGhCfgToStorage({ ...cfg, lastSync: now });
         updateLastSync(now);
         atualizar(); renderGoals();
-        setGhStatus('ok', 'Sincronizado · ' + cfg.repo);
-        toast(pulled ? '☁️ Sincronizado!' : '☁️ Dados enviados!', '#16a34a');
+        setGhStatus('ok', 'Sincronizado ✓');
+        toast('☁️ Sincronizado com sucesso!', '#16a34a');
     } catch(e) {
         setGhStatus('err', 'Erro na sync');
-        toast('❌ Sync: ' + e.message, '#dc2626');
+        toast('❌ ' + e.message, '#dc2626');
+        console.error('[GH Sync]', e);
     } finally {
         _ghSyncing = false;
     }
 }
 
-// ── Auto-save: debounced — salva 2s após última alteração ────────────────────
+// ── Auto-save: 2s após qualquer alteração local ───────────────────────────────
 let _ghSaveTimer = null;
 function scheduleGhSave() {
     clearTimeout(_ghSaveTimer);
     _ghSaveTimer = setTimeout(async () => {
         const cfg = getGhCfg();
-        if (!cfg.repo || !cfg.token) return; // não configurado, ignora silenciosamente
+        if (!cfg.gistId || !cfg.token) return; // não configurado, ignora
         setGhStatus('syncing', 'Salvando...');
         try {
             await pushToGitHub();
             const now = Date.now();
-            saveGhCfgToStorage({...cfg, lastSync: now});
+            saveGhCfgToStorage({ ...cfg, lastSync: now });
             updateLastSync(now);
-            setGhStatus('ok', 'Salvo · ' + cfg.repo);
+            setGhStatus('ok', 'Salvo ✓');
         } catch(e) {
             setGhStatus('err', 'Erro ao salvar');
-            toast('❌ Erro ao salvar no GitHub: ' + e.message, '#dc2626');
+            toast('❌ Erro ao salvar: ' + e.message, '#dc2626');
+            console.error('[GH Auto-save]', e);
         }
     }, 2000);
 }
 
-// ── Inicialização: carrega dados do GitHub ────────────────────────────────────
+// ── Startup: carrega dados do Gist ao abrir o app ────────────────────────────
 async function loadFromGitHub() {
     const cfg = getGhCfg();
-    if (!cfg.repo || !cfg.token) return;
+    if (!cfg.gistId || !cfg.token) return;
     setGhStatus('syncing', 'Carregando...');
     try {
         const pulled = await pullFromGitHub();
         if (pulled) {
             const now = Date.now();
-            saveGhCfgToStorage({...cfg, lastSync: now});
+            saveGhCfgToStorage({ ...cfg, lastSync: now });
             updateLastSync(now);
             atualizar(); renderGoals();
-            toast('☁️ Dados carregados do GitHub!', '#16a34a');
+            toast('☁️ Dados carregados do Gist!', '#16a34a');
         }
-        setGhStatus('ok', 'Conectado · ' + cfg.repo);
+        setGhStatus('ok', pulled ? 'Sincronizado ✓' : 'Gist vazio — salve algo');
     } catch(e) {
         setGhStatus('err', 'Erro ao carregar');
-        toast('❌ GitHub: ' + e.message, '#dc2626');
+        toast('❌ ' + e.message, '#dc2626');
+        console.error('[GH Load]', e);
     }
 }
 
