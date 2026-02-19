@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finances / Lucca</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -162,31 +161,6 @@
         .ie-check input { accent-color: var(--accent); }
         tr.editing > td { background: #f0f0f4 !important; }
         @media (max-width: 900px) { .ie-inner { grid-template-columns: 1fr 1fr 1fr; } }
-
-        /* ── GITHUB SYNC ── */
-        .gh-panel { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
-        .gh-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; margin-bottom: 8px; }
-        .gh-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .gh-dot.ok     { background: var(--success); }
-        .gh-dot.err    { background: var(--danger); }
-        .gh-dot.idle   { background: var(--text-3); }
-        .gh-dot.syncing { background: #f59e0b; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .gh-config { display: none; flex-direction: column; gap: 6px; margin-top: 8px; }
-        .gh-config.open { display: flex; }
-        .gh-config input { width: 100%; padding: 6px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: 'Inter', sans-serif; color: var(--text); background: var(--surface); outline: none; }
-        .gh-config input:focus { border-color: var(--accent); }
-        .gh-config input[type="password"] { letter-spacing: 0.1em; }
-        .gh-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
-        .gh-btn { padding: 6px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; border: none; text-align: center; }
-        .gh-btn.primary { background: var(--accent); color: white; }
-        .gh-btn.secondary { background: var(--surface); color: var(--text-2); border: 1px solid var(--border); }
-        .gh-btn:hover { opacity: 0.85; }
-        .gh-last-sync { font-size: 10px; color: var(--text-3); margin-top: 4px; }
-        .gh-actions { display: flex; gap: 4px; }
-        .gh-sync-btn { flex: 1; padding: 5px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; background: var(--accent); color: white; border: none; }
-        .gh-sync-btn:hover { opacity: 0.85; }
-        .gh-settings-btn { padding: 5px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; background: var(--surface); color: var(--text-3); border: 1px solid var(--border); }
 
         /* ── MODALS ── */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.18s; }
@@ -411,41 +385,9 @@
         </div>
         <hr style="border:none;border-top:1px solid var(--border)">
         <div>
-            <div class="section-label">GitHub Sync</div>
-            <div class="gh-panel">
-                <div class="gh-status">
-                    <div class="gh-dot idle" id="ghDot"></div>
-                    <span id="ghStatusText">Não configurado</span>
-                </div>
-                <div class="gh-actions">
-                    <button class="gh-sync-btn" onclick="syncNow()">↻ Sincronizar</button>
-                    <button class="gh-settings-btn" onclick="toggleGhConfig()">⚙</button>
-                </div>
-                <div class="gh-last-sync" id="ghLastSync"></div>
-                <div class="gh-config" id="ghConfig">
-                    <div style="font-size:10px;color:var(--text-3);background:var(--border-light);padding:7px 9px;border-radius:6px;line-height:1.5;margin-bottom:4px">
-                        Crie um <strong>Gist secreto</strong> em gist.github.com (qualquer nome de arquivo). Cole o ID do Gist e um token PAT com escopo <strong>gist</strong>.
-                    </div>
-                    <div class="field" style="margin:0">
-                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Gist ID</label>
-                        <input type="text" id="ghGistId" placeholder="ex: a1b2c3d4e5f67890abcd">
-                    </div>
-                    <div class="field" style="margin:0">
-                        <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:3px">Token PAT (escopo: gist)</label>
-                        <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-                    </div>
-                    <div class="gh-btn-row">
-                        <button class="gh-btn secondary" onclick="toggleGhConfig()">Cancelar</button>
-                        <button class="gh-btn primary" onclick="saveGhConfig()">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <hr style="border:none;border-top:1px solid var(--border)">
-        <div>
-            <div class="section-label">Backup Local</div>
+            <div class="section-label">Backup</div>
             <div class="backup-row">
-                <div class="backup-btn" onclick="exportar()">→ Exportar</div>
+                <div class="backup-btn" onclick="exportar()">↑ Exportar</div>
                 <label class="backup-btn">↓ Importar<input type="file" hidden onchange="importar(this)"></label>
             </div>
         </div>
@@ -748,7 +690,7 @@
 <div id="toast" style="position:fixed;bottom:20px;right:20px;background:#18181b;color:white;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transform:translateY(6px);transition:all 0.25s;pointer-events:none;z-index:999;"></div>
 
 <script>
-// ── STATE ──────────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 const SEED = [
     {id:1, desc:"Aluguel",        valor:1800, data:"2026-02-01", tipo:"saida",        cat:"🏠 Moradia",       fixo:true,  pagamento:"debito"},
     {id:2, desc:"Netflix",         valor:44.9, data:"2026-02-01", tipo:"saida",        cat:"📱 Assinaturas",  fixo:true,  pagamento:"credito"},
@@ -784,7 +726,7 @@ const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Ag
 const GOAL_COLORS = ['#16a34a','#0284c7','#6d28d9','#dc2626','#f59e0b','#ec4899','#0f766e','#b45309','#0e7490'];
 const CAT_COLORS  = ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#8b5cf6','#06b6d4','#84cc16','#f97316','#14b8a6'];
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────────────────────
 function init() {
     const now = new Date();
     // Top filters
@@ -800,11 +742,9 @@ function init() {
     document.getElementById('aporteData').valueAsDate = now;
     carregarCats(); renderCatList(); togglePagamento(); atualizar(); renderGoals();
     document.addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); undo(); } });
-    initGhStatus();
-    loadFromGitHub();
 }
 
-// ── NAVIGATION ────────────────────────────────────────────────────────────────
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
 function navTo(view, btn) {
     currentView = view;
     document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
@@ -838,12 +778,12 @@ function goToMensal(m, a) {
     navTo('mensal', btn);
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────────
 const fmt    = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const filtro = () => ({m: parseInt(document.getElementById('filtroMes').value), a: parseInt(document.getElementById('filtroAno').value)});
 const txMes  = (m,a) => tx.filter(t => { const d=new Date(t.data+'T00:00:00'); return d.getMonth()===m && d.getFullYear()===a; });
-const save   = () => { localStorage.setItem('fin5_data', JSON.stringify(tx)); scheduleGhSave(); };
-const saveGoals = () => { localStorage.setItem('fin5_goals', JSON.stringify(goals)); scheduleGhSave(); };
+const save   = () => localStorage.setItem('fin5_data', JSON.stringify(tx));
+const saveGoals = () => localStorage.setItem('fin5_goals', JSON.stringify(goals));
 
 function toast(msg, bg='#18181b') {
     const el=document.getElementById('toast'); el.textContent=msg; el.style.background=bg;
@@ -851,7 +791,7 @@ function toast(msg, bg='#18181b') {
     setTimeout(()=>{ el.style.opacity=0; el.style.transform='translateY(6px)'; }, 2400);
 }
 
-// ── UNDO ──────────────────────────────────────────────────────────────────────
+// ── UNDO ─────────────────────────────────────────────────────────────────────
 function pushUndo(snap, label) {
     undoStack.push({snap: JSON.parse(JSON.stringify(snap)), label});
     if (undoStack.length > 30) undoStack.shift();
@@ -865,7 +805,7 @@ function undo() {
     document.getElementById('btnUndo').disabled = undoStack.length===0;
 }
 
-// ── SORTING ───────────────────────────────────────────────────────────────────
+// ── SORTING ──────────────────────────────────────────────────────────────────
 function sortBy(col) {
     if (sortCol===col) sortDir = sortDir==='asc'?'desc':'asc';
     else { sortCol=col; sortDir = col==='valor'?'desc':'asc'; }
@@ -889,7 +829,7 @@ function sorted(list) {
     });
 }
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
+// ── TABS ─────────────────────────────────────────────────────────────────────
 function setTab(tab) {
     activeTab = tab;
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
@@ -898,12 +838,12 @@ function setTab(tab) {
     renderTabela();
 }
 
-// ── PAGAMENTO TOGGLE ──────────────────────────────────────────────────────────
+// ── PAGAMENTO TOGGLE ─────────────────────────────────────────────────────────
 function togglePagamento() {
     document.getElementById('pagamentoField').style.display = document.getElementById('tipo').value==='saida' ? '' : 'none';
 }
 
-// ── FORM ──────────────────────────────────────────────────────────────────────
+// ── FORM ─────────────────────────────────────────────────────────────────────
 function carregarCats() {
     const tipo=document.getElementById('tipo').value, sel=document.getElementById('categoria');
     sel.innerHTML='';
@@ -939,7 +879,7 @@ function adicionar() {
             document.getElementById('ovFixoRep').classList.add('open');
             return; // closeFixoRep will finalize
         }
-        toast('✔ Atualizado!'); cancelarEdicao();
+        toast('✓ Atualizado!'); cancelarEdicao();
     } else {
         if (fixo) {
             _pendingFixo = {desc,valor,data,tipo,cat,pagamento,afterEditId:null};
@@ -948,7 +888,7 @@ function adicionar() {
             return; // closeFixoRep will finalize
         }
         tx.push({id: Date.now(), desc, valor, data, tipo, cat, fixo: false, pagamento});
-        toast('✔ Salvo!');
+        toast('✓ Salvo!');
     }
     _finalizarAdicionar();
 }
@@ -973,7 +913,7 @@ function closeFixoRep(opcao) {
         if (!afterEditId) {
             tx.push({id: Date.now(), desc, valor, data, tipo, cat, fixo: true, pagamento});
         }
-        toast('✔ Salvo como fixo (só este mês).');
+        toast('✓ Salvo como fixo (só este mês).');
     }
     _finalizarAdicionar();
 }
@@ -1001,7 +941,7 @@ function remover(id) {
     toast('Removido.','#52525b');
 }
 
-// ── FIXOS ─────────────────────────────────────────────────────────────────────
+// ── FIXOS ────────────────────────────────────────────────────────────────────
 function abrirPopupFixos() { renderPopupFixos(); document.getElementById('ovFixos').classList.add('open'); }
 function closeFixos(e) { if (!e||e.target===document.getElementById('ovFixos')) document.getElementById('ovFixos').classList.remove('open'); }
 
@@ -1052,7 +992,7 @@ function confirmarEdicaoFixo() {
         }
         return t;
     });
-    save(); atualizar(); renderPopupFixos(); closeEditFixo(); toast('✔ Fixo atualizado!');
+    save(); atualizar(); renderPopupFixos(); closeEditFixo(); toast('✓ Fixo atualizado!');
 }
 
 function removerFixo(nome) {
@@ -1069,17 +1009,17 @@ function removerFixo(nome) {
     save(); atualizar(); renderPopupFixos(); toast('Fixo removido.','#52525b');
 }
 
-// ── CATEGORIES ────────────────────────────────────────────────────────────────
+// ── CATEGORIES ───────────────────────────────────────────────────────────────
 function adicionarCategoria() {
     const nome=document.getElementById('novaCat').value.trim(), tipo=document.getElementById('tipo').value;
     if (!nome) return;
     cats[tipo].push(nome);
-    localStorage.setItem('fin5_cats',JSON.stringify(cats)); scheduleGhSave();
+    localStorage.setItem('fin5_cats',JSON.stringify(cats));
     document.getElementById('novaCat').value='';
     carregarCats(); renderCatList(); toast('Categoria adicionada!');
 }
 function removerCategoria(tipo, idx) {
-    cats[tipo].splice(idx,1); localStorage.setItem('fin5_cats',JSON.stringify(cats)); scheduleGhSave(); carregarCats(); renderCatList();
+    cats[tipo].splice(idx,1); localStorage.setItem('fin5_cats',JSON.stringify(cats)); carregarCats(); renderCatList();
 }
 function renderCatList() {
     const tipo=document.getElementById('tipo').value;
@@ -1087,7 +1027,7 @@ function renderCatList() {
         <div class="cat-item"><span>${c}</span><button class="icon-btn" onclick="removerCategoria('${tipo}',${i})">✕</button></div>`).join('')||'<span style="font-size:12px;color:var(--text-3)">Nenhuma.</span>';
 }
 
-// ── BACKUP ────────────────────────────────────────────────────────────────────
+// ── BACKUP ───────────────────────────────────────────────────────────────────
 function exportar() {
     const b=new Blob([JSON.stringify({t:tx,c:cats,g:goals})],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='backup_finances.json'; a.click();
@@ -1105,7 +1045,7 @@ function importar(input) {
     r.readAsText(input.files[0]);
 }
 
-// ── TABLE ─────────────────────────────────────────────────────────────────────
+// ── TABLE ────────────────────────────────────────────────────────────────────
 let _openInlineId = null;
 
 function renderTabela() {
@@ -1168,7 +1108,7 @@ function renderTabela() {
                         <select id="ie-cat-${t.id}">${catOpts}</select>
                     </div>
                     <div class="ie-actions">
-                        <button class="ie-save" onclick="saveInlineEdit(${t.id})">✔ Salvar</button>
+                        <button class="ie-save" onclick="saveInlineEdit(${t.id})">✓ Salvar</button>
                         <button class="ie-cancel" onclick="closeInlineEdit()">✕</button>
                     </div>
                 </div>
@@ -1248,10 +1188,10 @@ function saveInlineEdit(id) {
     }
 
     save(); atualizar();
-    toast('✔ Atualizado!');
+    toast('✓ Atualizado!');
 }
 
-// ── CHARTS (DASHBOARD) ────────────────────────────────────────────────────────
+// ── CHARTS (DASHBOARD) ───────────────────────────────────────────────────────
 function renderDonut(dados, cid, wid, emptyIcon, colors, emptyH=160) {
     const wrap=document.getElementById(wid), keys=Object.keys(dados);
     if (!keys.length) {
@@ -1294,7 +1234,7 @@ function renderTrend() {
     });
 }
 
-// ── MAIN UPDATE ───────────────────────────────────────────────────────────────
+// ── MAIN UPDATE ──────────────────────────────────────────────────────────────
 function atualizar() {
     const {m,a}=filtro(), lista=txMes(m,a);
     let ent=0,gas=0,inv=0;
@@ -1332,7 +1272,7 @@ function atualizar() {
     renderTrend(); renderTabela();
 }
 
-// ── ANNUAL VIEW ───────────────────────────────────────────────────────────────
+// ── ANNUAL VIEW ──────────────────────────────────────────────────────────────
 function renderAnual() {
     const a=parseInt(document.getElementById('filtroAno').value);
     document.getElementById('anualSubtitle').textContent=`Resumo completo de ${a}`;
@@ -1397,7 +1337,7 @@ function renderAnual() {
     }).join('');
 }
 
-// ── MONTHLY ANALYSIS VIEW ─────────────────────────────────────────────────────
+// ── MONTHLY ANALYSIS VIEW ────────────────────────────────────────────────────
 function renderMensal() {
     const m=parseInt(document.getElementById('mensalMes').value);
     const a=parseInt(document.getElementById('mensalAno').value);
@@ -1477,7 +1417,7 @@ function renderMensal() {
         : '<div class="split-empty">Sem gastos neste mês.</div>';
 }
 
-// ── GOALS ─────────────────────────────────────────────────────────────────────
+// ── GOALS ────────────────────────────────────────────────────────────────────
 function renderGoals() {
     const grid=document.getElementById('goalsGrid');
     grid.innerHTML=goals.map(g=>{
@@ -1510,7 +1450,7 @@ function renderGoals() {
             </div>
             <div class="goal-meta-row">
                 <span class="goal-pct" style="color:${g.cor}">${pct}% concluído</span>
-                <span>${pct<100?'Faltam '+fmt(faltam):'✔ Concluído!'}</span>
+                <span>${pct<100?'Faltam '+fmt(faltam):'✓ Concluído!'}</span>
             </div>
             <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">📅 Prazo: ${prazoStr}</div>
             <button class="btn-aporte" style="background:${g.cor}" onclick="abrirAporte(${g.id})">+ Adicionar Aporte</button>
@@ -1584,7 +1524,7 @@ function salvarGoal() {
     if (editId) {
         const idx=goals.findIndex(g=>g.id==editId);
         goals[idx]={...goals[idx],nome,meta,prazo,descricao,cor:selectedGoalColor};
-        toast('✔ Meta atualizada!');
+        toast('✓ Meta atualizada!');
     } else {
         goals.push({id:Date.now(),nome,meta,prazo,descricao,cor:selectedGoalColor,aportes:[]});
         toast('🎯 Meta criada!');
@@ -1620,205 +1560,7 @@ function confirmarAporte() {
     const idx=goals.findIndex(g=>g.id===id);
     goals[idx].aportes.push({valor,data,nota});
     saveGoals(); renderGoals(); closeAporte();
-    toast(`✔ Aporte de ${fmt(valor)} adicionado!`,'#16a34a');
-}
-
-
-// ── GITHUB SYNC (via Gist API — sem SHA, sem conflitos) ──────────────────────
-// Por que Gist? A API de Gists usa PATCH simples para atualizar — não precisa
-// de SHA, não tem conflito 409/422, funciona perfeitamente de arquivos locais.
-//
-// Configuração necessária:
-//   1. Acesse gist.github.com e crie um Gist secreto (qualquer arquivo, ex: data.json)
-//   2. Copie o ID do Gist da URL: gist.github.com/usuario/<GIST_ID>
-//   3. Gere um PAT em github.com/settings/tokens com escopo "gist"
-//   4. Cole o Gist ID e o token no painel de configuração do app
-
-const GH_CFG_KEY = 'fin5_gh_config';
-
-function getGhCfg() {
-    try { return JSON.parse(localStorage.getItem(GH_CFG_KEY)) || {}; } catch { return {}; }
-}
-function saveGhCfgToStorage(cfg) {
-    localStorage.setItem(GH_CFG_KEY, JSON.stringify(cfg));
-}
-
-let _ghSyncing  = false;
-let _ghConfigOpen = false;
-const GIST_FILENAME = 'finances-data.json';
-
-function setGhStatus(state, text) {
-    document.getElementById('ghDot').className = 'gh-dot ' + state;
-    document.getElementById('ghStatusText').textContent = text;
-}
-function updateLastSync(ts) {
-    const el = document.getElementById('ghLastSync');
-    el.textContent = ts ? 'Última sync: ' + new Date(ts).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '';
-}
-
-function toggleGhConfig() {
-    _ghConfigOpen = !_ghConfigOpen;
-    document.getElementById('ghConfig').classList.toggle('open', _ghConfigOpen);
-    if (_ghConfigOpen) {
-        const s = getGhCfg();
-        document.getElementById('ghGistId').value = s.gistId || '';
-        document.getElementById('ghToken').value  = s.token  || '';
-    }
-}
-
-function saveGhConfig() {
-    const gistId = document.getElementById('ghGistId').value.trim();
-    const token  = document.getElementById('ghToken').value.trim();
-    if (!gistId || !token) return toast('⚠️ Preencha o Gist ID e o token.', '#b45309');
-    saveGhCfgToStorage({ gistId, token });
-    toggleGhConfig();
-    toast('✔ Configuração salva!');
-    setGhStatus('idle', 'Gist configurado');
-    syncNow();
-}
-
-function initGhStatus() {
-    const cfg = getGhCfg();
-    setGhStatus('idle', cfg.gistId ? 'Gist: ' + cfg.gistId.slice(0, 8) + '…' : 'Não configurado');
-    if (cfg.lastSync) updateLastSync(cfg.lastSync);
-}
-
-// ── Helpers de encoding UTF-8 ─────────────────────────────────────────────────
-function toBase64(str) {
-    const bytes = new TextEncoder().encode(str);
-    let bin = '';
-    bytes.forEach(b => bin += String.fromCharCode(b));
-    return btoa(bin);
-}
-
-// ── API Gist ──────────────────────────────────────────────────────────────────
-function gistHeaders() {
-    return {
-        'Authorization': 'token ' + getGhCfg().token,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-    };
-}
-function gistUrl() {
-    const cfg = getGhCfg();
-    return cfg.gistId ? `https://api.github.com/gists/${cfg.gistId}` : null;
-}
-
-// ── Pull: baixa dados do Gist e aplica localmente ────────────────────────────
-async function pullFromGitHub() {
-    const url = gistUrl();
-    if (!url) return false;
-    // ?t= evita cache do browser sem afetar a API do Gist
-    const res = await fetch(url + '?t=' + Date.now(), { headers: gistHeaders() });
-    if (res.status === 404) return false;
-    if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        throw new Error((e.message || 'HTTP ' + res.status) + ' (pull)');
-    }
-    const gist = await res.json();
-    const file = gist.files && gist.files[GIST_FILENAME];
-    if (!file) return false; // arquivo ainda não foi criado no Gist
-    const raw = JSON.parse(file.content);
-    if (raw.t) { tx    = raw.t.map(t => ({pagamento: t.tipo==='saida'?'debito':null, ...t})); localStorage.setItem('fin5_data',  JSON.stringify(tx)); }
-    if (raw.c) { cats  = raw.c; localStorage.setItem('fin5_cats',  JSON.stringify(cats)); }
-    if (raw.g) { goals = raw.g; localStorage.setItem('fin5_goals', JSON.stringify(goals)); }
-    return true;
-}
-
-// ── Push: envia dados locais para o Gist (PATCH — sem SHA) ───────────────────
-let _pushing = false;
-async function pushToGitHub() {
-    if (_pushing) return;
-    const url = gistUrl();
-    if (!url) return;
-    _pushing = true;
-    try {
-        const content = JSON.stringify({ t: tx, c: cats, g: goals }, null, 2);
-        const body = {
-            description: '💰 Finances sync ' + new Date().toLocaleString('pt-BR'),
-            files: { [GIST_FILENAME]: { content } }   // PATCH simples, sem SHA
-        };
-        const res = await fetch(url, {
-            method: 'PATCH',
-            headers: gistHeaders(),
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-            const e = await res.json().catch(() => ({}));
-            throw new Error((e.message || 'HTTP ' + res.status) + ' (push)');
-        }
-    } finally {
-        _pushing = false;
-    }
-}
-
-// ── Sync manual (botão): push → pull ─────────────────────────────────────────
-async function syncNow() {
-    const cfg = getGhCfg();
-    if (!cfg.gistId || !cfg.token) { toggleGhConfig(); return; }
-    if (_ghSyncing) return;
-    _ghSyncing = true;
-    setGhStatus('syncing', 'Sincronizando...');
-    try {
-        await pushToGitHub();          // sobe dados locais
-        const pulled = await pullFromGitHub();  // baixa dados remotos
-        const now = Date.now();
-        saveGhCfgToStorage({ ...cfg, lastSync: now });
-        updateLastSync(now);
-        atualizar(); renderGoals();
-        setGhStatus('ok', 'Sincronizado ✓');
-        toast('☁️ Sincronizado com sucesso!', '#16a34a');
-    } catch(e) {
-        setGhStatus('err', 'Erro na sync');
-        toast('❌ ' + e.message, '#dc2626');
-        console.error('[GH Sync]', e);
-    } finally {
-        _ghSyncing = false;
-    }
-}
-
-// ── Auto-save: 2s após qualquer alteração local ───────────────────────────────
-let _ghSaveTimer = null;
-function scheduleGhSave() {
-    clearTimeout(_ghSaveTimer);
-    _ghSaveTimer = setTimeout(async () => {
-        const cfg = getGhCfg();
-        if (!cfg.gistId || !cfg.token) return; // não configurado, ignora
-        setGhStatus('syncing', 'Salvando...');
-        try {
-            await pushToGitHub();
-            const now = Date.now();
-            saveGhCfgToStorage({ ...cfg, lastSync: now });
-            updateLastSync(now);
-            setGhStatus('ok', 'Salvo ✓');
-        } catch(e) {
-            setGhStatus('err', 'Erro ao salvar');
-            toast('❌ Erro ao salvar: ' + e.message, '#dc2626');
-            console.error('[GH Auto-save]', e);
-        }
-    }, 2000);
-}
-
-// ── Startup: carrega dados do Gist ao abrir o app ────────────────────────────
-async function loadFromGitHub() {
-    const cfg = getGhCfg();
-    if (!cfg.gistId || !cfg.token) return;
-    setGhStatus('syncing', 'Carregando...');
-    try {
-        const pulled = await pullFromGitHub();
-        if (pulled) {
-            const now = Date.now();
-            saveGhCfgToStorage({ ...cfg, lastSync: now });
-            updateLastSync(now);
-            atualizar(); renderGoals();
-            toast('☁️ Dados carregados do Gist!', '#16a34a');
-        }
-        setGhStatus('ok', pulled ? 'Sincronizado ✓' : 'Gist vazio — salve algo');
-    } catch(e) {
-        setGhStatus('err', 'Erro ao carregar');
-        toast('❌ ' + e.message, '#dc2626');
-        console.error('[GH Load]', e);
-    }
+    toast(`✓ Aporte de ${fmt(valor)} adicionado!`,'#16a34a');
 }
 
 init();
