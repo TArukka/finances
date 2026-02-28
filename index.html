@@ -328,7 +328,7 @@
         body.mobile .sidebar { display: none; }
 
         /* ── Dashboard layout ── */
-        body.mobile #view-dashboard { display: flex !important; flex-direction: column; min-height: calc(100vh - 50px); }
+        body.mobile #view-dashboard { display: flex; flex-direction: column; min-height: calc(100vh - 50px); }
         body.mobile .main { padding: 14px 14px 90px; gap: 14px; }
 
         /* ── KPIs 2×2 ── */
@@ -1309,7 +1309,7 @@ function navTo(view, btn) {
     if (btn) btn.classList.add('active');
 
     const isDash = view === 'dashboard';
-    document.getElementById('view-dashboard').style.display = isDash ? 'grid' : 'none';
+    document.getElementById('view-dashboard').style.display = isDash ? (IS_MOBILE ? 'flex' : 'grid') : 'none';
     ['anual','mensal','metas'].forEach(v => document.getElementById('view-' + v).classList.toggle('active', v === view));
 
     const hideMes = view === 'anual' || view === 'metas';
