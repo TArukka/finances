@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>Finances / Lucca</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -298,6 +298,129 @@
             .main, .view-inner { padding: 14px; }
             .sidebar { padding: 14px; }
         }
+
+        /* ═══════════════════════════════════════════════════
+           MOBILE LAYOUT — applied via body.mobile class
+           (UA-based, works regardless of viewport width)
+        ═══════════════════════════════════════════════════ */
+
+        /* ── Topbar mobile ── */
+        body.mobile .topbar { padding: 0 14px; height: 50px; }
+        body.mobile .nav-pills { display: none; }
+        body.mobile .month-pill { display: none; }
+        body.mobile .btn-undo { display: none; }
+        body.mobile .sync-time { display: none; }
+        body.mobile #filtroMes,
+        body.mobile #filtroAno { display: none !important; }
+        body.mobile .topbar-left { gap: 0; }
+        body.mobile .logo { font-size: 16px; }
+
+        /* Month bar — thin strip below topbar on mobile */
+        .mob-month-bar { display: none; background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 14px; display: flex; align-items: center; gap: 6px; }
+        body:not(.mobile) .mob-month-bar { display: none !important; }
+        body.mobile .mob-month-bar { display: flex; }
+        .mob-month-bar label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; }
+        .mob-month-bar select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; font-weight: 600; font-family: inherit; color: var(--text); background: var(--bg); outline: none; }
+        .mob-month-bar .mob-month-spacer { flex: 1; }
+        .mob-month-bar .mob-view-label { font-size: 12px; font-weight: 700; color: var(--text-2); }
+
+        /* ── Hide sidebar ── */
+        body.mobile .sidebar { display: none; }
+
+        /* ── Dashboard layout ── */
+        body.mobile #view-dashboard { display: flex !important; flex-direction: column; min-height: calc(100vh - 50px); }
+        body.mobile .main { padding: 14px 14px 90px; gap: 14px; }
+
+        /* ── KPIs 2×2 ── */
+        body.mobile .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+        body.mobile .kpi { padding: 12px; }
+        body.mobile .kpi-val { font-size: 17px; }
+
+        /* ── Charts stack ── */
+        body.mobile .charts,
+        body.mobile .annual-charts-row,
+        body.mobile .mensal-charts-row { grid-template-columns: 1fr; gap: 10px; }
+        body.mobile .annual-kpis { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+        body.mobile .split-grid { grid-template-columns: 1fr; gap: 10px; }
+
+        /* ── Views ── */
+        body.mobile .view-inner { padding: 14px 14px 90px; }
+        body.mobile .view-title { font-size: 17px; }
+        body.mobile .view-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+        body.mobile .mensal-controls { flex-wrap: wrap; gap: 6px; }
+        body.mobile .goals-grid { grid-template-columns: 1fr; }
+
+        /* ── Transaction table → hidden on mobile; show card list instead ── */
+        body.mobile .history-box table { display: none; }
+        body.mobile .history-box thead { display: none; }
+        .mob-tx-list { display: none; }
+        body.mobile .mob-tx-list { display: block; }
+
+        .mob-tx-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border-light); background: var(--surface); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .1s; }
+        .mob-tx-card:last-child { border-bottom: none; }
+        .mob-tx-card:active { background: var(--bg); }
+        .mob-tx-dot { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .mob-tx-dot.entrada { background: #dcfce7; }
+        .mob-tx-dot.saida   { background: #fee2e2; }
+        .mob-tx-dot.invest  { background: #ede9fe; }
+        .mob-tx-info { flex: 1; min-width: 0; }
+        .mob-tx-desc { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+        .mob-tx-meta { font-size: 11px; color: var(--text-3); display: flex; align-items: center; gap: 5px; }
+        .mob-tx-val  { font-weight: 700; font-size: 14px; white-space: nowrap; text-align: right; }
+        .mob-tx-date { font-size: 11px; color: var(--text-3); margin-top: 1px; text-align: right; }
+        .mob-tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+
+        /* Edit sheet for transaction (mobile) */
+        .mob-edit-sheet { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+        .mob-edit-sheet.open { pointer-events: all; }
+        .mob-edit-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.35); opacity: 0; transition: opacity .22s; }
+        .mob-edit-sheet.open .mob-edit-backdrop { opacity: 1; }
+        .mob-edit-content { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 18px 18px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .28s cubic-bezier(.4,0,.2,1); max-height: 88vh; overflow-y: auto; }
+        .mob-edit-sheet.open .mob-edit-content { transform: translateY(0); }
+        .mob-edit-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+        .mob-edit-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+        .mob-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .mob-edit-full { margin-bottom: 10px; }
+        .mob-edit-actions { display: flex; gap: 8px; margin-top: 14px; }
+        .mob-edit-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+        .mob-edit-save   { background: var(--accent); color: white; }
+        .mob-edit-delete { background: #fee2e2; color: var(--danger); }
+        .mob-edit-cancel { background: var(--bg); color: var(--text-2); border: 1px solid var(--border) !important; }
+
+        /* ── Bottom nav ── */
+        .mob-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--border); z-index: 200; }
+        body.mobile .mob-bottom-nav { display: flex; }
+        .mob-nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; font-family: inherit; color: var(--text-3); font-size: 10px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; transition: color .15s; }
+        .mob-nav-tab .mob-nav-icon { font-size: 20px; line-height: 1; }
+        .mob-nav-tab.active { color: var(--accent); }
+        .mob-nav-tab.mob-add-tab { position: relative; }
+        .mob-add-btn { width: 46px; height: 46px; border-radius: 14px; background: var(--accent); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 16px rgba(0,0,0,.2); margin-bottom: 2px; transition: transform .1s; }
+        .mob-nav-tab.mob-add-tab:active .mob-add-btn { transform: scale(.92); }
+
+        /* ── Add / Form sheet ── */
+        .mob-form-sheet { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+        .mob-form-sheet.open { pointer-events: all; }
+        .mob-form-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.4); opacity: 0; transition: opacity .22s; }
+        .mob-form-sheet.open .mob-form-backdrop { opacity: 1; }
+        .mob-form-content { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 20px 20px 0 0; padding: 0 18px calc(24px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); max-height: 92vh; overflow-y: auto; }
+        .mob-form-sheet.open .mob-form-content { transform: translateY(0); }
+        .mob-form-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 16px; }
+        .mob-form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .mob-form-title { font-size: 16px; font-weight: 700; }
+        .mob-form-close { background: var(--bg); border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-3); cursor: pointer; }
+        .mob-form-sheet .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .mob-form-sheet .field { margin-bottom: 10px; }
+        .mob-form-sheet .field label { font-size: 11px; font-weight: 600; color: var(--text-2); display: block; margin-bottom: 4px; }
+        .mob-form-sheet .field input,
+        .mob-form-sheet .field select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; }
+        .mob-form-sheet .field input:focus,
+        .mob-form-sheet .field select:focus { border-color: var(--accent); }
+        .mob-form-sheet .check-row { padding: 10px 12px; border-radius: 10px; font-size: 13px; margin-bottom: 10px; }
+        .mob-form-save { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
+        .mob-form-save:active { opacity: .85; }
+
+        /* Toast adjustment for mobile (above bottom nav) */
+        body.mobile #toast { bottom: 80px; }
     </style>
 </head>
 <body>
@@ -326,6 +449,142 @@
         <select id="filtroAno" onchange="onFiltroChange()"></select>
     </div>
 </div>
+
+<!-- MOBILE: month bar (shown below topbar on mobile) -->
+<div class="mob-month-bar" id="mobMonthBar">
+    <span class="mob-view-label" id="mobViewLabel">Início</span>
+    <span class="mob-month-spacer"></span>
+    <select id="mobFiltroMes" onchange="mobFiltroChange()"></select>
+    <select id="mobFiltroAno" onchange="mobFiltroChange()"></select>
+</div>
+
+<!-- MOBILE: add-transaction bottom sheet -->
+<div class="mob-form-sheet" id="mobFormSheet">
+    <div class="mob-form-backdrop" onclick="closeMobForm()"></div>
+    <div class="mob-form-content">
+        <div class="mob-form-handle"></div>
+        <div class="mob-form-header">
+            <div class="mob-form-title" id="mobFormTitle">Novo Lançamento</div>
+            <button class="mob-form-close" onclick="closeMobForm()">✕</button>
+        </div>
+        <div class="field">
+            <label>Descrição</label>
+            <input type="text" id="mob-desc" placeholder="Ex: Supermercado">
+        </div>
+        <div class="g2">
+            <div class="field">
+                <label>Valor (R$)</label>
+                <input type="text" id="mob-valor" placeholder="0,00" inputmode="decimal">
+            </div>
+            <div class="field">
+                <label>Data</label>
+                <input type="date" id="mob-data">
+            </div>
+        </div>
+        <div class="g2">
+            <div class="field">
+                <label>Tipo</label>
+                <select id="mob-tipo" onchange="mobOnTipoChange()">
+                    <option value="saida">📉 Gasto</option>
+                    <option value="entrada">📈 Ganho</option>
+                    <option value="investimento">🟣 Investimento</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Categoria</label>
+                <select id="mob-categoria"></select>
+            </div>
+        </div>
+        <div class="field" id="mobPagamentoField">
+            <label>Pagamento</label>
+            <select id="mob-pagamento">
+                <option value="debito">🟢 Débito</option>
+                <option value="credito">🔵 Crédito</option>
+            </select>
+        </div>
+        <label class="check-row" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;margin-bottom:10px">
+            <input type="checkbox" id="mob-fixo"> Gasto fixo mensal?
+        </label>
+        <button class="mob-form-save" onclick="mobAdicionar()">Salvar Lançamento</button>
+    </div>
+</div>
+
+<!-- MOBILE: inline-edit transaction sheet -->
+<div class="mob-edit-sheet" id="mobEditSheet">
+    <div class="mob-edit-backdrop" onclick="closeMobEdit()"></div>
+    <div class="mob-edit-content">
+        <div class="mob-edit-handle"></div>
+        <div class="mob-edit-title">Editar Lançamento</div>
+        <input type="hidden" id="mob-edit-id">
+        <div class="mob-edit-full field">
+            <label>Descrição</label>
+            <input type="text" id="mob-edit-desc" placeholder="Descrição">
+        </div>
+        <div class="mob-edit-grid">
+            <div class="field">
+                <label>Valor (R$)</label>
+                <input type="text" id="mob-edit-valor" inputmode="decimal">
+            </div>
+            <div class="field">
+                <label>Data</label>
+                <input type="date" id="mob-edit-data">
+            </div>
+        </div>
+        <div class="mob-edit-grid">
+            <div class="field">
+                <label>Tipo</label>
+                <select id="mob-edit-tipo" onchange="mobEditTipoChange()">
+                    <option value="saida">📉 Gasto</option>
+                    <option value="entrada">📈 Ganho</option>
+                    <option value="investimento">🟣 Investimento</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Categoria</label>
+                <select id="mob-edit-cat"></select>
+            </div>
+        </div>
+        <div class="field" id="mobEditPagField">
+            <label>Pagamento</label>
+            <select id="mob-edit-pag">
+                <option value="debito">🟢 Débito</option>
+                <option value="credito">🔵 Crédito</option>
+            </select>
+        </div>
+        <label class="check-row" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;cursor:pointer;margin-bottom:4px">
+            <input type="checkbox" id="mob-edit-fixo"> Gasto fixo mensal?
+        </label>
+        <div class="mob-edit-actions">
+            <button class="mob-edit-cancel" onclick="closeMobEdit()">Cancelar</button>
+            <button class="mob-edit-delete" onclick="mobEditDelete()">🗑️</button>
+            <button class="mob-edit-save" onclick="mobEditSave()">✓ Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MOBILE: bottom navigation -->
+<nav class="mob-bottom-nav">
+    <button class="mob-nav-tab active" id="mob-tab-dashboard" onclick="mobNavTo('dashboard',this)">
+        <span class="mob-nav-icon">🏠</span>
+        <span>Início</span>
+    </button>
+    <button class="mob-nav-tab" id="mob-tab-anual" onclick="mobNavTo('anual',this)">
+        <span class="mob-nav-icon">📅</span>
+        <span>Anual</span>
+    </button>
+    <button class="mob-nav-tab mob-add-tab" onclick="openMobForm()">
+        <div class="mob-add-btn">＋</div>
+        <span>Lançar</span>
+    </button>
+    <button class="mob-nav-tab" id="mob-tab-mensal" onclick="mobNavTo('mensal',this)">
+        <span class="mob-nav-icon">📊</span>
+        <span>Mensal</span>
+    </button>
+    <button class="mob-nav-tab" id="mob-tab-metas" onclick="mobNavTo('metas',this)">
+        <span class="mob-nav-icon">🎯</span>
+        <span>Metas</span>
+    </button>
+</nav>
 
 <!-- DASHBOARD -->
 <div id="view-dashboard" class="app">
@@ -468,6 +727,7 @@
                 <tbody id="tbody"></tbody>
             </table>
             <div id="emptyState" style="display:none" class="empty-state">Nenhum lançamento encontrado.</div>
+            <div class="mob-tx-list" id="mobTxList"></div>
         </div>
     </main>
 </div>
@@ -762,7 +1022,181 @@
 <div id="toast" style="position:fixed;bottom:20px;right:20px;background:#18181b;color:white;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;z-index:999;"></div>
 
 <script>
-// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
+const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
+if (IS_MOBILE) document.body.classList.add('mobile');
+
+// ── MOBILE HELPERS ────────────────────────────────────────────────────────────
+const MOB_VIEW_LABELS = { dashboard: 'Início', anual: 'Visão Anual', mensal: 'Mensal', metas: 'Metas' };
+const MOB_TYPE_ICON   = { entrada: '💰', saida: '💸', investimento: '📈' };
+
+function mobNavTo(view, btn) {
+    document.querySelectorAll('.mob-nav-tab:not(.mob-add-tab)').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const label = document.getElementById('mobViewLabel');
+    if (label) label.textContent = MOB_VIEW_LABELS[view] || '';
+    // Show/hide month bar (hide for anual & metas)
+    const bar = document.getElementById('mobMonthBar');
+    if (bar) bar.style.display = (view === 'anual' || view === 'metas') ? 'none' : 'flex';
+    navTo(view);
+}
+
+function mobFiltroChange() {
+    // Sync mobile month selects → desktop selects
+    const mes = document.getElementById('mobFiltroMes').value;
+    const ano = document.getElementById('mobFiltroAno').value;
+    document.getElementById('filtroMes').value = mes;
+    document.getElementById('filtroAno').value = ano;
+    onFiltroChange();
+}
+
+function openMobForm() {
+    document.getElementById('mobFormTitle').textContent = 'Novo Lançamento';
+    document.getElementById('mob-desc').value  = '';
+    document.getElementById('mob-valor').value = '';
+    document.getElementById('mob-fixo').checked = false;
+    document.getElementById('mob-data').valueAsDate = new Date();
+    mobOnTipoChange();
+    document.getElementById('mobFormSheet').classList.add('open');
+    setTimeout(() => document.getElementById('mob-desc').focus(), 300);
+}
+
+function closeMobForm() {
+    document.getElementById('mobFormSheet').classList.remove('open');
+}
+
+function mobOnTipoChange() {
+    const tipo = document.getElementById('mob-tipo').value;
+    document.getElementById('mobPagamentoField').style.display = tipo === 'saida' ? '' : 'none';
+    const sel = document.getElementById('mob-categoria');
+    sel.innerHTML = '';
+    (cats[tipo] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; sel.add(o); });
+}
+
+function mobAdicionar() {
+    const desc  = document.getElementById('mob-desc').value.trim();
+    const valor = parseFloat(document.getElementById('mob-valor').value.replace(/\./g,'').replace(',','.'));
+    const data  = document.getElementById('mob-data').value;
+    const tipo  = document.getElementById('mob-tipo').value;
+    const cat   = document.getElementById('mob-categoria').value;
+    const fixo  = document.getElementById('mob-fixo').checked;
+    const pagamento = tipo === 'saida' ? document.getElementById('mob-pagamento').value : null;
+
+    if (!desc)                        return toast('⚠️ Digite uma descrição.', '#b45309');
+    if (isNaN(valor) || valor <= 0)   return toast('⚠️ Valor inválido.', '#b45309');
+    if (!data)                        return toast('⚠️ Selecione uma data.', '#b45309');
+
+    pushUndo(tx, `Adição de "${desc}"`);
+    if (fixo) {
+        _pendingFixo = { desc, valor, data, tipo, cat, pagamento, afterEditId: null };
+        document.getElementById('fixoRepMsg').textContent = `Replicar "${desc}" como gasto fixo para os próximos meses?`;
+        closeMobForm();
+        document.getElementById('ovFixoRep').classList.add('open');
+        return;
+    }
+    tx.push({ id: Date.now(), desc, valor, data, tipo, cat, fixo: false, pagamento });
+    save(); atualizar();
+    closeMobForm();
+    toast('✓ Salvo!');
+}
+
+function openMobEdit(id) {
+    const t = tx.find(x => x.id === id);
+    if (!t) return;
+    document.getElementById('mob-edit-id').value   = id;
+    document.getElementById('mob-edit-desc').value  = t.desc;
+    document.getElementById('mob-edit-valor').value = t.valor.toFixed(2).replace('.', ',');
+    document.getElementById('mob-edit-data').value  = t.data;
+    document.getElementById('mob-edit-tipo').value  = t.tipo;
+    document.getElementById('mob-edit-fixo').checked = t.fixo;
+    if (t.pagamento) document.getElementById('mob-edit-pag').value = t.pagamento;
+    mobEditTipoChange(t.cat);
+    document.getElementById('mobEditSheet').classList.add('open');
+}
+
+function closeMobEdit() {
+    document.getElementById('mobEditSheet').classList.remove('open');
+}
+
+function mobEditTipoChange(selectedCat) {
+    const tipo = document.getElementById('mob-edit-tipo').value;
+    document.getElementById('mobEditPagField').style.display = tipo === 'saida' ? '' : 'none';
+    const sel = document.getElementById('mob-edit-cat');
+    const prev = selectedCat || sel.value;
+    sel.innerHTML = '';
+    (cats[tipo] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; if (c === prev) o.selected = true; sel.add(o); });
+}
+
+function mobEditSave() {
+    const id    = parseInt(document.getElementById('mob-edit-id').value);
+    const desc  = document.getElementById('mob-edit-desc').value.trim();
+    const valor = parseFloat(document.getElementById('mob-edit-valor').value.replace(/\./g,'').replace(',','.'));
+    const data  = document.getElementById('mob-edit-data').value;
+    const tipo  = document.getElementById('mob-edit-tipo').value;
+    const cat   = document.getElementById('mob-edit-cat').value;
+    const fixo  = document.getElementById('mob-edit-fixo').checked;
+    const pagamento = tipo === 'saida' ? document.getElementById('mob-edit-pag').value : null;
+
+    if (!desc || isNaN(valor) || valor <= 0 || !data) return toast('⚠️ Preencha todos os campos.', '#b45309');
+    pushUndo(tx, `Edição de "${desc}"`);
+    tx = tx.map(t => t.id === id ? { ...t, desc, valor, data, tipo, cat, fixo, pagamento } : t);
+    save(); atualizar();
+    closeMobEdit();
+    toast('✓ Atualizado!');
+}
+
+function mobEditDelete() {
+    const id = parseInt(document.getElementById('mob-edit-id').value);
+    const t  = tx.find(x => x.id === id);
+    if (!t || !confirm(`Remover "${t.desc}"?`)) return;
+    pushUndo(tx, `Remoção de "${t.desc}"`);
+    tx = tx.filter(x => x.id !== id);
+    save(); atualizar();
+    closeMobEdit();
+    toast('Removido.', '#52525b');
+}
+
+function renderMobList() {
+    const { m, a } = filtro();
+    const busca = document.getElementById('busca').value.toLowerCase();
+    let lista = txMes(m, a).filter(t =>
+        (activeTab === 'all' || t.tipo === activeTab) &&
+        (t.desc.toLowerCase().includes(busca) || t.cat.toLowerCase().includes(busca))
+    );
+    lista = sorted(lista);
+    const container = document.getElementById('mobTxList');
+    if (!container) return;
+
+    if (!lista.length) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = lista.map(t => {
+        const [y, mo, d] = t.data.split('-');
+        const cor = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
+        const pre = t.tipo === 'entrada' ? '+' : '−';
+        const dotClass = t.tipo === 'investimento' ? 'invest' : t.tipo;
+        const icon = MOB_TYPE_ICON[t.tipo] || '💰';
+        const payBadge = t.tipo === 'saida'
+            ? (t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : '<span class="tag-deb">DÉB</span>')
+            : '';
+        const fixoBadge = t.fixo ? '<span class="tag-fixo">FIXO</span>' : '';
+        return `<div class="mob-tx-card" onclick="openMobEdit(${t.id})">
+            <div class="mob-tx-dot ${dotClass}">${icon}</div>
+            <div class="mob-tx-info">
+                <div class="mob-tx-desc">${t.desc}</div>
+                <div class="mob-tx-meta">${t.cat}${payBadge}${fixoBadge}</div>
+            </div>
+            <div class="mob-tx-right">
+                <div class="mob-tx-val" style="color:${cor}">${pre} ${fmt(t.valor)}</div>
+                <div class="mob-tx-date">${d}/${mo}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const GOAL_COLORS = ['#16a34a','#0284c7','#6d28d9','#dc2626','#f59e0b','#ec4899','#0f766e','#b45309','#0e7490'];
 const CAT_COLORS  = ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#8b5cf6','#06b6d4','#84cc16','#f97316','#14b8a6'];
@@ -830,11 +1264,12 @@ function init() {
     const curM = now.getMonth(), curA = now.getFullYear();
 
     // Populate all four selects (filtroMes, filtroAno, mensalMes, mensalAno)
-    const mesSelectors = ['filtroMes', 'mensalMes'];
-    const anoSelectors = ['filtroAno', 'mensalAno'];
+    const mesSelectors = ['filtroMes', 'mensalMes', 'mobFiltroMes'];
+    const anoSelectors = ['filtroAno', 'mensalAno', 'mobFiltroAno'];
 
     mesSelectors.forEach(id => {
         const sel = document.getElementById(id);
+        if (!sel) return;
         MESES.forEach((m, i) => {
             const o = document.createElement('option');
             o.value = i; o.text = m;
@@ -845,6 +1280,7 @@ function init() {
 
     anoSelectors.forEach(id => {
         const sel = document.getElementById(id);
+        if (!sel) return;
         for (let y = curA - 3; y <= curA + 2; y++) {
             const o = document.createElement('option');
             o.value = y; o.text = y;
@@ -855,6 +1291,9 @@ function init() {
 
     document.getElementById('data').valueAsDate = now;
     document.getElementById('aporteData').valueAsDate = now;
+
+    // Mobile form type sync
+    if (IS_MOBILE) mobOnTipoChange();
 
     onTipoChange();
     atualizar();
@@ -1174,8 +1613,11 @@ function renderTabela() {
     );
     lista = sorted(lista);
     const tbody = document.getElementById('tbody'), empty = document.getElementById('emptyState');
-    if (!lista.length) { tbody.innerHTML = ''; empty.style.display = 'block'; _openInlineId = null; return; }
+    if (!lista.length) { tbody.innerHTML = ''; empty.style.display = 'block'; _openInlineId = null; if (IS_MOBILE) renderMobList(); return; }
     empty.style.display = 'none';
+
+    // Mobile renders cards; desktop renders table rows
+    if (IS_MOBILE) { renderMobList(); return; }
 
     tbody.innerHTML = lista.map(t => {
         const [y, mo, d] = t.data.split('-');
@@ -1329,6 +1771,11 @@ function atualizar() {
     }
 
     document.getElementById('pillMes').textContent = MESES[m] + ' ' + a;
+    // Sync mobile month bar selects to desktop (needed if desktop selects changed)
+    const mobM = document.getElementById('mobFiltroMes');
+    const mobA = document.getElementById('mobFiltroAno');
+    if (mobM) mobM.value = m;
+    if (mobA) mobA.value = a;
 
     const nomes = Object.keys(fixosMap);
     const totalF = nomes.reduce((s, k) => s + fixosMap[k], 0);
