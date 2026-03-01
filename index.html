@@ -80,6 +80,7 @@
         .kpi.al-blue   { border-left: 3px solid var(--credit); }
         .kpi.al-teal   { border-left: 3px solid var(--debit); }
         .kpi.al-dark   { border-left: 3px solid var(--accent); }
+        .kpi.al-amber  { border-left: 3px solid #f59e0b; }
         .kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text-3); margin-bottom: 6px; }
         .kpi-val { font-size: 20px; font-weight: 700; line-height: 1; }
         .kpi-val.green  { color: var(--success); }
@@ -301,10 +302,7 @@
 
         /* ═══════════════════════════════════════════════════
            MOBILE LAYOUT — applied via body.mobile class
-           (UA-based, works regardless of viewport width)
         ═══════════════════════════════════════════════════ */
-
-        /* ── Topbar mobile ── */
         body.mobile .topbar { padding: 0 14px; height: 50px; }
         body.mobile .nav-pills { display: none; }
         body.mobile .month-pill { display: none; }
@@ -315,7 +313,6 @@
         body.mobile .topbar-left { gap: 0; }
         body.mobile .logo { font-size: 16px; }
 
-        /* Month bar — thin strip below topbar on mobile */
         .mob-month-bar { display: none; background: var(--surface); border-bottom: 1px solid var(--border); padding: 6px 14px; display: flex; align-items: center; gap: 6px; }
         body:not(.mobile) .mob-month-bar { display: none !important; }
         body.mobile .mob-month-bar { display: flex; }
@@ -324,33 +321,23 @@
         .mob-month-bar .mob-month-spacer { flex: 1; }
         .mob-month-bar .mob-view-label { font-size: 12px; font-weight: 700; color: var(--text-2); }
 
-        /* ── Hide sidebar ── */
         body.mobile .sidebar { display: none; }
-
-        /* ── Dashboard layout ── */
         body.mobile #view-dashboard { display: flex; flex-direction: column; min-height: calc(100vh - 50px); }
         body.mobile .main { padding: 14px 14px 90px; gap: 14px; }
-
-        /* ── KPIs 2×2 ── */
         body.mobile .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
         body.mobile .kpi { padding: 12px; }
         body.mobile .kpi-val { font-size: 17px; }
-
-        /* ── Charts stack ── */
         body.mobile .charts,
         body.mobile .annual-charts-row,
         body.mobile .mensal-charts-row { grid-template-columns: 1fr; gap: 10px; }
         body.mobile .annual-kpis { grid-template-columns: 1fr 1fr !important; gap: 10px; }
         body.mobile .split-grid { grid-template-columns: 1fr; gap: 10px; }
-
-        /* ── Views ── */
         body.mobile .view-inner { padding: 14px 14px 90px; }
         body.mobile .view-title { font-size: 17px; }
         body.mobile .view-header { flex-direction: column; gap: 10px; align-items: flex-start; }
         body.mobile .mensal-controls { flex-wrap: wrap; gap: 6px; }
         body.mobile .goals-grid { grid-template-columns: 1fr; }
 
-        /* ── Transaction table → hidden on mobile; show card list instead ── */
         body.mobile .history-box table { display: none; }
         body.mobile .history-box thead { display: none; }
         .mob-tx-list { display: none; }
@@ -370,7 +357,6 @@
         .mob-tx-date { font-size: 11px; color: var(--text-3); margin-top: 1px; text-align: right; }
         .mob-tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 
-        /* Edit sheet for transaction (mobile) */
         .mob-edit-sheet { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
         .mob-edit-sheet.open { pointer-events: all; }
         .mob-edit-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.35); opacity: 0; transition: opacity .22s; }
@@ -387,7 +373,6 @@
         .mob-edit-delete { background: #fee2e2; color: var(--danger); }
         .mob-edit-cancel { background: var(--bg); color: var(--text-2); border: 1px solid var(--border) !important; }
 
-        /* ── Bottom nav ── */
         .mob-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: calc(60px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--border); z-index: 200; }
         body.mobile .mob-bottom-nav { display: flex; }
         .mob-nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; font-family: inherit; color: var(--text-3); font-size: 10px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; transition: color .15s; }
@@ -397,7 +382,6 @@
         .mob-add-btn { width: 46px; height: 46px; border-radius: 14px; background: var(--accent); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 16px rgba(0,0,0,.2); margin-bottom: 2px; transition: transform .1s; }
         .mob-nav-tab.mob-add-tab:active .mob-add-btn { transform: scale(.92); }
 
-        /* ── Add / Form sheet ── */
         .mob-form-sheet { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
         .mob-form-sheet.open { pointer-events: all; }
         .mob-form-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.4); opacity: 0; transition: opacity .22s; }
@@ -419,7 +403,6 @@
         .mob-form-save { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 8px; }
         .mob-form-save:active { opacity: .85; }
 
-        /* Toast adjustment for mobile (above bottom nav) */
         body.mobile #toast { bottom: 80px; }
     </style>
 </head>
@@ -450,7 +433,7 @@
     </div>
 </div>
 
-<!-- MOBILE: month bar (shown below topbar on mobile) -->
+<!-- MOBILE: month bar -->
 <div class="mob-month-bar" id="mobMonthBar">
     <span class="mob-view-label" id="mobViewLabel">Início</span>
     <span class="mob-month-spacer"></span>
@@ -741,13 +724,15 @@
                 <div class="view-subtitle" id="anualSubtitle">Resumo completo do ano</div>
             </div>
         </div>
-        <div class="annual-kpis" style="grid-template-columns:repeat(6,1fr)">
+        <!-- ★ UPDATED: 4-column grid, 2 rows, with Saldo Anual + Saldo Até Agora -->
+        <div class="annual-kpis" style="grid-template-columns:repeat(4,1fr)">
             <div class="kpi al-green">  <div class="kpi-label">Entradas</div>  <div class="kpi-val green"  id="aKpiEnt">—</div></div>
             <div class="kpi al-red">    <div class="kpi-label">Despesas</div>  <div class="kpi-val red"    id="aKpiGas">—</div></div>
             <div class="kpi al-teal">   <div class="kpi-label">Débito</div>    <div class="kpi-val teal"   id="aKpiDeb">—</div><div class="kpi-sub" id="aKpiDebPct"></div></div>
             <div class="kpi al-blue">   <div class="kpi-label">Crédito</div>   <div class="kpi-val blue"   id="aKpiCred">—</div><div class="kpi-sub" id="aKpiCredPct"></div></div>
             <div class="kpi al-purple"> <div class="kpi-label">Investido</div> <div class="kpi-val purple" id="aKpiInv">—</div></div>
-            <div class="kpi al-dark">   <div class="kpi-label">Saldo</div>     <div class="kpi-val"        id="aKpiSaldo">—</div></div>
+            <div class="kpi al-dark">   <div class="kpi-label">Saldo Anual</div><div class="kpi-val" id="aKpiSaldo">—</div><div class="kpi-sub">Jan → Dez (projeção)</div></div>
+            <div class="kpi al-amber">  <div class="kpi-label">Saldo Até Agora</div><div class="kpi-val" id="aKpiSaldoNow">—</div><div class="kpi-sub" id="aKpiSaldoNowSub"></div></div>
         </div>
         <div class="annual-charts-row">
             <div class="chart-box">
@@ -958,7 +943,6 @@
     <div class="modal">
         <div class="modal-title">☁️ Sincronização com GitHub Gist</div>
         <div class="modal-sub">Seus dados ficam num Gist privado e sincronizam entre dispositivos.</div>
-
         <div class="gist-steps">
             <div class="gist-step">
                 <div class="gist-step-num">1</div>
@@ -973,7 +957,6 @@
                 <div>No outro computador, repita os passos 1–2 com o <strong>mesmo token e mesmo Gist ID</strong>.</div>
             </div>
         </div>
-
         <div class="field">
             <label>Personal Access Token (GitHub)</label>
             <div class="token-field">
@@ -994,7 +977,6 @@
                 Sincronizar automaticamente a cada 5 minutos
             </label>
         </div>
-
         <div class="modal-footer">
             <button class="btn-mcancel" onclick="closeGistConfig()">Cancelar</button>
             <button class="btn-confirm" onclick="salvarGistConfig()">Salvar e Sincronizar</button>
@@ -1035,14 +1017,12 @@ function mobNavTo(view, btn) {
     if (btn) btn.classList.add('active');
     const label = document.getElementById('mobViewLabel');
     if (label) label.textContent = MOB_VIEW_LABELS[view] || '';
-    // Show/hide month bar (hide for anual & metas)
     const bar = document.getElementById('mobMonthBar');
     if (bar) bar.style.display = (view === 'anual' || view === 'metas') ? 'none' : 'flex';
     navTo(view);
 }
 
 function mobFiltroChange() {
-    // Sync mobile month selects → desktop selects
     const mes = document.getElementById('mobFiltroMes').value;
     const ano = document.getElementById('mobFiltroAno').value;
     document.getElementById('filtroMes').value = mes;
@@ -1166,12 +1146,7 @@ function renderMobList() {
     lista = sorted(lista);
     const container = document.getElementById('mobTxList');
     if (!container) return;
-
-    if (!lista.length) {
-        container.innerHTML = '';
-        return;
-    }
-
+    if (!lista.length) { container.innerHTML = ''; return; }
     container.innerHTML = lista.map(t => {
         const [y, mo, d] = t.data.split('-');
         const cor = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
@@ -1263,7 +1238,6 @@ function init() {
     const now = new Date();
     const curM = now.getMonth(), curA = now.getFullYear();
 
-    // Populate all four selects (filtroMes, filtroAno, mensalMes, mensalAno)
     const mesSelectors = ['filtroMes', 'mensalMes', 'mobFiltroMes'];
     const anoSelectors = ['filtroAno', 'mensalAno', 'mobFiltroAno'];
 
@@ -1292,7 +1266,6 @@ function init() {
     document.getElementById('data').valueAsDate = now;
     document.getElementById('aporteData').valueAsDate = now;
 
-    // Mobile form type sync
     if (IS_MOBILE) mobOnTipoChange();
 
     onTipoChange();
@@ -1387,7 +1360,6 @@ function setTab(tab) {
 function onTipoChange() {
     const tipo = document.getElementById('tipo').value;
     document.getElementById('pagamentoField').style.display = tipo === 'saida' ? '' : 'none';
-    // Reload categories
     const sel = document.getElementById('categoria');
     sel.innerHTML = '';
     (cats[tipo] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; sel.add(o); });
@@ -1616,7 +1588,6 @@ function renderTabela() {
     if (!lista.length) { tbody.innerHTML = ''; empty.style.display = 'block'; _openInlineId = null; if (IS_MOBILE) renderMobList(); return; }
     empty.style.display = 'none';
 
-    // Mobile renders cards; desktop renders table rows
     if (IS_MOBILE) { renderMobList(); return; }
 
     tbody.innerHTML = lista.map(t => {
@@ -1771,7 +1742,6 @@ function atualizar() {
     }
 
     document.getElementById('pillMes').textContent = MESES[m] + ' ' + a;
-    // Sync mobile month bar selects to desktop (needed if desktop selects changed)
     const mobM = document.getElementById('mobFiltroMes');
     const mobA = document.getElementById('mobFiltroAno');
     if (mobM) mobM.value = m;
@@ -1834,6 +1804,26 @@ function renderAnual() {
     }
 
     const aSaldo = aEnt - aGas - aInv;
+
+    // ★ Saldo Até Agora: sum only months up to current month (same year)
+    const nowDate = new Date();
+    const curMonth = nowDate.getMonth(), curYear = nowDate.getFullYear();
+    let sNowEnt = 0, sNowGas = 0, sNowInv = 0;
+    if (a === curYear) {
+        for (let m2 = 0; m2 <= curMonth; m2++) {
+            const l2 = txMes(m2, a);
+            l2.forEach(t => {
+                if (t.tipo === 'entrada') sNowEnt += t.valor;
+                else if (t.tipo === 'investimento') sNowInv += t.valor;
+                else sNowGas += t.valor;
+            });
+        }
+    } else {
+        // For past/future years show the full-year saldo as "until now"
+        sNowEnt = aEnt; sNowGas = aGas; sNowInv = aInv;
+    }
+    const saldoNow = sNowEnt - sNowGas - sNowInv;
+
     document.getElementById('aKpiEnt').textContent = fmt(aEnt);
     document.getElementById('aKpiGas').textContent = fmt(aGas);
     document.getElementById('aKpiInv').textContent = fmt(aInv);
@@ -1843,6 +1833,15 @@ function renderAnual() {
     aKpiSaldo.textContent = fmt(aSaldo); aKpiSaldo.className = 'kpi-val ' + (aSaldo < 0 ? 'red' : '');
     document.getElementById('aKpiDebPct').textContent  = aGas > 0 ? `${Math.round((aDeb / aGas) * 100)}% das despesas` : '';
     document.getElementById('aKpiCredPct').textContent = aGas > 0 ? `${Math.round((aCred / aGas) * 100)}% das despesas` : '';
+
+    // ★ Populate the new "Saldo Até Agora" card
+    const aKpiSaldoNow = document.getElementById('aKpiSaldoNow');
+    aKpiSaldoNow.textContent = fmt(saldoNow);
+    aKpiSaldoNow.style.color = saldoNow < 0 ? 'var(--danger)' : 'var(--success)';
+    const nowMesLabel = a === curYear
+        ? `Jan → ${MESES[curMonth].slice(0, 3)}`
+        : (a < curYear ? 'Ano completo' : 'Ainda não começou');
+    document.getElementById('aKpiSaldoNowSub').textContent = nowMesLabel;
 
     destroyChart('anual');
     charts['anual'] = new Chart(document.getElementById('graficoAnual').getContext('2d'), {
@@ -1909,7 +1908,6 @@ function renderMensal() {
     renderSplitList(saidas.filter(t => t.pagamento !== 'credito'), 'mDebList');
     renderSplitList(saidas.filter(t => t.pagamento === 'credito'), 'mCredList');
 
-    // Day spending chart
     const daysInMonth = new Date(a, m + 1, 0).getDate();
     const dayData = Array(daysInMonth).fill(0);
     saidas.forEach(t => { dayData[parseInt(t.data.split('-')[2]) - 1] += t.valor; });
@@ -1922,7 +1920,6 @@ function renderMensal() {
             scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, maxTicksLimit: 16 } }, y: AXIS_OPTS.y } }
     });
 
-    // Credit vs Debit donut
     const cvdCanvas = document.getElementById('graficoCvD');
     destroyChart('cvd');
     if (gas > 0) {
@@ -1935,7 +1932,6 @@ function renderMensal() {
         cvdCanvas.parentElement.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px">Sem despesas</div>';
     }
 
-    // Category breakdown
     const catMap = {};
     saidas.forEach(t => { catMap[t.cat] = (catMap[t.cat] || 0) + t.valor; });
     const sorted2 = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
@@ -2101,7 +2097,6 @@ function saveGistCfg(token, id, autoSync) {
     localStorage.setItem('gist_auto',  autoSync ? '1' : '0');
 }
 
-// --- Sync UI state ---
 function setSyncState(state, label) {
     const dot = document.getElementById('syncDot');
     const lbl = document.getElementById('syncLabel');
@@ -2118,7 +2113,6 @@ function updateSyncTime() {
     el.textContent = diff < 1 ? 'agora' : diff + 'min';
 }
 
-// --- Config modal ---
 function abrirGistConfig() {
     const cfg = gistCfg();
     document.getElementById('cfgToken').value      = cfg.token;
@@ -2171,7 +2165,6 @@ function salvarGistConfig() {
     syncNow();
 }
 
-// --- Payload ---
 function _buildPayload() {
     return { t: tx, c: cats, g: goals, ts: Date.now(), v: 1 };
 }
@@ -2183,7 +2176,6 @@ function _applyPayload(payload) {
     atualizar(); onTipoChange(); renderGoals();
 }
 
-// --- Core sync ---
 async function syncNow() {
     const { token, id } = gistCfg();
     if (!token || !id) { abrirGistConfig(); return; }
@@ -2199,14 +2191,12 @@ async function syncNow() {
         const local  = _buildPayload();
 
         if (!remote) {
-            // Gist empty — first push
             await _pushToGist(token, id, local);
         } else {
             const remoteTs = remote.ts || 0;
             const localTs  = parseInt(localStorage.getItem('gist_localTs') || '0');
 
             if (remoteTs > localTs) {
-                // Remote is newer — check for local unsaved changes
                 const lastKnown = localStorage.getItem('gist_lastKnown');
                 const localClean = lastKnown && JSON.stringify({t:tx,c:cats,g:goals}) === lastKnown;
                 if (localClean) {
@@ -2218,7 +2208,6 @@ async function syncNow() {
                     await _showConflict(local, remote, token, id);
                 }
             } else {
-                // Local is same or newer — push
                 await _pushToGist(token, id, local);
             }
         }
@@ -2244,7 +2233,6 @@ async function _pushToGist(token, id, payload) {
     localStorage.setItem('gist_lastKnown', JSON.stringify({t:payload.t,c:payload.c,g:payload.g}));
 }
 
-// --- Conflict resolution ---
 async function _showConflict(local, remote, token, id) {
     const lDate = new Date(local.ts).toLocaleString('pt-BR');
     const rDate = new Date(remote.ts).toLocaleString('pt-BR');
@@ -2254,7 +2242,6 @@ async function _showConflict(local, remote, token, id) {
         <div><strong>💾 Local</strong><br>${local.t.length} transações<br><span style="color:var(--text-3)">${lDate}</span></div>
         <div><strong>☁️ Gist (remoto)</strong><br>${remote.t.length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
     document.getElementById('ovConflict').classList.add('open');
-    // Store for resolveConflict()
     window._pendingConflict = { local, remote, token, id };
 }
 
@@ -2277,7 +2264,6 @@ async function resolveConflict(choice) {
     window._pendingConflict = null;
 }
 
-// --- Auto-sync setup ---
 function setupAutoSync() {
     clearInterval(_autoSyncTimer);
     if (gistCfg().autoSync) {
