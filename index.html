@@ -257,7 +257,7 @@
         .color-opt { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, transform .1s; }
         .color-opt.selected { border-color: var(--text); transform: scale(1.15); }
 
-        /* GIST SYNC */
+        /* FIREBASE SYNC */
         .sync-btn { display: flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--surface); padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
         .sync-btn:hover { background: var(--bg); }
         .sync-btn.syncing { opacity: .6; pointer-events: none; }
@@ -267,7 +267,7 @@
         .sync-dot.busy   { background: #f59e0b; animation: pulse .8s infinite; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
         .sync-time { font-size: 10px; color: var(--text-3); margin-left: 2px; }
-        #ovGist .modal { width: 440px; }
+        #ovFirebase .modal { width: 440px; }
         .gist-steps { counter-reset: step; margin: 12px 0; }
         .gist-step  { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: 12px; color: var(--text-2); line-height: 1.5; }
         .gist-step-num { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: white; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
@@ -422,12 +422,12 @@
     </div>
     <div class="topbar-right">
         <button class="btn-undo" id="btnUndo" onclick="undo()" disabled>↩ Desfazer</button>
-        <button class="sync-btn" id="btnSync" onclick="syncNow()" title="Sincronizar com GitHub Gist">
+        <button class="sync-btn" id="btnSync" onclick="syncNow()" title="Sincronizar com Firebase">
             <span class="sync-dot" id="syncDot"></span>
             <span id="syncLabel">Sync</span>
             <span class="sync-time" id="syncTime"></span>
         </button>
-        <button class="sync-btn" onclick="abrirGistConfig()" title="Configurar Gist" style="padding:5px 8px">⚙️</button>
+        <button class="sync-btn" onclick="abrirFirebaseConfig()" title="Configurar Firebase" style="padding:5px 8px">⚙️</button>
         <select id="filtroMes" onchange="onFiltroChange()"></select>
         <select id="filtroAno" onchange="onFiltroChange()"></select>
     </div>
@@ -936,48 +936,49 @@
     </div>
 </div>
 
-<!-- MODAL GIST CONFIG -->
-<div class="overlay" id="ovGist" onclick="if(event.target===this)closeGistConfig()">
+<!-- MODAL FIREBASE CONFIG -->
+<div class="overlay" id="ovFirebase" onclick="if(event.target===this)closeFirebaseConfig()">
     <div class="modal">
-        <div class="modal-title">☁️ Sincronização com GitHub Gist</div>
-        <div class="modal-sub">Seus dados ficam num Gist privado e sincronizam entre dispositivos.</div>
+        <div class="modal-title">🔥 Sincronização com Firebase</div>
+        <div class="modal-sub">Seus dados ficam no Firebase Realtime Database e sincronizam entre dispositivos.</div>
         <div class="gist-steps">
             <div class="gist-step">
                 <div class="gist-step-num">1</div>
-                <div>Acesse <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a>, crie um token com escopo <strong>gist</strong> e cole abaixo.</div>
+                <div>Acesse <a href="https://console.firebase.google.com/" target="_blank">console.firebase.google.com</a>, crie um projeto e ative o <strong>Realtime Database</strong>.</div>
             </div>
             <div class="gist-step">
                 <div class="gist-step-num">2</div>
-                <div>Clique <strong>Criar Gist</strong> para gerar um Gist privado novo — ou cole o ID de um existente.</div>
+                <div>Nas <strong>Regras</strong> do banco, coloque <code style="background:var(--bg);padding:2px 5px;border-radius:4px;font-size:11px">"read": true, "write": true</code> para uso pessoal.</div>
             </div>
             <div class="gist-step">
                 <div class="gist-step-num">3</div>
-                <div>No outro computador, repita os passos 1–2 com o <strong>mesmo token e mesmo Gist ID</strong>.</div>
+                <div>Copie a <strong>URL do banco</strong> (ex: <code style="font-size:10px">https://meu-projeto-rtdb.firebaseio.com</code>) e o <strong>Database Secret</strong> em Configurações → Contas de Serviço.</div>
             </div>
         </div>
         <div class="field">
-            <label>Personal Access Token (GitHub)</label>
+            <label>URL do Realtime Database</label>
+            <input type="text" id="cfgFbUrl" placeholder="https://meu-projeto-default-rtdb.firebaseio.com">
+        </div>
+        <div class="field">
+            <label>Database Secret / Auth Token</label>
             <div class="token-field">
-                <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                <button class="token-toggle" onclick="toggleTokenVis()">mostrar</button>
+                <input type="password" id="cfgFbToken" placeholder="Cole o secret aqui...">
+                <button class="token-toggle" onclick="toggleFbTokenVis()">mostrar</button>
             </div>
         </div>
         <div class="field">
-            <label>Gist ID</label>
-            <div class="gist-id-row">
-                <input type="text" id="cfgGistId" placeholder="Cole um ID existente ou crie novo →">
-                <button onclick="criarGist()">✦ Criar Gist</button>
-            </div>
+            <label>Chave de dados (para separar perfis diferentes)</label>
+            <input type="text" id="cfgFbKey" placeholder="lucca" value="lucca">
         </div>
         <div class="field" style="margin-top:4px">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                <input type="checkbox" id="cfgAutoSync" style="width:auto;accent-color:var(--accent)">
+                <input type="checkbox" id="cfgFbAutoSync" style="width:auto;accent-color:var(--accent)">
                 Sincronizar automaticamente a cada 5 minutos
             </label>
         </div>
         <div class="modal-footer">
-            <button class="btn-mcancel" onclick="closeGistConfig()">Cancelar</button>
-            <button class="btn-confirm" onclick="salvarGistConfig()">Salvar e Sincronizar</button>
+            <button class="btn-mcancel" onclick="closeFirebaseConfig()">Cancelar</button>
+            <button class="btn-confirm" onclick="salvarFirebaseConfig()">Salvar e Sincronizar</button>
         </div>
     </div>
 </div>
@@ -986,14 +987,14 @@
 <div class="overlay" id="ovConflict">
     <div class="modal">
         <div class="modal-title">⚠️ Conflito de Dados</div>
-        <div class="modal-sub">Os dados locais e do Gist são diferentes. Qual versão manter?</div>
+        <div class="modal-sub">Os dados locais e do Firebase são diferentes. Qual versão manter?</div>
         <div class="conflict-box">
             <p id="conflictMsg"></p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:var(--text-2)" id="conflictDetails"></div>
         </div>
         <div class="modal-footer">
             <button class="btn-mcancel" onclick="resolveConflict('local')">Manter Local</button>
-            <button class="btn-confirm" onclick="resolveConflict('remote')">Usar Gist</button>
+            <button class="btn-confirm" onclick="resolveConflict('remote')">Usar Firebase</button>
         </div>
     </div>
 </div>
@@ -2077,24 +2078,26 @@ function confirmarAporte() {
     toast(`✓ Aporte de ${fmt(valor)} adicionado!`, '#16a34a');
 }
 
-// ── GIST SYNC ─────────────────────────────────────────────────────────────────
-const GIST_FILENAME = 'finances_lucca_data.json';
-let _autoSyncTimer  = null;
+// ── FIREBASE SYNC ─────────────────────────────────────────────────────────────
+let _autoSyncTimer   = null;
 let _conflictResolve = null;
 
-function gistCfg() {
+function firebaseCfg() {
     return {
-        token:    localStorage.getItem('gist_token') || '',
-        id:       localStorage.getItem('gist_id')    || '',
-        autoSync: localStorage.getItem('gist_auto')  === '1',
+        dbUrl:    (localStorage.getItem('fb_dbUrl') || '').replace(/\/$/, ''),
+        token:    localStorage.getItem('fb_token')    || '',
+        key:      localStorage.getItem('fb_key')      || 'lucca',
+        autoSync: localStorage.getItem('fb_auto')     === '1',
     };
 }
-function saveGistCfg(token, id, autoSync) {
-    localStorage.setItem('gist_token', token);
-    localStorage.setItem('gist_id',    id);
-    localStorage.setItem('gist_auto',  autoSync ? '1' : '0');
+function saveFirebaseCfg(dbUrl, token, key, autoSync) {
+    localStorage.setItem('fb_dbUrl', dbUrl.replace(/\/$/, ''));
+    localStorage.setItem('fb_token', token);
+    localStorage.setItem('fb_key',   key || 'lucca');
+    localStorage.setItem('fb_auto',  autoSync ? '1' : '0');
 }
 
+// ── Sync UI helpers ──
 function setSyncState(state, label) {
     const dot = document.getElementById('syncDot');
     const lbl = document.getElementById('syncLabel');
@@ -2104,65 +2107,43 @@ function setSyncState(state, label) {
     btn.classList.toggle('syncing', state === 'busy');
 }
 function updateSyncTime() {
-    const t  = localStorage.getItem('gist_lastSync');
+    const t  = localStorage.getItem('fb_lastSync');
     const el = document.getElementById('syncTime');
     if (!t) { el.textContent = ''; return; }
     const diff = Math.round((Date.now() - parseInt(t)) / 60000);
     el.textContent = diff < 1 ? 'agora' : diff + 'min';
 }
 
-function abrirGistConfig() {
-    const cfg = gistCfg();
-    document.getElementById('cfgToken').value      = cfg.token;
-    document.getElementById('cfgGistId').value     = cfg.id;
-    document.getElementById('cfgAutoSync').checked = cfg.autoSync;
-    document.getElementById('ovGist').classList.add('open');
+// ── Config modal ──
+function abrirFirebaseConfig() {
+    const cfg = firebaseCfg();
+    document.getElementById('cfgFbUrl').value       = cfg.dbUrl;
+    document.getElementById('cfgFbToken').value     = cfg.token;
+    document.getElementById('cfgFbKey').value       = cfg.key || 'lucca';
+    document.getElementById('cfgFbAutoSync').checked = cfg.autoSync;
+    document.getElementById('ovFirebase').classList.add('open');
 }
-function closeGistConfig() { document.getElementById('ovGist').classList.remove('open'); }
-function toggleTokenVis() {
-    const inp = document.getElementById('cfgToken');
+function closeFirebaseConfig() { document.getElementById('ovFirebase').classList.remove('open'); }
+function toggleFbTokenVis() {
+    const inp = document.getElementById('cfgFbToken');
     const btn = inp.nextElementSibling;
-    inp.type    = inp.type === 'password' ? 'text' : 'password';
+    inp.type        = inp.type === 'password' ? 'text' : 'password';
     btn.textContent = inp.type === 'password' ? 'mostrar' : 'ocultar';
 }
-
-async function criarGist() {
-    const token = document.getElementById('cfgToken').value.trim();
-    if (!token) return toast('⚠️ Cole o token primeiro.', '#b45309');
-    setSyncState('busy', 'Criando…');
-    try {
-        const res = await fetch('https://api.github.com/gists', {
-            method:  'POST',
-            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-                description: 'Finances / Lucca — dados sincronizados',
-                public:      false,
-                files:       { [GIST_FILENAME]: { content: JSON.stringify(_buildPayload(), null, 2) } }
-            })
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        document.getElementById('cfgGistId').value = data.id;
-        setSyncState('ok', 'Sync');
-        toast('✅ Gist criado! ID preenchido automaticamente.', '#16a34a');
-    } catch (e) {
-        setSyncState('err', 'Sync');
-        toast('❌ Erro ao criar Gist: ' + e.message, '#dc2626');
-    }
-}
-
-function salvarGistConfig() {
-    const token    = document.getElementById('cfgToken').value.trim();
-    const id       = document.getElementById('cfgGistId').value.trim();
-    const autoSync = document.getElementById('cfgAutoSync').checked;
-    if (!token) return toast('⚠️ Token obrigatório.', '#b45309');
-    if (!id)    return toast('⚠️ Gist ID obrigatório.', '#b45309');
-    saveGistCfg(token, id, autoSync);
+function salvarFirebaseConfig() {
+    const dbUrl    = document.getElementById('cfgFbUrl').value.trim();
+    const token    = document.getElementById('cfgFbToken').value.trim();
+    const key      = document.getElementById('cfgFbKey').value.trim() || 'lucca';
+    const autoSync = document.getElementById('cfgFbAutoSync').checked;
+    if (!dbUrl)  return toast('⚠️ URL do banco obrigatória.', '#b45309');
+    if (!token)  return toast('⚠️ Token/Secret obrigatório.', '#b45309');
+    saveFirebaseCfg(dbUrl, token, key, autoSync);
     setupAutoSync();
-    closeGistConfig();
+    closeFirebaseConfig();
     syncNow();
 }
 
+// ── Payload helpers ──
 function _buildPayload() {
     return { t: tx, c: cats, g: goals, ts: Date.now(), v: 1 };
 }
@@ -2174,97 +2155,115 @@ function _applyPayload(payload) {
     atualizar(); onTipoChange(); renderGoals();
 }
 
+// ── Firebase REST helpers ──
+function _fbUrl() {
+    const { dbUrl, key, token } = firebaseCfg();
+    return `${dbUrl}/finances/${key}.json?auth=${token}`;
+}
+
+async function _fbGet() {
+    const res = await fetch(_fbUrl());
+    if (!res.ok) throw new Error(`Firebase GET falhou: HTTP ${res.status}`);
+    return res.json(); // returns null if empty
+}
+
+async function _fbPut(payload) {
+    const res = await fetch(_fbUrl(), {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Firebase PUT falhou: HTTP ${res.status}`);
+    localStorage.setItem('fb_localTs',   String(payload.ts));
+    localStorage.setItem('fb_lastKnown', JSON.stringify({ t: payload.t, c: payload.c, g: payload.g }));
+}
+
+// ── Core sync ──
 async function syncNow() {
-    const { token, id } = gistCfg();
-    if (!token || !id) { abrirGistConfig(); return; }
+    const { dbUrl, token } = firebaseCfg();
+    if (!dbUrl || !token) { abrirFirebaseConfig(); return; }
     setSyncState('busy', 'Sync…');
     try {
-        const res = await fetch(`https://api.github.com/gists/${id}`, {
-            headers: { Authorization: `token ${token}` }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const gist   = await res.json();
-        const file   = gist.files[GIST_FILENAME];
-        const remote = file ? JSON.parse(file.content) : null;
+        const remote = await _fbGet();
         const local  = _buildPayload();
 
         if (!remote) {
-            await _pushToGist(token, id, local);
+            // Nothing in Firebase yet — first push
+            await _fbPut(local);
+            toast('🔥 Dados enviados ao Firebase!', '#f97316');
         } else {
             const remoteTs = remote.ts || 0;
-            const localTs  = parseInt(localStorage.getItem('gist_localTs') || '0');
+            const localTs  = parseInt(localStorage.getItem('fb_localTs') || '0');
 
             if (remoteTs > localTs) {
-                const lastKnown = localStorage.getItem('gist_lastKnown');
-                const localClean = lastKnown && JSON.stringify({t:tx,c:cats,g:goals}) === lastKnown;
+                const lastKnown  = localStorage.getItem('fb_lastKnown');
+                const localClean = lastKnown && JSON.stringify({ t: tx, c: cats, g: goals }) === lastKnown;
                 if (localClean) {
                     _applyPayload(remote);
-                    localStorage.setItem('gist_localTs', String(remoteTs));
-                    localStorage.setItem('gist_lastKnown', JSON.stringify({t:remote.t,c:remote.c,g:remote.g}));
-                    toast('☁️ Dados atualizados do Gist!', '#0284c7');
+                    localStorage.setItem('fb_localTs',   String(remoteTs));
+                    localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g }));
+                    toast('🔥 Dados atualizados do Firebase!', '#f97316');
                 } else {
-                    await _showConflict(local, remote, token, id);
+                    _showConflict(local, remote);
+                    return; // conflict handler will finish
                 }
             } else {
-                await _pushToGist(token, id, local);
+                // Local is same age or newer — push
+                await _fbPut(local);
             }
         }
 
-        localStorage.setItem('gist_lastSync', String(Date.now()));
+        localStorage.setItem('fb_lastSync', String(Date.now()));
         updateSyncTime();
         setSyncState('ok', 'Sync');
     } catch (e) {
         setSyncState('err', 'Sync');
         toast('❌ Sincronização falhou: ' + e.message, '#dc2626');
-        console.error('Gist sync error:', e);
+        console.error('Firebase sync error:', e);
     }
 }
 
-async function _pushToGist(token, id, payload) {
-    const res = await fetch(`https://api.github.com/gists/${id}`, {
-        method:  'PATCH',
-        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) } } })
-    });
-    if (!res.ok) throw new Error(`Push failed: HTTP ${res.status}`);
-    localStorage.setItem('gist_localTs',   String(payload.ts));
-    localStorage.setItem('gist_lastKnown', JSON.stringify({t:payload.t,c:payload.c,g:payload.g}));
-}
-
-async function _showConflict(local, remote, token, id) {
+// ── Conflict resolution ──
+function _showConflict(local, remote) {
     const lDate = new Date(local.ts).toLocaleString('pt-BR');
     const rDate = new Date(remote.ts).toLocaleString('pt-BR');
     document.getElementById('conflictMsg').textContent =
-        'Você tem mudanças locais e o Gist foi atualizado em outro dispositivo.';
+        'Você tem mudanças locais e o Firebase foi atualizado em outro dispositivo.';
     document.getElementById('conflictDetails').innerHTML = `
         <div><strong>💾 Local</strong><br>${local.t.length} transações<br><span style="color:var(--text-3)">${lDate}</span></div>
-        <div><strong>☁️ Gist (remoto)</strong><br>${remote.t.length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
+        <div><strong>🔥 Firebase (remoto)</strong><br>${remote.t.length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
     document.getElementById('ovConflict').classList.add('open');
-    window._pendingConflict = { local, remote, token, id };
+    window._pendingConflict = { local, remote };
 }
 
 async function resolveConflict(choice) {
     document.getElementById('ovConflict').classList.remove('open');
-    const { local, remote, token, id } = window._pendingConflict || {};
-    if (!token) return;
-    if (choice === 'remote') {
-        _applyPayload(remote);
-        localStorage.setItem('gist_localTs',   String(remote.ts));
-        localStorage.setItem('gist_lastKnown', JSON.stringify({t:remote.t,c:remote.c,g:remote.g}));
-        toast('☁️ Dados do Gist aplicados.', '#0284c7');
-    } else {
-        await _pushToGist(token, id, local);
-        toast('💾 Dados locais enviados ao Gist.', '#16a34a');
+    const { local, remote } = window._pendingConflict || {};
+    if (!local) return;
+    try {
+        if (choice === 'remote') {
+            _applyPayload(remote);
+            localStorage.setItem('fb_localTs',   String(remote.ts));
+            localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g }));
+            toast('🔥 Dados do Firebase aplicados.', '#f97316');
+        } else {
+            await _fbPut(local);
+            toast('💾 Dados locais enviados ao Firebase.', '#16a34a');
+        }
+        setSyncState('ok', 'Sync');
+        localStorage.setItem('fb_lastSync', String(Date.now()));
+        updateSyncTime();
+    } catch (e) {
+        setSyncState('err', 'Sync');
+        toast('❌ Erro ao resolver conflito: ' + e.message, '#dc2626');
     }
-    setSyncState('ok', 'Sync');
-    localStorage.setItem('gist_lastSync', String(Date.now()));
-    updateSyncTime();
     window._pendingConflict = null;
 }
 
+// ── Auto-sync ──
 function setupAutoSync() {
     clearInterval(_autoSyncTimer);
-    if (gistCfg().autoSync) {
+    if (firebaseCfg().autoSync) {
         _autoSyncTimer = setInterval(() => { syncNow(); }, 5 * 60 * 1000);
     }
 }
@@ -2272,8 +2271,8 @@ function setupAutoSync() {
 init();
 setupAutoSync();
 updateSyncTime();
-const _gistCfgOnLoad = gistCfg();
-if (_gistCfgOnLoad.token && _gistCfgOnLoad.id) setSyncState('ok', 'Sync');
+const _fbCfgOnLoad = firebaseCfg();
+if (_fbCfgOnLoad.dbUrl && _fbCfgOnLoad.token) setSyncState('ok', 'Sync');
 </script>
 </body>
 </html>
