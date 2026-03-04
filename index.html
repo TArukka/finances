@@ -2082,18 +2082,24 @@ function confirmarAporte() {
 let _autoSyncTimer   = null;
 let _conflictResolve = null;
 
+const FB_DEFAULTS = {
+    dbUrl: 'https://webapps-cbefa-default-rtdb.firebaseio.com',
+    token: 'AIzaSyBJ-CK1s_ySQqvM98sJbi15SejsIoicVvo',
+    key:   'lucca',
+};
+
 function firebaseCfg() {
     return {
-        dbUrl:    (localStorage.getItem('fb_dbUrl') || '').replace(/\/$/, ''),
-        token:    localStorage.getItem('fb_token')    || '',
-        key:      localStorage.getItem('fb_key')      || 'lucca',
-        autoSync: localStorage.getItem('fb_auto')     === '1',
+        dbUrl:    (localStorage.getItem('fb_dbUrl') || FB_DEFAULTS.dbUrl).replace(/\/$/, ''),
+        token:    localStorage.getItem('fb_token')  || FB_DEFAULTS.token,
+        key:      localStorage.getItem('fb_key')    || FB_DEFAULTS.key,
+        autoSync: localStorage.getItem('fb_auto')   === '1',
     };
 }
 function saveFirebaseCfg(dbUrl, token, key, autoSync) {
     localStorage.setItem('fb_dbUrl', dbUrl.replace(/\/$/, ''));
     localStorage.setItem('fb_token', token);
-    localStorage.setItem('fb_key',   key || 'lucca');
+    localStorage.setItem('fb_key',   key || FB_DEFAULTS.key);
     localStorage.setItem('fb_auto',  autoSync ? '1' : '0');
 }
 
