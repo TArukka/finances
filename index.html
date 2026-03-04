@@ -6,6 +6,10 @@
     <title>Finances / Lucca</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <style>
         :root {
             --accent: #18181b; --accent2: #3f3f46;
@@ -258,6 +262,25 @@
         .color-opt.selected { border-color: var(--text); transform: scale(1.15); }
 
         /* FIREBASE SYNC */
+        /* LOGIN SCREEN */
+        .login-screen { position:fixed; inset:0; background:var(--bg); z-index:999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:0; }
+        .login-screen.hidden { display:none; }
+        .login-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:40px 36px; width:360px; max-width:90vw; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,.08); }
+        .login-logo { font-size:22px; font-weight:800; letter-spacing:-.5px; margin-bottom:6px; }
+        .login-logo span { color:var(--text-3); font-weight:400; }
+        .login-sub { font-size:13px; color:var(--text-3); margin-bottom:28px; }
+        .btn-google { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 16px; background:#fff; border:1.5px solid var(--border); border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; color:var(--text); transition:box-shadow .15s, border-color .15s; }
+        .btn-google:hover { box-shadow:0 2px 12px rgba(0,0,0,.1); border-color:#aaa; }
+        .btn-google img { width:20px; height:20px; }
+        .login-error { margin-top:12px; font-size:12px; color:var(--danger); min-height:18px; }
+        .login-spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        /* USER CHIP in topbar */
+        .user-chip { display:flex; align-items:center; gap:6px; padding:3px 10px 3px 4px; border:1px solid var(--border); border-radius:20px; background:var(--surface); cursor:pointer; transition:background .1s; }
+        .user-chip:hover { background:var(--bg); }
+        .user-avatar { width:24px; height:24px; border-radius:50%; object-fit:cover; }
+        .user-avatar-initials { width:24px; height:24px; border-radius:50%; background:var(--accent); color:white; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+        .user-name { font-size:12px; font-weight:500; color:var(--text-2); max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .sync-btn { display: flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--surface); padding: 5px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-2); cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
         .sync-btn:hover { background: var(--bg); }
         .sync-btn.syncing { opacity: .6; pointer-events: none; }
@@ -421,13 +444,16 @@
         <div class="month-pill" id="pillMes">—</div>
     </div>
     <div class="topbar-right">
-        <button class="btn-undo" id="btnUndo" onclick="undo()" disabled>↩ Desfazer</button>
-        <button class="sync-btn" id="btnSync" onclick="syncNow()" title="Sincronizar com Firebase">
+        <button class="btn-undo" id="btnUndo" onclick="undo()" disabled style="display:none">↩ Desfazer</button>
+        <button class="sync-btn" id="btnSync" onclick="syncNow()" title="Sincronizar com Firebase" style="display:none">
             <span class="sync-dot" id="syncDot"></span>
             <span id="syncLabel">Sync</span>
             <span class="sync-time" id="syncTime"></span>
         </button>
-        <button class="sync-btn" onclick="abrirFirebaseConfig()" title="Configurar Firebase" style="padding:5px 8px">⚙️</button>
+        <div id="userChip" class="user-chip" onclick="signOut()" title="Sair" style="display:none">
+            <div class="user-avatar-initials" id="userInitials">?</div>
+            <span class="user-name" id="userName">...</span>
+        </div>
         <select id="filtroMes" onchange="onFiltroChange()"></select>
         <select id="filtroAno" onchange="onFiltroChange()"></select>
     </div>
@@ -570,7 +596,7 @@
 </nav>
 
 <!-- DASHBOARD -->
-<div id="view-dashboard" class="app">
+<div id="view-dashboard" class="app" style="display:none">
     <aside class="sidebar">
         <div>
             <div class="section-label" id="formLabel">Novo Lançamento</div>
@@ -936,50 +962,16 @@
     </div>
 </div>
 
-<!-- MODAL FIREBASE CONFIG -->
-<div class="overlay" id="ovFirebase" onclick="if(event.target===this)closeFirebaseConfig()">
-    <div class="modal">
-        <div class="modal-title">🔥 Sincronização com Firebase</div>
-        <div class="modal-sub">Seus dados ficam no Firebase Realtime Database e sincronizam entre dispositivos.</div>
-        <div class="gist-steps">
-            <div class="gist-step">
-                <div class="gist-step-num">1</div>
-                <div>Acesse <a href="https://console.firebase.google.com/" target="_blank">console.firebase.google.com</a>, crie um projeto e ative o <strong>Realtime Database</strong>.</div>
-            </div>
-            <div class="gist-step">
-                <div class="gist-step-num">2</div>
-                <div>Nas <strong>Regras</strong> do banco, coloque <code style="background:var(--bg);padding:2px 5px;border-radius:4px;font-size:11px">"read": true, "write": true</code> para uso pessoal.</div>
-            </div>
-            <div class="gist-step">
-                <div class="gist-step-num">3</div>
-                <div>Copie a <strong>URL do banco</strong> (ex: <code style="font-size:10px">https://meu-projeto-rtdb.firebaseio.com</code>) e o <strong>Database Secret</strong> em Configurações → Contas de Serviço.</div>
-            </div>
-        </div>
-        <div class="field">
-            <label>URL do Realtime Database</label>
-            <input type="text" id="cfgFbUrl" placeholder="https://meu-projeto-default-rtdb.firebaseio.com">
-        </div>
-        <div class="field">
-            <label>Database Secret / Auth Token</label>
-            <div class="token-field">
-                <input type="password" id="cfgFbToken" placeholder="Cole o secret aqui...">
-                <button class="token-toggle" onclick="toggleFbTokenVis()">mostrar</button>
-            </div>
-        </div>
-        <div class="field">
-            <label>Chave de dados (para separar perfis diferentes)</label>
-            <input type="text" id="cfgFbKey" placeholder="lucca" value="lucca">
-        </div>
-        <div class="field" style="margin-top:4px">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-                <input type="checkbox" id="cfgFbAutoSync" style="width:auto;accent-color:var(--accent)">
-                Sincronizar automaticamente a cada 5 minutos
-            </label>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-mcancel" onclick="closeFirebaseConfig()">Cancelar</button>
-            <button class="btn-confirm" onclick="salvarFirebaseConfig()">Salvar e Sincronizar</button>
-        </div>
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-card">
+        <div class="login-logo">Finances <span>/ Lucca</span></div>
+        <div class="login-sub">Entre com sua conta Google para sincronizar seus dados</div>
+        <button class="btn-google" id="btnGoogleSignIn" onclick="signInWithGoogle()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+            Entrar com Google
+        </button>
+        <div class="login-error" id="loginError"></div>
     </div>
 </div>
 
@@ -2078,32 +2070,98 @@ function confirmarAporte() {
     toast(`✓ Aporte de ${fmt(valor)} adicionado!`, '#16a34a');
 }
 
-// ── FIREBASE SYNC ─────────────────────────────────────────────────────────────
-let _autoSyncTimer   = null;
-let _conflictResolve = null;
-
-const FB_DEFAULTS = {
-    dbUrl: 'https://webapps-cbefa-default-rtdb.firebaseio.com',
-    token: 'AIzaSyBJ-CK1s_ySQqvM98sJbi15SejsIoicVvo',
-    key:   'lucca',
+// ── FIREBASE INIT ────────────────────────────────────────────────────────────
+const FB_CONFIG = {
+    apiKey:            "AIzaSyBJ-CK1s_ySQqvM98sJbi15SejsIoicVvo",
+    authDomain:        "webapps-cbefa.firebaseapp.com",
+    databaseURL:       "https://webapps-cbefa-default-rtdb.firebaseio.com",
+    projectId:         "webapps-cbefa",
+    storageBucket:     "webapps-cbefa.firebasestorage.app",
+    messagingSenderId: "817788828725",
+    appId:             "1:817788828725:web:612f5d62662b88274d457c",
 };
 
-function firebaseCfg() {
-    return {
-        dbUrl:    (localStorage.getItem('fb_dbUrl') || FB_DEFAULTS.dbUrl).replace(/\/$/, ''),
-        token:    localStorage.getItem('fb_token')  || FB_DEFAULTS.token,
-        key:      localStorage.getItem('fb_key')    || FB_DEFAULTS.key,
-        autoSync: localStorage.getItem('fb_auto')   === '1',
-    };
-}
-function saveFirebaseCfg(dbUrl, token, key, autoSync) {
-    localStorage.setItem('fb_dbUrl', dbUrl.replace(/\/$/, ''));
-    localStorage.setItem('fb_token', token);
-    localStorage.setItem('fb_key',   key || FB_DEFAULTS.key);
-    localStorage.setItem('fb_auto',  autoSync ? '1' : '0');
+firebase.initializeApp(FB_CONFIG);
+const fbAuth = firebase.auth();
+const fbDb   = firebase.database();
+
+let _currentUser    = null;
+let _autoSyncTimer  = null;
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+fbAuth.onAuthStateChanged(user => {
+    if (user) {
+        _currentUser = user;
+        showApp(user);
+        init();
+        syncNow();
+        setupAutoSync();
+    } else {
+        _currentUser = null;
+        showLoginScreen();
+    }
+});
+
+function showLoginScreen() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    // Hide the main app
+    document.getElementById('view-dashboard').style.display = 'none';
+    ['anual','mensal','metas'].forEach(v => document.getElementById('view-' + v).classList.remove('active'));
+    document.getElementById('userChip').style.display  = 'none';
+    document.getElementById('btnSync').style.display   = 'none';
+    document.getElementById('btnUndo').style.display   = 'none';
+    setSyncState('', 'Sync');
 }
 
-// ── Sync UI helpers ──
+function showApp(user) {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('btnSync').style.display  = '';
+    document.getElementById('btnUndo').style.display  = '';
+
+    // Show user chip
+    const chip     = document.getElementById('userChip');
+    const nameEl   = document.getElementById('userName');
+    const initials = document.getElementById('userInitials');
+    chip.style.display = 'flex';
+    nameEl.textContent = user.displayName ? user.displayName.split(' ')[0] : user.email;
+
+    // Try to show photo
+    if (user.photoURL) {
+        initials.outerHTML = `<img class="user-avatar" id="userInitials" src="${user.photoURL}" referrerpolicy="no-referrer">`;
+    } else {
+        const letter = (user.displayName || user.email || '?')[0].toUpperCase();
+        initials.textContent = letter;
+    }
+
+    // Show dashboard
+    navTo('dashboard');
+}
+
+async function signInWithGoogle() {
+    const btn = document.getElementById('btnGoogleSignIn');
+    const err = document.getElementById('loginError');
+    btn.innerHTML = '<div class="login-spinner"></div> Entrando...';
+    btn.disabled  = true;
+    err.textContent = '';
+    try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await fbAuth.signInWithPopup(provider);
+        // onAuthStateChanged handles the rest
+    } catch (e) {
+        err.textContent = 'Erro ao entrar: ' + (e.message || e.code);
+        btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"> Entrar com Google';
+        btn.disabled  = false;
+    }
+}
+
+async function signOut() {
+    if (!confirm('Sair da conta?')) return;
+    clearInterval(_autoSyncTimer);
+    await fbAuth.signOut();
+    toast('Até logo!', '#52525b');
+}
+
+// ── SYNC UI ───────────────────────────────────────────────────────────────────
 function setSyncState(state, label) {
     const dot = document.getElementById('syncDot');
     const lbl = document.getElementById('syncLabel');
@@ -2112,6 +2170,7 @@ function setSyncState(state, label) {
     if (label) lbl.textContent = label;
     btn.classList.toggle('syncing', state === 'busy');
 }
+
 function updateSyncTime() {
     const t  = localStorage.getItem('fb_lastSync');
     const el = document.getElementById('syncTime');
@@ -2120,36 +2179,7 @@ function updateSyncTime() {
     el.textContent = diff < 1 ? 'agora' : diff + 'min';
 }
 
-// ── Config modal ──
-function abrirFirebaseConfig() {
-    const cfg = firebaseCfg();
-    document.getElementById('cfgFbUrl').value       = cfg.dbUrl;
-    document.getElementById('cfgFbToken').value     = cfg.token;
-    document.getElementById('cfgFbKey').value       = cfg.key || 'lucca';
-    document.getElementById('cfgFbAutoSync').checked = cfg.autoSync;
-    document.getElementById('ovFirebase').classList.add('open');
-}
-function closeFirebaseConfig() { document.getElementById('ovFirebase').classList.remove('open'); }
-function toggleFbTokenVis() {
-    const inp = document.getElementById('cfgFbToken');
-    const btn = inp.nextElementSibling;
-    inp.type        = inp.type === 'password' ? 'text' : 'password';
-    btn.textContent = inp.type === 'password' ? 'mostrar' : 'ocultar';
-}
-function salvarFirebaseConfig() {
-    const dbUrl    = document.getElementById('cfgFbUrl').value.trim();
-    const token    = document.getElementById('cfgFbToken').value.trim();
-    const key      = document.getElementById('cfgFbKey').value.trim() || 'lucca';
-    const autoSync = document.getElementById('cfgFbAutoSync').checked;
-    if (!dbUrl)  return toast('⚠️ URL do banco obrigatória.', '#b45309');
-    if (!token)  return toast('⚠️ Token/Secret obrigatório.', '#b45309');
-    saveFirebaseCfg(dbUrl, token, key, autoSync);
-    setupAutoSync();
-    closeFirebaseConfig();
-    syncNow();
-}
-
-// ── Payload helpers ──
+// ── PAYLOAD ───────────────────────────────────────────────────────────────────
 function _buildPayload() {
     return { t: tx, c: cats, g: goals, ts: Date.now(), v: 1 };
 }
@@ -2161,47 +2191,41 @@ function _applyPayload(payload) {
     atualizar(); onTipoChange(); renderGoals();
 }
 
-// ── Firebase REST helpers ──
-function _fbUrl() {
-    const { dbUrl, key, token } = firebaseCfg();
-    return `${dbUrl}/finances/${key}.json?auth=${token}`;
+// ── FIREBASE DB HELPERS ───────────────────────────────────────────────────────
+function _userRef() {
+    if (!_currentUser) throw new Error('Não autenticado');
+    return fbDb.ref(`finances/${_currentUser.uid}`);
 }
 
-async function _fbGet() {
-    const res = await fetch(_fbUrl());
-    if (!res.ok) throw new Error(`Firebase GET falhou: HTTP ${res.status}`);
-    return res.json(); // returns null if empty
+async function _dbGet() {
+    const snap = await _userRef().once('value');
+    return snap.val(); // null if nothing there yet
 }
 
-async function _fbPut(payload) {
-    const res = await fetch(_fbUrl(), {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`Firebase PUT falhou: HTTP ${res.status}`);
+async function _dbPut(payload) {
+    await _userRef().set(payload);
     localStorage.setItem('fb_localTs',   String(payload.ts));
     localStorage.setItem('fb_lastKnown', JSON.stringify({ t: payload.t, c: payload.c, g: payload.g }));
 }
 
-// ── Core sync ──
+// ── CORE SYNC ─────────────────────────────────────────────────────────────────
 async function syncNow() {
-    const { dbUrl, token } = firebaseCfg();
-    if (!dbUrl || !token) { abrirFirebaseConfig(); return; }
+    if (!_currentUser) return;
     setSyncState('busy', 'Sync…');
     try {
-        const remote = await _fbGet();
+        const remote = await _dbGet();
         const local  = _buildPayload();
 
         if (!remote) {
-            // Nothing in Firebase yet — first push
-            await _fbPut(local);
+            // First time — push local data to Firebase
+            await _dbPut(local);
             toast('🔥 Dados enviados ao Firebase!', '#f97316');
         } else {
             const remoteTs = remote.ts || 0;
             const localTs  = parseInt(localStorage.getItem('fb_localTs') || '0');
 
             if (remoteTs > localTs) {
+                // Remote is newer — check if local has unsaved changes
                 const lastKnown  = localStorage.getItem('fb_lastKnown');
                 const localClean = lastKnown && JSON.stringify({ t: tx, c: cats, g: goals }) === lastKnown;
                 if (localClean) {
@@ -2211,11 +2235,10 @@ async function syncNow() {
                     toast('🔥 Dados atualizados do Firebase!', '#f97316');
                 } else {
                     _showConflict(local, remote);
-                    return; // conflict handler will finish
+                    return;
                 }
             } else {
-                // Local is same age or newer — push
-                await _fbPut(local);
+                await _dbPut(local);
             }
         }
 
@@ -2229,7 +2252,7 @@ async function syncNow() {
     }
 }
 
-// ── Conflict resolution ──
+// ── CONFLICT RESOLUTION ───────────────────────────────────────────────────────
 function _showConflict(local, remote) {
     const lDate = new Date(local.ts).toLocaleString('pt-BR');
     const rDate = new Date(remote.ts).toLocaleString('pt-BR');
@@ -2237,7 +2260,7 @@ function _showConflict(local, remote) {
         'Você tem mudanças locais e o Firebase foi atualizado em outro dispositivo.';
     document.getElementById('conflictDetails').innerHTML = `
         <div><strong>💾 Local</strong><br>${local.t.length} transações<br><span style="color:var(--text-3)">${lDate}</span></div>
-        <div><strong>🔥 Firebase (remoto)</strong><br>${remote.t.length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
+        <div><strong>🔥 Firebase</strong><br>${remote.t.length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
     document.getElementById('ovConflict').classList.add('open');
     window._pendingConflict = { local, remote };
 }
@@ -2253,7 +2276,7 @@ async function resolveConflict(choice) {
             localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g }));
             toast('🔥 Dados do Firebase aplicados.', '#f97316');
         } else {
-            await _fbPut(local);
+            await _dbPut(local);
             toast('💾 Dados locais enviados ao Firebase.', '#16a34a');
         }
         setSyncState('ok', 'Sync');
@@ -2266,19 +2289,16 @@ async function resolveConflict(choice) {
     window._pendingConflict = null;
 }
 
-// ── Auto-sync ──
+// ── AUTO-SYNC ─────────────────────────────────────────────────────────────────
 function setupAutoSync() {
     clearInterval(_autoSyncTimer);
-    if (firebaseCfg().autoSync) {
-        _autoSyncTimer = setInterval(() => { syncNow(); }, 5 * 60 * 1000);
-    }
+    // Auto-sync every 5 minutes when logged in
+    _autoSyncTimer = setInterval(() => { if (_currentUser) syncNow(); }, 5 * 60 * 1000);
 }
 
-init();
-setupAutoSync();
-updateSyncTime();
-const _fbCfgOnLoad = firebaseCfg();
-if (_fbCfgOnLoad.dbUrl && _fbCfgOnLoad.token) setSyncState('ok', 'Sync');
+// ── BOOT — auth listener handles init() call above ────────────────────────────
+// If Firebase is slow to respond, show login screen by default
+document.getElementById('loginScreen').classList.remove('hidden');
 </script>
 </body>
 </html>
