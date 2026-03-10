@@ -1818,12 +1818,8 @@ function renderAnual() {
     document.getElementById('aKpiEnt').textContent = fmt(aEnt);
     document.getElementById('aKpiGas').textContent = fmt(aGas);
     document.getElementById('aKpiInv').textContent = fmt(aInv);
-    document.getElementById('aKpiDeb').textContent = fmt(aDeb);
-    document.getElementById('aKpiCred').textContent = fmt(aCred);
     const aKpiSaldo = document.getElementById('aKpiSaldo');
     aKpiSaldo.textContent = fmt(aSaldo); aKpiSaldo.className = 'kpi-val ' + (aSaldo < 0 ? 'red' : '');
-    document.getElementById('aKpiDebPct').textContent  = aGas > 0 ? `${Math.round((aDeb / aGas) * 100)}% das despesas` : '';
-    document.getElementById('aKpiCredPct').textContent = aGas > 0 ? `${Math.round((aCred / aGas) * 100)}% das despesas` : '';
 
     // ★ Populate the new "Saldo Até Agora" card
     const aKpiSaldoNow = document.getElementById('aKpiSaldoNow');
