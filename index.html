@@ -97,11 +97,11 @@
         .savings-fill  { height: 3px; background: var(--success); border-radius: 2px; transition: width .5s; }
 
         /* CHARTS */
-        .charts { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 12px; min-width: 0; }
-        .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; overflow: hidden; }
-        .chart-box-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
-        .chart-wrap { height: 160px; position: relative; }
-        .chart-empty { height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-3); font-size: 12px; gap: 6px; }
+        .charts { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 12px; min-width: 0; align-items: start; }
+        .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; overflow: hidden; max-height: 280px; display: flex; flex-direction: column; }
+        .chart-box-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; }
+        .chart-wrap { height: 160px; position: relative; flex-shrink: 0; }
+        .chart-empty { height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-3); font-size: 12px; gap: 6px; flex-shrink: 0; }
 
         /* TAGS */
         .tag-cred { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #e0f2fe; color: #0369a1; margin-left: 5px; vertical-align: middle; }
@@ -144,16 +144,24 @@
         .mob-fixo-item:last-child { border-bottom: none; }
         .mob-fixo-day-input { width: 36px; padding: 4px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; text-align: center; font-family: inherit; background: var(--surface); outline: none; flex-shrink: 0; }
         .fatura-card { border: 1px solid var(--border); border-radius: 9px; margin-bottom: 8px; overflow: hidden; background: var(--surface); }
+        .fatura-card.fatura-paid { border-color: #86efac; background: #f0fdf4; }
         .fatura-card-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .1s; }
         .fatura-card-header:hover { background: var(--bg); }
+        .fatura-card.fatura-paid .fatura-card-header:hover { background: #dcfce7; }
         .fatura-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .fatura-card-name { font-weight: 600; font-size: 13px; flex: 1; }
+        .fatura-card.fatura-paid .fatura-card-name { color: var(--text-3); text-decoration: line-through; }
         .fatura-card-total { font-weight: 700; font-size: 13px; color: var(--danger); }
+        .fatura-card.fatura-paid .fatura-card-total { color: var(--success); }
         .fatura-card-due { font-size: 10px; color: var(--text-3); margin-left: 8px; white-space: nowrap; }
         .fatura-card-arrow { font-size: 11px; color: var(--text-3); transition: transform .2s; }
         .fatura-card.open .fatura-card-arrow { transform: rotate(180deg); }
         .fatura-card-body { display: none; border-top: 1px solid var(--border-light); max-height: 240px; overflow-y: auto; }
         .fatura-card.open .fatura-card-body { display: block; }
+        .fatura-pay-btn { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text-3); cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
+        .fatura-pay-btn:hover { border-color: var(--success); color: var(--success); }
+        .fatura-pay-btn.paid { border-color: var(--success); background: var(--success); color: white; }
+        .fatura-paid-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #dcfce7; color: var(--success); white-space: nowrap; }
         .fatura-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid var(--border-light); font-size: 12px; }
         .fatura-item:last-child { border-bottom: none; }
         .fatura-item-desc { font-weight: 500; color: var(--text); }
@@ -970,19 +978,18 @@
                 <div class="chart-box-label">Investimentos</div>
                 <div id="wrapInvest"><div class="chart-empty"><span style="font-size:24px;opacity:.3">💼</span>Sem dados</div></div>
             </div>
-            <div class="chart-box">
-                <div class="chart-box-label">Tendência — 6 meses</div>
-                <div class="chart-wrap"><canvas id="graficoTrend"></canvas></div>
+            <div class="chart-box" style="max-height:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <div class="chart-box-label" style="margin-bottom:0">Orçamento do Mês</div>
+                    <button onclick="navTo('budget',document.querySelectorAll('.nav-pill')[4])" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">ver tudo</button>
+                </div>
+                <div id="budgetWidgetList" style="display:flex;flex-direction:column;gap:10px;overflow:hidden">
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100px;color:var(--text-3);font-size:12px;gap:6px" id="budgetWidgetEmpty">
+                        <span style="font-size:24px;opacity:.3">📊</span>Nenhum orçamento definido
+                    </div>
+                </div>
             </div>
         </div>
-        </div>
-        <!-- BUDGET MINI WIDGET -->
-        <div id="budgetWidget" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-            <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-light)">
-                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2)">Orçamento do Mês</div>
-                <button onclick="navTo('budget',document.querySelectorAll('.nav-pill')[4])" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">ver tudo</button>
-            </div>
-            <div id="budgetWidgetList" style="padding:12px 16px;display:flex;flex-direction:column;gap:10px"></div>
         </div>
         <div class="history-box">
             <div class="history-header">
@@ -1786,6 +1793,8 @@ const saveGoals = () => localStorage.setItem('fin5_goals', JSON.stringify(goals)
 const saveCats  = () => localStorage.setItem('fin5_cats', JSON.stringify(cats));
 const saveCards = () => localStorage.setItem('fin5_cards', JSON.stringify(cards));
 const saveBudgets = () => localStorage.setItem('fin5_budgets', JSON.stringify(budgets));
+let paidFaturas = JSON.parse(localStorage.getItem('fin5_paidFaturas') || '{}'); // {cardId-YYYY-MM: true}
+const savePaidFaturas = () => localStorage.setItem('fin5_paidFaturas', JSON.stringify(paidFaturas));
 
 function toast(msg, bg = '#18181b') {
     const el = $('toast');
@@ -1945,28 +1954,42 @@ function renderBudget() {
 }
 
 function renderBudgetWidget() {
-    const widget = $('budgetWidget');
     const listEl = $('budgetWidgetList');
-    if (!budgets.length) { widget.style.display = 'none'; return; }
+    const emptyEl = $('budgetWidgetEmpty');
+    if (!listEl) return;
+
+    if (!budgets.length) {
+        if (emptyEl) emptyEl.style.display = 'flex';
+        listEl.querySelectorAll('.bw-item').forEach(e => e.remove());
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
 
     const now = new Date(), m = now.getMonth(), a = now.getFullYear();
-    widget.style.display = 'block';
-
     const items = budgets.map(b => {
         const spent = getBudgetSpend(b.cat, m, a);
         const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
         return { ...b, spent, pct };
-    }).sort((a, b) => b.pct - a.pct).slice(0, 6); // show top 6
+    }).sort((a, b) => b.pct - a.pct).slice(0, 6);
 
-    listEl.innerHTML = items.map(b => {
+    // Remove old rows, keep the empty placeholder
+    listEl.querySelectorAll('.bw-item').forEach(e => e.remove());
+    listEl.insertAdjacentHTML('beforeend', items.map(b => {
         const st = budgetStatus(b.pct);
         const barW = Math.min(b.pct, 100);
+        const left = b.limit - b.spent;
         return `<div class="bw-item">
             <div class="bw-label" title="${b.cat}">${b.cat}</div>
-            <div class="bw-track"><div class="bw-fill ${st}" style="width:${barW}%"></div></div>
-            <div class="bw-pct ${st}">${b.pct}%</div>
+            <div style="flex:1;min-width:0">
+                <div class="bw-track"><div class="bw-fill ${st}" style="width:${barW}%"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-top:3px">
+                    <span style="font-size:9px;color:var(--text-3)">${fmt(b.spent)} / ${fmt(b.limit)}</span>
+                    <span style="font-size:9px;font-weight:600;color:${st==='over'?'var(--danger)':st==='warn'?'#f59e0b':'var(--success)'}">${left < 0 ? '⚠ +'+fmt(Math.abs(left)) : fmt(left)+' restam'}</span>
+                </div>
+            </div>
+            <div class="bw-pct ${st}" style="margin-left:8px">${b.pct}%</div>
         </div>`;
-    }).join('');
+    }).join(''));
 }
 
 let _editBudgetIdx = null;
@@ -2549,12 +2572,20 @@ function renderDonut(dados, cid, wid, emptyIcon, colors, emptyH = 160) {
         wrap.innerHTML = `<div class="chart-empty" style="height:${emptyH}px"><span style="font-size:24px;opacity:.3">${emptyIcon}</span>Sem dados</div>`;
         destroyChart(cid); $clear(cid); return;
     }
-    wrap.innerHTML = `<div style="height:${emptyH}px;position:relative"><canvas id="${cid}"></canvas></div>`;
+    // Custom HTML legend so it doesn't push the canvas out
+    const legendHTML = keys.map((k, i) => {
+        const clr = colors[i % colors.length];
+        const label = k.replace(/^\S+\s/, ''); // strip emoji for brevity
+        return `<span style="display:inline-flex;align-items:center;gap:3px;margin:2px 4px 2px 0;white-space:nowrap;font-size:9px;color:var(--text-2)"><span style="width:7px;height:7px;border-radius:50%;background:${clr};flex-shrink:0;display:inline-block"></span>${k}</span>`;
+    }).join('');
+    wrap.innerHTML = `
+        <div style="height:${emptyH}px;position:relative"><canvas id="${cid}"></canvas></div>
+        <div style="padding:6px 2px 0;line-height:1.5;overflow:hidden">${legendHTML}</div>`;
     destroyChart(cid); $clear(cid);
     charts[cid] = new Chart($(cid).getContext('2d'), {
         type: 'doughnut',
         data: { labels: keys, datasets: [{ data: Object.values(dados), backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
-        options: { ...CHART_COMMON_OPTS, cutout: '62%', layout: { padding: { bottom: 4 } } }
+        options: { ...CHART_COMMON_OPTS, cutout: '62%', plugins: { legend: { display: false } } }
     });
 }
 
@@ -2594,20 +2625,27 @@ function renderFaturas() {
     section.style.display = '';
     container.innerHTML = faturas.map((f, idx) => {
         const [vy, vm, vd] = f.faturaDate.split('-');
-        return `<div class="fatura-card" id="faturaCard-${idx}">
+        const key = `${f.card.id}-${vy}-${vm}`;
+        const isPaid = !!paidFaturas[key];
+
+        return `<div class="fatura-card${isPaid ? ' fatura-paid' : ''}" id="faturaCard-${idx}">
             <div class="fatura-card-header" onclick="toggleFaturaCard(${idx})">
                 <div class="fatura-card-dot" style="background:${f.card.cor}"></div>
                 <div class="fatura-card-name">${f.card.nome}</div>
                 <div class="fatura-card-due">vence ${vd}/${vm}</div>
-                <div class="fatura-card-total">${fmt(f.total)}</div>
+                <div class="fatura-card-total">${isPaid ? '✓ ' : ''}${fmt(f.total)}</div>
+                <button class="fatura-pay-btn ${isPaid ? 'paid' : ''}" onclick="event.stopPropagation(); toggleFaturaPaga('${key}', ${idx})" title="${isPaid ? 'Marcar como não paga' : 'Marcar como paga'}">
+                    ${isPaid ? '✓ Paga' : '○ Pagar'}
+                </button>
                 <div class="fatura-card-arrow">▼</div>
             </div>
             <div class="fatura-card-body">
+                ${isPaid ? `<div style="padding:8px 14px 4px;display:flex;align-items:center;gap:6px"><span class="fatura-paid-badge">✓ Fatura paga</span><span style="font-size:11px;color:var(--text-3)">Clique em "Pagar" para desfazer</span></div>` : ''}
                 ${f.items.map(t => {
                     const [y2, m2, d2] = t.data.split('-');
-                    return `<div class="fatura-item">
+                    return `<div class="fatura-item" style="${isPaid ? 'opacity:.5' : ''}">
                         <div>
-                            <div class="fatura-item-desc">${t.desc}</div>
+                            <div class="fatura-item-desc" style="${isPaid ? 'text-decoration:line-through' : ''}">${t.desc}</div>
                             <div class="fatura-item-meta">${d2}/${m2} · ${t.cat}</div>
                         </div>
                         <div class="fatura-item-val">− ${fmt(t.valor)}</div>
@@ -2621,6 +2659,17 @@ function renderFaturas() {
 function toggleFaturaCard(idx) {
     const el = document.getElementById('faturaCard-' + idx);
     if (el) el.classList.toggle('open');
+}
+
+function toggleFaturaPaga(key, idx) {
+    paidFaturas[key] = !paidFaturas[key];
+    if (!paidFaturas[key]) delete paidFaturas[key];
+    savePaidFaturas();
+    renderFaturas();
+    // Re-open if it was open
+    const el = document.getElementById('faturaCard-' + idx);
+    if (el) el.classList.add('open');
+    toast(paidFaturas[key] === undefined ? '↩ Fatura desmarcada.' : '✓ Fatura marcada como paga!', paidFaturas[key] === undefined ? '#52525b' : '#16a34a');
 }
 
 // ── FIXOS TABLE ──────────────────────────────────────────────────────────────
@@ -2900,9 +2949,8 @@ function atualizar() {
             + (nomes.length > 5 ? `<div style="text-align:center;margin-top:6px"><button class="link-btn" onclick="abrirPopupFixos()">ver todos (${nomes.length})</button></div>` : '')
         : '<span style="font-size:12px;color:var(--text-3)">Nenhum fixo.</span>';
 
-    renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS, 210);
+    renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS, 170);
     renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
-    renderTrend();
     renderFaturas();
     renderFixosTable();
     renderCartoesMini();
