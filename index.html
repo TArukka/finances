@@ -992,11 +992,12 @@
                 </div>
                 <div id="budgetWidgetInner" style="display:flex;align-items:center;gap:16px;flex:1">
                     <div style="position:relative;flex-shrink:0;width:140px;height:140px">
-                        <canvas id="budgetDonutCanvas" width="140" height="140"></canvas>
+                        <canvas id="budgetDonutCanvas" width="140" height="140" style="cursor:pointer"></canvas>
                         <div id="budgetDonutCenter" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
                             <div style="font-size:18px;font-weight:700;line-height:1" id="budgetDonutPct">—</div>
-                            <div style="font-size:9px;color:var(--text-3);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.5px">usado</div>
+                            <div style="font-size:9px;color:var(--text-3);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.5px" id="budgetDonutLabel">usado</div>
                         </div>
+                        <div id="budgetCanvasTooltip" style="position:fixed;background:#18181b;color:#fff;font-size:11px;padding:7px 10px;border-radius:7px;pointer-events:none;opacity:0;transition:opacity .1s;z-index:999;white-space:nowrap;line-height:1.6;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div>
                     </div>
                     <div id="budgetWidgetList" style="flex:1;display:flex;flex-direction:column;gap:7px;overflow:hidden;min-width:0">
                         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100px;color:var(--text-3);font-size:12px;gap:6px" id="budgetWidgetEmpty">
@@ -1980,13 +1981,13 @@ function renderBudgetWidget() {
     if (!budgets.length) {
         if (emptyEl) emptyEl.style.display = 'flex';
         listEl.querySelectorAll('.bw-item').forEach(e => e.remove());
-        _drawBudgetDonut(canvas, [], 0);
+        _drawBudgetDonut(canvas, [], 0, -1);
         if (pctEl) { pctEl.textContent = '—'; pctEl.style.color = 'var(--text-3)'; }
         return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
 
-    const now = new Date(), m = now.getMonth(), a = now.getFullYear();
+    const { m, a } = filtro();
     const items = budgets.map(b => {
         const spent = getBudgetSpend(b.cat, m, a);
         const pct   = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
@@ -2001,8 +2002,12 @@ function renderBudgetWidget() {
 
     if (pctEl) { pctEl.textContent = overallPct + '%'; pctEl.style.color = pctColor; }
 
+    // Store for mouseleave restore
+    canvas.dataset.overallPct   = overallPct + '%';
+    canvas.dataset.overallColor = pctColor;
+
     // Draw animated donut
-    _drawBudgetDonut(canvas, items.slice(0, 6), overallPct);
+    _drawBudgetDonut(canvas, items.slice(0, 6), overallPct, -1);
 
     // Legend list
     listEl.querySelectorAll('.bw-item').forEach(e => e.remove());
@@ -2010,106 +2015,170 @@ function renderBudgetWidget() {
     listEl.insertAdjacentHTML('beforeend', items.slice(0, 6).map((b, i) => {
         const st   = budgetStatus(b.pct);
         const clr  = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
-        const left = b.limit - b.spent;
-        const label = b.cat.replace(/^\S+\s/, '');
         const isOver = st === 'over';
-        return `<div class="bw-item" style="position:relative;cursor:default"
-            onmouseenter="this.querySelector('.bw-tooltip').style.opacity='1';this.querySelector('.bw-tooltip').style.transform='translateY(0)'"
-            onmouseleave="this.querySelector('.bw-tooltip').style.opacity='0';this.querySelector('.bw-tooltip').style.transform='translateY(4px)'">
+        const label = b.cat.replace(/^\S+\s/, '');
+        return `<div class="bw-item">
             <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1">
                 <span style="width:8px;height:8px;border-radius:50%;background:${clr};flex-shrink:0;display:inline-block"></span>
-                <span class="bw-label" style="font-size:11px${isOver ? ';text-decoration:line-through;opacity:.6' : ''}" title="${b.cat}">${label}</span>
-                ${isOver ? `<span style="font-size:9px;font-weight:700;color:var(--danger);background:#fee2e2;padding:1px 5px;border-radius:4px;white-space:nowrap">⚠ over</span>` : ''}
+                <span class="bw-label" style="font-size:11px" title="${b.cat}">${label}</span>
+                ${isOver ? `<span style="font-size:9px;font-weight:700;color:var(--danger);background:#fee2e2;padding:1px 5px;border-radius:4px;white-space:nowrap">⚠</span>` : ''}
             </div>
             <div style="text-align:right;white-space:nowrap;font-size:10px">
                 <span class="bw-pct ${st}">${b.pct}%</span>
-            </div>
-            <div class="bw-tooltip" style="position:absolute;bottom:calc(100% + 5px);left:0;right:0;background:#18181b;color:#fff;font-size:10px;padding:5px 8px;border-radius:6px;opacity:0;transform:translateY(4px);transition:all .15s;pointer-events:none;z-index:10;white-space:nowrap;text-align:center">
-                ${fmt(b.spent)} <span style="opacity:.5">de</span> ${fmt(b.limit)}${isOver ? ` · <span style="color:#fca5a5">+${fmt(Math.abs(left))}</span>` : ` · restam ${fmt(left)}`}
             </div>
         </div>`;
     }).join(''));
 }
 
 let _budgetDonutAnim = null;
-function _drawBudgetDonut(canvas, items, overallPct) {
+let _budgetSegments  = []; // [{startAngle, endAngle, item, color}]
+
+function _drawBudgetDonut(canvas, items, overallPct, highlightIdx = -1) {
     if (!canvas) return;
     const ctx  = canvas.getContext('2d');
     const W    = canvas.width, H = canvas.height;
+    const dpr  = window.devicePixelRatio || 1;
     const cx   = W / 2, cy = H / 2, R = W / 2 - 8, r = R * 0.55;
     const SEGMENT_COLORS = ['#16a34a','#0284c7','#6d28d9','#f59e0b','#dc2626','#0f766e'];
-    const BG   = '#e4e4e7';
     const totalLimit = items.reduce((s, b) => s + b.limit, 0);
 
-    if (_budgetDonutAnim) cancelAnimationFrame(_budgetDonutAnim);
+    // Build segment angle map (done once, not per frame)
+    _budgetSegments = [];
+    let sa = -Math.PI / 2;
+    items.forEach((b, i) => {
+        const sliceAngle = totalLimit > 0 ? (b.limit / totalLimit) * Math.PI * 2 : 0;
+        _budgetSegments.push({ startAngle: sa, endAngle: sa + sliceAngle, item: b, color: SEGMENT_COLORS[i % SEGMENT_COLORS.length] });
+        sa += sliceAngle;
+    });
 
+    if (_budgetDonutAnim) cancelAnimationFrame(_budgetDonutAnim);
     const startTime = performance.now();
-    const DURATION  = 900; // ms
+    const DURATION  = 900;
 
     function draw(progress) {
         ctx.clearRect(0, 0, W, H);
 
         if (!items.length || totalLimit === 0) {
-            // Empty ring
             ctx.beginPath();
             ctx.arc(cx, cy, R, 0, Math.PI * 2);
             ctx.arc(cx, cy, r, Math.PI * 2, 0, true);
-            ctx.fillStyle = BG;
+            ctx.fillStyle = '#e4e4e7';
             ctx.fill();
             return;
         }
 
-        // Build segments proportional to each category's limit
-        let startAngle = -Math.PI / 2;
-        items.forEach((b, i) => {
-            const sliceAngle = (b.limit / totalLimit) * Math.PI * 2;
-            const filledAngle = sliceAngle * Math.min(b.pct / 100, 1) * progress;
+        _budgetSegments.forEach((seg, i) => {
+            const sliceAngle  = seg.endAngle - seg.startAngle;
+            const filledAngle = sliceAngle * Math.min(seg.item.pct / 100, 1) * progress;
+            const isHovered   = i === highlightIdx;
+            const rOuter = isHovered ? R + 4 : R;
 
-            // Background slice (full segment, muted)
+            // Background slice
             ctx.beginPath();
             ctx.moveTo(cx, cy);
-            ctx.arc(cx, cy, R, startAngle, startAngle + sliceAngle);
+            ctx.arc(cx, cy, rOuter, seg.startAngle, seg.endAngle);
             ctx.closePath();
-            ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length] + '28';
+            ctx.fillStyle = seg.color + '28';
             ctx.fill();
 
             // Filled portion
             if (filledAngle > 0) {
                 ctx.beginPath();
                 ctx.moveTo(cx, cy);
-                ctx.arc(cx, cy, R, startAngle, startAngle + filledAngle);
+                ctx.arc(cx, cy, rOuter, seg.startAngle, seg.startAngle + filledAngle);
                 ctx.closePath();
-                ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+                ctx.fillStyle = seg.item.pct >= 100 ? '#dc2626' : seg.color;
                 ctx.fill();
             }
 
-            // Thin divider line
+            // Divider
             ctx.beginPath();
             ctx.moveTo(cx, cy);
-            ctx.lineTo(cx + R * Math.cos(startAngle + sliceAngle), cy + R * Math.sin(startAngle + sliceAngle));
+            ctx.lineTo(cx + (rOuter + 4) * Math.cos(seg.endAngle), cy + (rOuter + 4) * Math.sin(seg.endAngle));
             ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 2;
             ctx.stroke();
-
-            startAngle += sliceAngle;
         });
 
-        // Cut inner hole
+        // Inner hole
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';
+        ctx.fillStyle = '#ffffff';
         ctx.fill();
     }
 
     function animate(now) {
         const elapsed  = now - startTime;
         const progress = Math.min(elapsed / DURATION, 1);
-        // Ease out cubic
-        const eased = 1 - Math.pow(1 - progress, 3);
-        draw(eased);
+        draw(1 - Math.pow(1 - progress, 3));
         if (progress < 1) _budgetDonutAnim = requestAnimationFrame(animate);
     }
     _budgetDonutAnim = requestAnimationFrame(animate);
+
+    // Attach mousemove listener (once)
+    if (!canvas._budgetListenerAdded) {
+        canvas._budgetListenerAdded = true;
+        const tooltip = $('budgetCanvasTooltip');
+        const pctEl   = $('budgetDonutPct');
+        const lblEl   = $('budgetDonutLabel');
+
+        canvas.addEventListener('mousemove', e => {
+            if (!_budgetSegments.length) return;
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left - cx;
+            const my = e.clientY - rect.top  - cy;
+            const dist = Math.sqrt(mx * mx + my * my);
+
+            if (dist < r || dist > R + 6) {
+                // Inside hole or outside ring
+                tooltip.style.opacity = '0';
+                if (pctEl && lblEl) { pctEl.textContent = $('budgetDonutPct').dataset.overall || '—'; lblEl.textContent = 'usado'; }
+                _drawBudgetDonut(canvas, _budgetSegments.map(s => s.item), -1, -1);
+                return;
+            }
+
+            let angle = Math.atan2(my, mx);
+            if (angle < -Math.PI / 2) angle += Math.PI * 2;
+
+            const idx = _budgetSegments.findIndex(s => {
+                let sa = s.startAngle, ea = s.endAngle;
+                if (sa < -Math.PI / 2) { sa += Math.PI * 2; ea += Math.PI * 2; }
+                return angle >= sa && angle <= ea;
+            });
+
+            if (idx !== -1) {
+                const seg  = _budgetSegments[idx];
+                const b    = seg.item;
+                const left = b.limit - b.spent;
+                const st   = budgetStatus(b.pct);
+                const stColor = st === 'over' ? '#fca5a5' : st === 'warn' ? '#fde68a' : '#86efac';
+                tooltip.innerHTML = `<b style="font-size:12px">${b.cat}</b><br>
+                    Gasto: <b>${fmt(b.spent)}</b> de <b>${fmt(b.limit)}</b><br>
+                    ${b.pct >= 100 ? `<span style="color:#fca5a5">⚠ Ultrapassou em ${fmt(Math.abs(left))}</span>` : `<span style="color:${stColor}">Restam ${fmt(left)} (${100 - b.pct}%)</span>`}`;
+                tooltip.style.opacity = '1';
+                tooltip.style.left = (e.clientX + 12) + 'px';
+                tooltip.style.top  = (e.clientY - 10) + 'px';
+
+                if (pctEl) { pctEl.textContent = b.pct + '%'; pctEl.style.color = st === 'over' ? 'var(--danger)' : st === 'warn' ? '#f59e0b' : 'var(--success)'; }
+                if (lblEl) lblEl.textContent = b.cat.replace(/^\S+\s/, '');
+
+                if (canvas._lastHoverIdx !== idx) {
+                    canvas._lastHoverIdx = idx;
+                    _drawBudgetDonut(canvas, _budgetSegments.map(s => s.item), 999, idx);
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            if (tooltip) tooltip.style.opacity = '0';
+            canvas._lastHoverIdx = -1;
+            const overall = canvas.dataset.overallPct || '—';
+            const overallColor = canvas.dataset.overallColor || 'var(--text)';
+            if (pctEl) { pctEl.textContent = overall; pctEl.style.color = overallColor; }
+            if (lblEl) lblEl.textContent = 'usado';
+            _drawBudgetDonut(canvas, _budgetSegments.map(s => s.item), 999, -1);
+        });
+    }
 }
 
 let _editBudgetIdx = null;
