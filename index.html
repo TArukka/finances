@@ -110,6 +110,40 @@
         .tag-card { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-left: 5px; vertical-align: middle; }
         /* FATURA INFO */
         .fatura-info { border-radius: 7px; padding: 8px 10px; font-size: 11px; margin-bottom: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; line-height: 1.5; }
+
+        /* FATURA ACCORDION */
+        .fatura-section { padding: 0 16px 12px; }
+        .fatura-card { border: 1px solid var(--border); border-radius: 9px; margin-bottom: 8px; overflow: hidden; background: var(--surface); }
+        .fatura-card-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .1s; }
+        .fatura-card-header:hover { background: var(--bg); }
+        .fatura-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .fatura-card-name { font-weight: 600; font-size: 13px; flex: 1; }
+        .fatura-card-total { font-weight: 700; font-size: 13px; color: var(--danger); }
+        .fatura-card-due { font-size: 10px; color: var(--text-3); margin-left: 8px; white-space: nowrap; }
+        .fatura-card-arrow { font-size: 11px; color: var(--text-3); transition: transform .2s; }
+        .fatura-card.open .fatura-card-arrow { transform: rotate(180deg); }
+        .fatura-card-body { display: none; border-top: 1px solid var(--border-light); max-height: 240px; overflow-y: auto; }
+        .fatura-card.open .fatura-card-body { display: block; }
+        .fatura-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid var(--border-light); font-size: 12px; }
+        .fatura-item:last-child { border-bottom: none; }
+        .fatura-item-desc { font-weight: 500; color: var(--text); }
+        .fatura-item-meta { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+        .fatura-item-val { font-weight: 600; color: var(--danger); white-space: nowrap; margin-left: 10px; }
+        .fatura-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text-3); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .fatura-section-empty { font-size: 12px; color: var(--text-3); padding: 4px 0 8px; }
+
+        /* Fatura summary row in table */
+        tr.fatura-row td { background: #f0f4ff !important; border-bottom: 1px solid #dbeafe; }
+        tr.fatura-row:hover td { background: #e8eeff !important; }
+        .fatura-row-label { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #1d4ed8; }
+        .fatura-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        /* Mobile fatura card in list */
+        .mob-fatura-card { border: 1px solid #bfdbfe; border-radius: 10px; margin: 8px 14px; overflow: hidden; background: #f0f4ff; }
+        .mob-fatura-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; }
+        .mob-fatura-header .mob-tx-dot { background: #dbeafe; }
+        .mob-fatura-body { display: none; border-top: 1px solid #bfdbfe; }
+        .mob-fatura-card.open .mob-fatura-body { display: block; }
         /* CARDS MODAL */
         #ovCartoes .modal { width: 500px; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
         .cartoes-head { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
@@ -780,6 +814,10 @@
                     <button class="group-toggle" id="btnGroupCat" onclick="toggleGroupMode()" title="Agrupar por categoria">⊞ Categoria</button>
                 </div>
             </div>
+            <div class="fatura-section" id="faturaSection" style="display:none">
+                <div class="fatura-section-label">💳 Faturas do Mês</div>
+                <div id="faturaAccordion"></div>
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -1257,8 +1295,45 @@ function renderMobList() {
     lista = sorted(lista);
     const container = $('mobTxList');
     if (!container) return;
-    if (!lista.length) { container.innerHTML = ''; return; }
-    container.innerHTML = lista.map(t => {
+
+    // Build fatura cards for mobile
+    let faturaHtml = '';
+    if (activeTab === 'all' || activeTab === 'saida') {
+        const faturas = getFaturasForMonth(m, a);
+        faturaHtml = faturas.map((f, idx) => {
+            const [vy, vm, vd] = f.faturaDate.split('-');
+            return `<div class="mob-fatura-card" id="mobFaturaCard-${idx}">
+                <div class="mob-fatura-header" onclick="document.getElementById('mobFaturaCard-${idx}').classList.toggle('open')">
+                    <div class="mob-tx-dot" style="background:${f.card.cor}22;border-radius:10px"><span style="font-size:16px">💳</span></div>
+                    <div class="mob-tx-info">
+                        <div class="mob-tx-desc" style="color:#1d4ed8">${f.card.nome}</div>
+                        <div class="mob-tx-meta">Fatura · vence ${vd}/${vm} · ${f.items.length} itens</div>
+                    </div>
+                    <div class="mob-tx-right">
+                        <div class="mob-tx-val" style="color:var(--danger)">− ${fmt(f.total)}</div>
+                        <div class="mob-tx-date">▼</div>
+                    </div>
+                </div>
+                <div class="mob-fatura-body">
+                    ${f.items.map(t => {
+                        const [y2, m2, d2] = t.data.split('-');
+                        return `<div class="mob-tx-card" onclick="openMobEdit(${t.id})" style="background:transparent">
+                            <div class="mob-tx-info" style="padding-left:14px">
+                                <div class="mob-tx-desc" style="font-size:12px">${t.desc}</div>
+                                <div class="mob-tx-meta">${d2}/${m2} · ${t.cat}</div>
+                            </div>
+                            <div class="mob-tx-right">
+                                <div class="mob-tx-val" style="color:var(--danger);font-size:12px">− ${fmt(t.valor)}</div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    if (!lista.length && !faturaHtml) { container.innerHTML = ''; return; }
+    container.innerHTML = faturaHtml + lista.map(t => {
         const [y, mo, d] = t.data.split('-');
         const cor = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
         const pre = t.tipo === 'entrada' ? '+' : '−';
@@ -1335,8 +1410,7 @@ let groupMode = 'none'; // 'none' | 'cat'
 const fmt     = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const filtro  = () => ({ m: parseInt($('filtroMes').value), a: parseInt($('filtroAno').value) });
 const txMes   = (m, a) => tx.filter(t => {
-    const dateStr = (t.pagamento === 'credito' && t.faturaData) ? t.faturaData : t.data;
-    const d = new Date(dateStr + 'T00:00:00');
+    const d = new Date(t.data + 'T00:00:00');
     return d.getMonth() === m && d.getFullYear() === a;
 });
 const save    = () => localStorage.setItem('fin5_data', JSON.stringify(tx));
@@ -1912,6 +1986,71 @@ function renderDonut(dados, cid, wid, emptyIcon, colors, emptyH = 160) {
     });
 }
 
+// ── FATURA HELPERS ────────────────────────────────────────────────────────────
+// Returns array of { card, items, total, faturaDate } for faturas due in month m/year a
+function getFaturasForMonth(m, a) {
+    if (!cards.length) return [];
+    const result = [];
+    cards.forEach(card => {
+        // Find all credit card purchases whose faturaData falls in this month
+        const items = tx.filter(t => {
+            if (t.cartaoId != card.id || t.pagamento !== 'credito' || !t.faturaData) return false;
+            const fd = new Date(t.faturaData + 'T00:00:00');
+            return fd.getMonth() === m && fd.getFullYear() === a;
+        });
+        if (!items.length) return;
+        const total = items.reduce((s, t) => s + t.valor, 0);
+        // Build a display date for the fatura (vencimento day of this month)
+        const maxDay = new Date(a, m + 1, 0).getDate();
+        const vencDay = Math.min(card.vencimento, maxDay);
+        const faturaDate = `${a}-${String(m + 1).padStart(2, '0')}-${String(vencDay).padStart(2, '0')}`;
+        result.push({ card, items: [...items].sort((a, b) => a.data.localeCompare(b.data)), total, faturaDate });
+    });
+    return result;
+}
+
+function renderFaturas() {
+    const { m, a } = filtro();
+    const faturas = getFaturasForMonth(m, a);
+    const section = $('faturaSection');
+    const container = $('faturaAccordion');
+
+    if (!faturas.length) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+    container.innerHTML = faturas.map((f, idx) => {
+        const [vy, vm, vd] = f.faturaDate.split('-');
+        return `<div class="fatura-card" id="faturaCard-${idx}">
+            <div class="fatura-card-header" onclick="toggleFaturaCard(${idx})">
+                <div class="fatura-card-dot" style="background:${f.card.cor}"></div>
+                <div class="fatura-card-name">${f.card.nome}</div>
+                <div class="fatura-card-due">vence ${vd}/${vm}</div>
+                <div class="fatura-card-total">${fmt(f.total)}</div>
+                <div class="fatura-card-arrow">▼</div>
+            </div>
+            <div class="fatura-card-body">
+                ${f.items.map(t => {
+                    const [y2, m2, d2] = t.data.split('-');
+                    return `<div class="fatura-item">
+                        <div>
+                            <div class="fatura-item-desc">${t.desc}</div>
+                            <div class="fatura-item-meta">${d2}/${m2} · ${t.cat}</div>
+                        </div>
+                        <div class="fatura-item-val">− ${fmt(t.valor)}</div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function toggleFaturaCard(idx) {
+    const el = document.getElementById('faturaCard-' + idx);
+    if (el) el.classList.toggle('open');
+}
+
 // ── MAIN UPDATE ───────────────────────────────────────────────────────────────
 function atualizar() {
     const { m, a } = filtro(), lista = txMes(m, a);
@@ -1965,6 +2104,7 @@ function atualizar() {
     renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS);
     renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
     renderTrend();
+    renderFaturas();
     renderTabela();
 }
 
@@ -2518,7 +2658,6 @@ function calcFaturaData(cardId, spendDate) {
     let dueYear = d.getFullYear();
     let dueMon  = d.getMonth(); // 0-indexed closing month
     if (d.getDate() > card.fechamento) dueMon++; // spills into next cycle
-    dueMon++; // vencimento is the month after closing
     if (dueMon > 11) { dueMon -= 12; dueYear++; }
     const maxDay = new Date(dueYear, dueMon + 1, 0).getDate();
     const venc   = Math.min(card.vencimento, maxDay);
@@ -2617,21 +2756,20 @@ function renderCartoesMini() {
         list.innerHTML  = '';
         return;
     }
-    lbl.textContent = cards.length + (cards.length === 1 ? ' cartão' : ' cartões cadastrados');
     const { m, a } = filtro();
-    list.innerHTML = cards.map(c => {
-        const total = tx.filter(t => {
-            if (t.cartaoId != c.id || t.pagamento !== 'credito') return false;
-            const ds = t.faturaData || t.data;
-            const dd = new Date(ds + 'T00:00:00');
-            return dd.getMonth() === m && dd.getFullYear() === a;
-        }).reduce((s, t) => s + t.valor, 0);
+    const faturas = getFaturasForMonth(m, a);
+    lbl.textContent = faturas.length
+        ? `${faturas.length} fatura${faturas.length > 1 ? 's' : ''} em ${MESES[m]}`
+        : 'Sem faturas este mês';
+    list.innerHTML = faturas.map(f => {
+        const [vy, vm, vd] = f.faturaDate.split('-');
         return `<div class="fixos-mini-item">
             <span class="n" style="display:flex;align-items:center;gap:6px">
-                <span style="width:8px;height:8px;border-radius:50%;background:${c.cor};display:inline-block;flex-shrink:0"></span>
-                ${c.nome}
+                <span style="width:8px;height:8px;border-radius:50%;background:${f.card.cor};display:inline-block;flex-shrink:0"></span>
+                ${f.card.nome}
+                <span style="font-size:10px;color:var(--text-3)">vence ${vd}/${vm}</span>
             </span>
-            <span class="v">${total > 0 ? fmt(total) : '—'}</span>
+            <span class="v">${fmt(f.total)}</span>
         </div>`;
     }).join('');
 }
