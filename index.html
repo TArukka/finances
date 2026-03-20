@@ -672,7 +672,7 @@
             <button class="nav-pill" onclick="navTo('metas',this)">Metas</button>
             <button class="nav-pill" onclick="navTo('budget',this)">Orçamento</button>
         </nav>
-        <div class="month-pill" id="pillMes">—</div>
+        <div class="month-pill" id="pillMes" style="display:none">—</div>
     </div>
     <div class="topbar-right">
         <button class="btn-undo" id="btnUndo" onclick="undo()" disabled style="display:none">↩ Desfazer</button>
@@ -686,8 +686,15 @@
             <span class="user-name" id="userName">...</span>
         </div>
         <button class="sync-btn" onclick="abrirExtrato()" title="Importar extrato bancário" style="padding:5px 10px">📄</button>
-        <select id="filtroMes" onchange="onFiltroChange()"></select>
-        <select id="filtroAno" onchange="onFiltroChange()"></select>
+        <!-- Hidden selects kept for compatibility -->
+        <select id="filtroMes" onchange="onFiltroChange()" style="display:none"></select>
+        <select id="filtroAno" onchange="onFiltroChange()" style="display:none"></select>
+        <!-- Arrow month navigator -->
+        <div id="monthNav" style="display:flex;align-items:center;gap:4px">
+            <button onclick="shiftMonth(-1)" style="width:28px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--surface);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text-2)">‹</button>
+            <div id="monthNavLabel" style="min-width:100px;text-align:center;font-size:13px;font-weight:600;color:var(--text)">—</div>
+            <button onclick="shiftMonth(1)" style="width:28px;height:28px;border:1px solid var(--border);border-radius:7px;background:var(--surface);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text-2)">›</button>
+        </div>
     </div>
 </div>
 
@@ -978,14 +985,23 @@
                 <div class="chart-box-label">Investimentos</div>
                 <div id="wrapInvest"><div class="chart-empty"><span style="font-size:24px;opacity:.3">💼</span>Sem dados</div></div>
             </div>
-            <div class="chart-box" style="max-height:none">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="chart-box" style="max-height:none;min-height:220px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                     <div class="chart-box-label" style="margin-bottom:0">Orçamento do Mês</div>
                     <button onclick="navTo('budget',document.querySelectorAll('.nav-pill')[4])" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">ver tudo</button>
                 </div>
-                <div id="budgetWidgetList" style="display:flex;flex-direction:column;gap:10px;overflow:hidden">
-                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100px;color:var(--text-3);font-size:12px;gap:6px" id="budgetWidgetEmpty">
-                        <span style="font-size:24px;opacity:.3">📊</span>Nenhum orçamento definido
+                <div id="budgetWidgetInner" style="display:flex;align-items:center;gap:16px;flex:1">
+                    <div style="position:relative;flex-shrink:0;width:140px;height:140px">
+                        <canvas id="budgetDonutCanvas" width="140" height="140"></canvas>
+                        <div id="budgetDonutCenter" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+                            <div style="font-size:18px;font-weight:700;line-height:1" id="budgetDonutPct">—</div>
+                            <div style="font-size:9px;color:var(--text-3);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.5px">usado</div>
+                        </div>
+                    </div>
+                    <div id="budgetWidgetList" style="flex:1;display:flex;flex-direction:column;gap:7px;overflow:hidden;min-width:0">
+                        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100px;color:var(--text-3);font-size:12px;gap:6px" id="budgetWidgetEmpty">
+                            <span style="font-size:24px;opacity:.3">📊</span>Nenhum orçamento
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1084,8 +1100,8 @@
                 <div class="view-subtitle">Detalhamento crédito, débito e categorias</div>
             </div>
             <div class="mensal-controls">
-                <select id="mensalMes" onchange="renderMensal()"></select>
-                <select id="mensalAno" onchange="renderMensal()"></select>
+                <select id="mensalMes" onchange="renderMensal()" style="display:none"></select>
+                <select id="mensalAno" onchange="renderMensal()" style="display:none"></select>
             </div>
         </div>
         <div class="kpis" style="margin-bottom:20px">
@@ -1768,6 +1784,8 @@ let cats  = JSON.parse(localStorage.getItem('fin5_cats')) || {
 };
 let goals = JSON.parse(localStorage.getItem('fin5_goals')) || [];
 let budgets = JSON.parse(localStorage.getItem('fin5_budgets') || '[]'); // [{cat, limit}]
+// Deduplicate on load (in case of prior bug)
+budgets = budgets.filter((b, i, arr) => arr.findIndex(x => x.cat === b.cat) === i);
 
 let undoStack = [];
 let sortCol   = 'data', sortDir = 'desc';
@@ -1953,13 +1971,17 @@ function renderBudget() {
 }
 
 function renderBudgetWidget() {
-    const listEl = $('budgetWidgetList');
+    const listEl  = $('budgetWidgetList');
     const emptyEl = $('budgetWidgetEmpty');
-    if (!listEl) return;
+    const canvas  = $('budgetDonutCanvas');
+    const pctEl   = $('budgetDonutPct');
+    if (!listEl || !canvas) return;
 
     if (!budgets.length) {
         if (emptyEl) emptyEl.style.display = 'flex';
         listEl.querySelectorAll('.bw-item').forEach(e => e.remove());
+        _drawBudgetDonut(canvas, [], 0);
+        if (pctEl) { pctEl.textContent = '—'; pctEl.style.color = 'var(--text-3)'; }
         return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
@@ -1967,28 +1989,121 @@ function renderBudgetWidget() {
     const now = new Date(), m = now.getMonth(), a = now.getFullYear();
     const items = budgets.map(b => {
         const spent = getBudgetSpend(b.cat, m, a);
-        const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
+        const pct   = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
         return { ...b, spent, pct };
-    }).sort((a, b) => b.pct - a.pct).slice(0, 6);
+    }).sort((a, b) => b.pct - a.pct);
 
-    // Remove old rows, keep the empty placeholder
+    const totalLimit = items.reduce((s, b) => s + b.limit, 0);
+    const totalSpent = items.reduce((s, b) => s + b.spent, 0);
+    const overallPct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
+    const overallSt  = budgetStatus(overallPct);
+    const pctColor   = overallSt === 'over' ? 'var(--danger)' : overallSt === 'warn' ? '#f59e0b' : 'var(--success)';
+
+    if (pctEl) { pctEl.textContent = overallPct + '%'; pctEl.style.color = pctColor; }
+
+    // Draw animated donut
+    _drawBudgetDonut(canvas, items.slice(0, 6), overallPct);
+
+    // Legend list
     listEl.querySelectorAll('.bw-item').forEach(e => e.remove());
-    listEl.insertAdjacentHTML('beforeend', items.map(b => {
-        const st = budgetStatus(b.pct);
-        const barW = Math.min(b.pct, 100);
+    const SEGMENT_COLORS = ['#16a34a','#0284c7','#6d28d9','#f59e0b','#dc2626','#0f766e'];
+    listEl.insertAdjacentHTML('beforeend', items.slice(0, 6).map((b, i) => {
+        const st   = budgetStatus(b.pct);
+        const clr  = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
         const left = b.limit - b.spent;
+        const label = b.cat.replace(/^\S+\s/, ''); // strip emoji
         return `<div class="bw-item">
-            <div class="bw-label" title="${b.cat}">${b.cat}</div>
-            <div style="flex:1;min-width:0">
-                <div class="bw-track"><div class="bw-fill ${st}" style="width:${barW}%"></div></div>
-                <div style="display:flex;justify-content:space-between;margin-top:3px">
-                    <span style="font-size:9px;color:var(--text-3)">${fmt(b.spent)} / ${fmt(b.limit)}</span>
-                    <span style="font-size:9px;font-weight:600;color:${st==='over'?'var(--danger)':st==='warn'?'#f59e0b':'var(--success)'}">${left < 0 ? '⚠ +'+fmt(Math.abs(left)) : fmt(left)+' restam'}</span>
-                </div>
+            <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1">
+                <span style="width:8px;height:8px;border-radius:50%;background:${clr};flex-shrink:0;display:inline-block"></span>
+                <span class="bw-label" style="font-size:11px" title="${b.cat}">${label}</span>
             </div>
-            <div class="bw-pct ${st}" style="margin-left:8px">${b.pct}%</div>
+            <div style="text-align:right;white-space:nowrap;font-size:10px">
+                <span class="bw-pct ${st}">${b.pct}%</span>
+                <span style="color:var(--text-3);margin-left:4px">${left < 0 ? '⚠' : fmt(left)}</span>
+            </div>
         </div>`;
     }).join(''));
+}
+
+let _budgetDonutAnim = null;
+function _drawBudgetDonut(canvas, items, overallPct) {
+    if (!canvas) return;
+    const ctx  = canvas.getContext('2d');
+    const W    = canvas.width, H = canvas.height;
+    const cx   = W / 2, cy = H / 2, R = W / 2 - 8, r = R * 0.55;
+    const SEGMENT_COLORS = ['#16a34a','#0284c7','#6d28d9','#f59e0b','#dc2626','#0f766e'];
+    const BG   = '#e4e4e7';
+    const totalLimit = items.reduce((s, b) => s + b.limit, 0);
+
+    if (_budgetDonutAnim) cancelAnimationFrame(_budgetDonutAnim);
+
+    const startTime = performance.now();
+    const DURATION  = 900; // ms
+
+    function draw(progress) {
+        ctx.clearRect(0, 0, W, H);
+
+        if (!items.length || totalLimit === 0) {
+            // Empty ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.arc(cx, cy, r, Math.PI * 2, 0, true);
+            ctx.fillStyle = BG;
+            ctx.fill();
+            return;
+        }
+
+        // Build segments proportional to each category's limit
+        let startAngle = -Math.PI / 2;
+        items.forEach((b, i) => {
+            const sliceAngle = (b.limit / totalLimit) * Math.PI * 2;
+            const filledAngle = sliceAngle * Math.min(b.pct / 100, 1) * progress;
+
+            // Background slice (full segment, muted)
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, R, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length] + '28';
+            ctx.fill();
+
+            // Filled portion
+            if (filledAngle > 0) {
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, R, startAngle, startAngle + filledAngle);
+                ctx.closePath();
+                ctx.fillStyle = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+                ctx.fill();
+            }
+
+            // Thin divider line
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + R * Math.cos(startAngle + sliceAngle), cy + R * Math.sin(startAngle + sliceAngle));
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            startAngle += sliceAngle;
+        });
+
+        // Cut inner hole
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';
+        ctx.fill();
+    }
+
+    function animate(now) {
+        const elapsed  = now - startTime;
+        const progress = Math.min(elapsed / DURATION, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        draw(eased);
+        if (progress < 1) _budgetDonutAnim = requestAnimationFrame(animate);
+    }
+    _budgetDonutAnim = requestAnimationFrame(animate);
 }
 
 let _editBudgetIdx = null;
@@ -2024,7 +2139,7 @@ function openBudgetForm(data) {
         </div>
         <div style="display:flex;gap:4px;padding-bottom:1px">
             <button class="ie-save" onclick="saveBudgetForm()">✓ Salvar</button>
-            <button class="ie-cancel" onclick="document.getElementById('budgetFormRow').remove()">✕</button>
+            <button class="ie-cancel" onclick="_editBudgetIdx=null;document.getElementById('budgetFormRow').remove()">✕</button>
         </div>
     </div>`;
 
@@ -2042,11 +2157,16 @@ function saveBudgetForm() {
     if (!cat) return toast('⚠️ Selecione uma categoria.', '#b45309');
     if (isNaN(limit) || limit <= 0) return toast('⚠️ Limite inválido.', '#b45309');
 
+    // Guard against duplicate categories
+    const dupIdx = budgets.findIndex((b, i) => b.cat === cat && i !== _editBudgetIdx);
+    if (dupIdx !== -1) return toast('⚠️ Essa categoria já tem orçamento.', '#b45309');
+
     if (_editBudgetIdx !== null) {
         budgets[_editBudgetIdx] = { cat, limit };
     } else {
         budgets.push({ cat, limit });
     }
+    _editBudgetIdx = null;
     saveBudgets();
     document.getElementById('budgetFormRow')?.remove();
     renderBudget();
@@ -2078,8 +2198,9 @@ function navTo(view, btn) {
     ['anual','mensal','metas','budget'].forEach(v => $('view-' + v).classList.toggle('active', v === view));
 
     const hideMes = view === 'anual' || view === 'metas' || view === 'budget';
-    $('filtroMes').style.display = hideMes ? 'none' : '';
-    $('pillMes').style.display   = hideMes ? 'none' : '';
+    $('monthNav').style.display = hideMes ? 'none' : 'flex';
+    $('filtroMes').style.display = 'none';
+    $('pillMes').style.display   = 'none';
 
     if (view === 'anual')  renderAnual();
     if (view === 'mensal') renderMensal();
@@ -2087,14 +2208,36 @@ function navTo(view, btn) {
     if (view === 'budget') renderBudget();
 }
 
+function updateMonthNavLabel() {
+    const m = parseInt($('filtroMes').value);
+    const a = parseInt($('filtroAno').value);
+    const el = $('monthNavLabel');
+    if (el && !isNaN(m) && !isNaN(a)) el.textContent = MESES[m] + ' ' + a;
+}
+
+function shiftMonth(delta) {
+    let m = parseInt($('filtroMes').value);
+    let a = parseInt($('filtroAno').value);
+    m += delta;
+    if (m < 0)  { m = 11; a--; }
+    if (m > 11) { m = 0;  a++; }
+    $('filtroMes').value = m;
+    $('filtroAno').value = a;
+    onFiltroChange();
+}
+
 function onFiltroChange() {
+    updateMonthNavLabel();
     atualizar();
     if (currentView === 'mensal') renderMensal();
 }
 
 function goToMensal(m, a) {
+    $('filtroMes').value = m;
+    $('filtroAno').value = a;
     $('mensalMes').value = m;
     $('mensalAno').value = a;
+    updateMonthNavLabel();
     navTo('mensal', document.querySelectorAll('.nav-pill')[2]);
 }
 
@@ -2938,7 +3081,7 @@ function atualizar() {
         sw.style.display = 'none';
     }
 
-    $('pillMes').textContent = MESES[m] + ' ' + a;
+    updateMonthNavLabel();
     const mobM = $('mobFiltroMes');
     const mobA = $('mobFiltroAno');
     if (mobM) mobM.value = m;
@@ -3070,8 +3213,10 @@ function renderAnual() {
 
 // ── MONTHLY ANALYSIS VIEW ─────────────────────────────────────────────────────
 function renderMensal() {
-    const m = parseInt($('mensalMes').value);
-    const a = parseInt($('mensalAno').value);
+    // Always sync from global filtro so arrow nav drives all views
+    const { m, a } = filtro();
+    $('mensalMes').value = m;
+    $('mensalAno').value = a;
     const lista  = txMes(m, a);
     const saidas = lista.filter(t => t.tipo === 'saida');
     let ent = 0, gas = 0, cred = 0, deb = 0;
@@ -3242,6 +3387,7 @@ function salvarGoal() {
         toast('🎯 Meta criada!');
     }
     saveGoals(); renderGoals(); closeNovaGoal();
+    if (_currentUser) { _dbPut(_buildPayload()).catch(() => {}); }
 }
 
 function removerGoal(id) {
@@ -3249,6 +3395,7 @@ function removerGoal(id) {
     if (!confirm(`Remover a meta "${g.nome}"?`)) return;
     goals = goals.filter(x => x.id !== id);
     saveGoals(); renderGoals();
+    if (_currentUser) { _dbPut(_buildPayload()).catch(() => {}); }
     toast('Meta removida.', '#52525b');
 }
 
@@ -3273,6 +3420,7 @@ function confirmarAporte() {
     if (!data) return toast('⚠️ Selecione uma data.', '#b45309');
     goals.find(g => g.id === id).aportes.push({ valor, data, nota });
     saveGoals(); renderGoals(); closeAporte();
+    if (_currentUser) { _dbPut(_buildPayload()).catch(() => {}); }
     toast(`✓ Aporte de ${fmt(valor)} adicionado!`, '#16a34a');
 }
 
@@ -3757,9 +3905,17 @@ async function fbLoadOnStart() {
     try {
         const remote = await _dbGet();
         if (remote) {
-            _applyPayload(remote);
-            localStorage.setItem('fb_localTs',   String(remote.ts || Date.now()));
-            localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, k: remote.k }));
+            const remoteTs = remote.ts || 0;
+            const localTs  = parseInt(localStorage.getItem('fb_localTs') || '0');
+            // Only apply remote if it's actually newer than what we last synced
+            if (remoteTs > localTs) {
+                _applyPayload(remote);
+                localStorage.setItem('fb_localTs',   String(remoteTs));
+                localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, k: remote.k }));
+            } else {
+                // Local is same or newer — push local up
+                await _dbPut(_buildPayload());
+            }
         } else {
             await _dbPut(_buildPayload());
             toast('🔥 Dados iniciais enviados ao Firebase!', '#f97316');
