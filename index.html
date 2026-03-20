@@ -113,6 +113,36 @@
 
         /* FATURA ACCORDION */
         .fatura-section { padding: 0 16px 12px; }
+
+        /* FIXOS TABLE SECTION */
+        .fixos-table-section { border-bottom: 1px solid var(--border); }
+        .fixos-table-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; }
+        .fixos-table-header:hover { background: var(--bg); }
+        .fixos-table-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #92400e; flex: 1; display: flex; align-items: center; gap: 6px; }
+        .fixos-table-total { font-size: 13px; font-weight: 700; color: var(--danger); }
+        .fixos-table-arrow { font-size: 11px; color: var(--text-3); transition: transform .2s; }
+        .fixos-table-section.open .fixos-table-arrow { transform: rotate(180deg); }
+        .fixos-table-body { display: none; }
+        .fixos-table-section.open .fixos-table-body { display: block; }
+        .fixo-row { display: grid; grid-template-columns: 50px 1fr 100px 100px auto; align-items: center; gap: 8px; padding: 9px 16px; border-bottom: 1px solid var(--border-light); font-size: 13px; }
+        .fixo-row:last-child { border-bottom: none; }
+        .fixo-row:hover { background: var(--bg); }
+        .fixo-day-input { width: 44px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; text-align: center; color: var(--text); background: var(--surface); outline: none; }
+        .fixo-day-input:focus { border-color: var(--accent); }
+        .fixo-row-desc { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fixo-row-cat { font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fixo-row-val { font-weight: 600; color: var(--danger); text-align: right; white-space: nowrap; }
+        .fixo-count-badge { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+
+        /* Mobile fixos */
+        .mob-fixos-section { margin: 8px 0; border: 1px solid #fde68a; border-radius: 10px; overflow: hidden; background: #fffbeb; }
+        .mob-fixos-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; cursor: pointer; }
+        .mob-fixos-body { display: none; border-top: 1px solid #fde68a; }
+        .mob-fixos-section.open .mob-fixos-body { display: block; }
+        .mob-fixo-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #fef3c7; }
+        .mob-fixo-item:last-child { border-bottom: none; }
+        .mob-fixo-day { width: 38px; text-align: center; }
+        .mob-fixo-day input { width: 36px; padding: 4px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; text-align: center; font-family: inherit; }
         .fatura-card { border: 1px solid var(--border); border-radius: 9px; margin-bottom: 8px; overflow: hidden; background: var(--surface); }
         .fatura-card-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .1s; }
         .fatura-card-header:hover { background: var(--bg); }
@@ -144,6 +174,92 @@
         .mob-fatura-header .mob-tx-dot { background: #dbeafe; }
         .mob-fatura-body { display: none; border-top: 1px solid #bfdbfe; }
         .mob-fatura-card.open .mob-fatura-body { display: block; }
+
+        /* EXTRATO IMPORT MODAL */
+        #ovExtrato .modal { width: 800px; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .ext-head { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .ext-head h3 { font-size: 15px; font-weight: 700; }
+        .ext-body { overflow-y: auto; padding: 16px 24px; flex: 1; }
+        .ext-foot { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .ext-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all .15s; background: var(--bg); }
+        .ext-drop:hover, .ext-drop.dragover { border-color: var(--accent); background: #f0f0ff; }
+        .ext-drop-icon { font-size: 36px; opacity: .3; margin-bottom: 8px; }
+        .ext-drop-text { font-size: 13px; color: var(--text-2); font-weight: 500; }
+        .ext-drop-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+        .ext-stats { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .ext-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; }
+        .ext-stat strong { font-weight: 700; }
+        .ext-stat.green { border-left: 3px solid var(--success); }
+        .ext-stat.red   { border-left: 3px solid var(--danger); }
+        .ext-stat.gray  { border-left: 3px solid var(--text-3); }
+        .ext-stat.amber { border-left: 3px solid #f59e0b; }
+        .ext-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .ext-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 8px 8px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+        .ext-table td { padding: 7px 8px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        .ext-table tr:hover td { background: var(--bg); }
+        .ext-table tr.ext-skip td { opacity: .45; text-decoration: line-through; }
+        .ext-table tr.ext-dup td { background: #fefce8; }
+        .ext-table select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; font-family: inherit; background: var(--surface); color: var(--text); }
+        .ext-table input[type="checkbox"] { accent-color: var(--accent); }
+        .ext-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+        .ext-badge.transf { background: #fef3c7; color: #92400e; }
+        .ext-badge.dup    { background: #fef9c3; color: #854d0e; }
+        .ext-badge.new    { background: #dcfce7; color: #166534; }
+        .ext-info-bar { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #1e40af; margin-bottom: 14px; line-height: 1.5; }
+        .ext-back-btn { background: var(--bg); border: 1px solid var(--border); padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--text-2); }
+        .ext-import-btn { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .ext-import-btn:disabled { opacity: .4; cursor: default; }
+        .ext-select-bar { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; }
+        .ext-select-bar button { font-size: 11px; background: none; border: 1px solid var(--border); padding: 3px 10px; border-radius: 5px; cursor: pointer; font-family: inherit; color: var(--text-2); }
+        .ext-select-bar button:hover { background: var(--bg); }
+        .ext-select-bar span { font-size: 11px; color: var(--text-3); }
+        @media (max-width: 768px) {
+            #ovExtrato .modal { width: 95vw; max-height: 95vh; }
+            .ext-table { font-size: 11px; }
+            .ext-table th, .ext-table td { padding: 6px 5px; }
+        }
+
+        /* IMPORT EXTRATO */
+        .import-btn { width: 100%; padding: 8px; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border: none; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .import-btn:hover { opacity: .88; }
+        #ovImport .modal { width: 780px; max-height: 88vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+        .import-head { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
+        .import-head h3 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+        .import-head p { font-size: 12px; color: var(--text-3); }
+        .import-body { overflow-y: auto; padding: 16px 24px; flex: 1; }
+        .import-stats { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+        .import-stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; }
+        .import-stat strong { display: block; font-size: 16px; margin-top: 2px; }
+        .import-stat.green strong { color: var(--success); }
+        .import-stat.red strong { color: var(--danger); }
+        .import-stat.gray strong { color: var(--text-3); }
+        .import-stat.blue strong { color: #3b82f6; }
+        .import-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+        .import-controls label { font-size: 12px; display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-2); }
+        .import-controls select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-family: inherit; }
+        .import-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .import-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+        .import-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        .import-table tr:hover td { background: var(--bg); }
+        .import-table tr.transfer td { opacity: .45; text-decoration: line-through; }
+        .import-table tr.duplicate td { background: #fef3c7; }
+        .import-table td select { padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; font-family: inherit; color: var(--text); background: var(--surface); }
+        .import-table td input[type="checkbox"] { accent-color: var(--accent); }
+        .import-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+        .import-footer .import-count { flex: 1; font-size: 12px; color: var(--text-2); }
+        .import-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: all .2s; background: var(--bg); }
+        .import-drop:hover, .import-drop.dragover { border-color: #6366f1; background: #eef2ff; }
+        .import-drop-icon { font-size: 32px; opacity: .3; margin-bottom: 8px; }
+        .import-drop-text { font-size: 13px; color: var(--text-2); font-weight: 500; }
+        .import-drop-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+        .import-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+        .import-badge.xfer { background: #fef3c7; color: #92400e; }
+        .import-badge.dup { background: #fce7f3; color: #9d174d; }
+        @media (max-width: 768px) {
+            #ovImport .modal { width: 95vw; max-height: 92vh; }
+            .import-table { font-size: 11px; }
+            .import-table th, .import-table td { padding: 6px 6px; }
+        }
         /* CARDS MODAL */
         #ovCartoes .modal { width: 500px; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
         .cartoes-head { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
@@ -518,6 +634,7 @@
             <div class="user-avatar-initials" id="userInitials">?</div>
             <span class="user-name" id="userName">...</span>
         </div>
+        <button class="sync-btn" onclick="abrirExtrato()" title="Importar extrato bancário" style="padding:5px 10px">📄</button>
         <select id="filtroMes" onchange="onFiltroChange()"></select>
         <select id="filtroAno" onchange="onFiltroChange()"></select>
     </div>
@@ -584,6 +701,9 @@
             <input type="checkbox" id="mob-fixo"> Gasto fixo mensal?
         </label>
         <button class="mob-form-save" onclick="mobAdicionar()">Salvar Lançamento</button>
+        <div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <button style="background:none;border:none;font-family:inherit;font-size:12px;color:#6366f1;font-weight:600;cursor:pointer" onclick="closeMobForm();abrirExtrato()">📄 Importar extrato bancário</button>
+        </div>
     </div>
 </div>
 
@@ -754,6 +874,12 @@
         </div>
         <hr style="border:none;border-top:1px solid var(--border)">
         <div>
+            <div class="section-label">Importar Extrato</div>
+            <button class="btn-save" style="background:#1d4ed8" onclick="abrirExtrato()">📄 Importar Extrato Bancário</button>
+            <div style="font-size:10px;color:var(--text-3);margin-top:4px;line-height:1.4">CSV (Nubank, Inter, Bradesco…) ou OFX — detecta transferências e duplicatas</div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border)">
+        <div>
             <div class="section-label">Backup</div>
             <div class="backup-row">
                 <div class="backup-btn" onclick="exportar()">↑ Exportar</div>
@@ -817,6 +943,14 @@
             <div class="fatura-section" id="faturaSection" style="display:none">
                 <div class="fatura-section-label">💳 Faturas do Mês</div>
                 <div id="faturaAccordion"></div>
+            </div>
+            <div class="fixos-table-section open" id="fixosTableSection" style="display:none">
+                <div class="fixos-table-header" onclick="document.getElementById('fixosTableSection').classList.toggle('open')">
+                    <div class="fixos-table-title">📌 Gastos Fixos <span class="fixo-count-badge" id="fixoCountBadge"></span></div>
+                    <div class="fixos-table-total" id="fixosTableTotal"></div>
+                    <div class="fixos-table-arrow">▼</div>
+                </div>
+                <div class="fixos-table-body" id="fixosTableBody"></div>
             </div>
             <table>
                 <thead>
@@ -1121,6 +1255,153 @@
     </div>
 </div>
 
+<!-- IMPORT EXTRATO MODAL -->
+<div class="overlay" id="ovImport" onclick="if(event.target===this)closeImport()">
+    <div class="modal">
+        <div class="import-head">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <h3>📄 Importar Extrato Bancário</h3>
+                    <p>OFX, CSV — Nubank, Inter, Itaú, Bradesco e genérico</p>
+                </div>
+                <button class="icon-btn" onclick="closeImport()" style="font-size:16px;opacity:.5">✕</button>
+            </div>
+        </div>
+        <div class="import-body">
+            <!-- Step 1: File upload -->
+            <div id="importStep1">
+                <div class="import-drop" id="importDrop" onclick="$('importFileInput').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="event.preventDefault();this.classList.remove('dragover');handleImportDrop(event)">
+                    <div class="import-drop-icon">📁</div>
+                    <div class="import-drop-text">Arraste o arquivo aqui ou clique para selecionar</div>
+                    <div class="import-drop-sub">Formatos: .ofx, .csv, .txt</div>
+                </div>
+                <input type="file" id="importFileInput" hidden accept=".ofx,.csv,.txt,.qfx" onchange="handleImportFile(this)">
+                <div style="margin-top:12px">
+                    <div class="field">
+                        <label>Tipo de conta (opcional)</label>
+                        <select id="importAccType">
+                            <option value="corrente">Conta Corrente (Débito)</option>
+                            <option value="credito">Cartão de Crédito</option>
+                        </select>
+                    </div>
+                    <div class="field" id="importCardField" style="display:none">
+                        <label>Cartão associado</label>
+                        <select id="importCardId"></select>
+                    </div>
+                </div>
+            </div>
+            <!-- Step 2: Review -->
+            <div id="importStep2" style="display:none">
+                <div class="import-stats" id="importStats"></div>
+                <div class="import-controls">
+                    <label><input type="checkbox" id="importHideXfer" checked onchange="renderImportTable()"> Ocultar transferências</label>
+                    <label><input type="checkbox" id="importHideDup" onchange="renderImportTable()"> Ocultar duplicados</label>
+                    <span style="flex:1"></span>
+                    <label>Todos: <input type="checkbox" id="importSelectAll" checked onchange="toggleImportAll()"></label>
+                </div>
+                <div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+                    <table class="import-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px">✓</th>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Tipo</th>
+                                <th>Categoria</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="importTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="import-footer" id="importFooter" style="display:none">
+            <div class="import-count" id="importCount"></div>
+            <button class="btn-mcancel" onclick="resetImport()">← Voltar</button>
+            <button class="btn-confirm" onclick="confirmarImport()">Importar Selecionados</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL IMPORTAR EXTRATO -->
+<div class="overlay" id="ovExtrato" onclick="if(event.target===this)closeExtrato()">
+    <div class="modal">
+        <div class="ext-head">
+            <h3>📄 Importar Extrato Bancário</h3>
+            <button class="icon-btn" onclick="closeExtrato()" style="font-size:16px;opacity:.5">✕</button>
+        </div>
+        <div class="ext-body" id="extBody">
+            <!-- Step 1: Upload -->
+            <div id="extStep1">
+                <div style="display:flex;gap:10px;margin-bottom:14px">
+                    <div class="field" style="flex:1;margin-bottom:0">
+                        <label>Tipo de conta</label>
+                        <select id="extAccType" onchange="extOnAccTypeChange()">
+                            <option value="debito">🟢 Conta corrente (Débito)</option>
+                            <option value="credito">🔵 Cartão de crédito</option>
+                        </select>
+                    </div>
+                    <div class="field" id="extCardField" style="flex:1;margin-bottom:0;display:none">
+                        <label>Cartão</label>
+                        <select id="extCardId"></select>
+                    </div>
+                </div>
+                <div class="ext-drop" id="extDrop" onclick="$('extFileInput').click()">
+                    <div class="ext-drop-icon">📄</div>
+                    <div class="ext-drop-text">Arraste o extrato aqui ou clique para selecionar</div>
+                    <div class="ext-drop-sub">CSV (Nubank, Inter, Bradesco, genérico) ou OFX (Itaú, BB, etc.)</div>
+                    <input type="file" id="extFileInput" accept=".csv,.ofx,.txt" hidden onchange="extHandleFile(this.files[0])">
+                </div>
+                <div style="margin-top:16px">
+                    <div class="ext-info-bar">
+                        <strong>Formatos suportados:</strong><br>
+                        • <strong>CSV</strong> — Nubank, Inter, Bradesco, ou qualquer CSV com colunas de data, descrição e valor<br>
+                        • <strong>OFX/QFX</strong> — Formato bancário universal (Itaú, BB, Santander, etc.)<br>
+                        <span style="font-size:11px;opacity:.7">Transferências entre contas são detectadas automaticamente. Duplicatas são sinalizadas.</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Step 2: Preview -->
+            <div id="extStep2" style="display:none">
+                <div class="ext-stats" id="extStats"></div>
+                <div class="ext-select-bar">
+                    <button onclick="extSelectAll(true)">✓ Todos</button>
+                    <button onclick="extSelectAll(false)">✕ Nenhum</button>
+                    <button onclick="extSelectNew()">Só novos</button>
+                    <span id="extSelectedCount"></span>
+                </div>
+                <div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+                    <table class="ext-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px"><input type="checkbox" id="extCheckAll" onchange="extToggleAll(this.checked)"></th>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th style="text-align:right">Valor</th>
+                                <th>Tipo</th>
+                                <th>Categoria</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="extTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="ext-foot" id="extFoot">
+            <button class="ext-back-btn" id="extBackBtn" onclick="extGoBack()" style="display:none">← Voltar</button>
+            <div style="flex:1"></div>
+            <button class="btn-mcancel" onclick="closeExtrato()">Cancelar</button>
+            <button class="ext-import-btn" id="extImportBtn" onclick="extConfirmImport()" style="display:none">Importar Selecionados</button>
+        </div>
+    </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast" style="position:fixed;bottom:20px;right:20px;background:#18181b;color:white;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;z-index:999;"></div>
 
@@ -1289,6 +1570,7 @@ function renderMobList() {
     const { m, a } = filtro();
     const busca = $('busca').value.toLowerCase();
     let lista = txMes(m, a).filter(t =>
+        !t.fixo &&
         (activeTab === 'all' || t.tipo === activeTab) &&
         (t.desc.toLowerCase().includes(busca) || t.cat.toLowerCase().includes(busca))
     );
@@ -1780,6 +2062,7 @@ function renderTabela() {
     const { m, a } = filtro();
     const busca = $('busca').value.toLowerCase();
     let lista = txMes(m, a).filter(t =>
+        !t.fixo &&
         (activeTab === 'all' || t.tipo === activeTab) &&
         (t.desc.toLowerCase().includes(busca) || t.cat.toLowerCase().includes(busca))
     );
@@ -2051,6 +2334,103 @@ function toggleFaturaCard(idx) {
     if (el) el.classList.toggle('open');
 }
 
+// ── FIXOS TABLE ──────────────────────────────────────────────────────────────
+function renderFixosTable() {
+    const { m, a } = filtro();
+    const fixos = txMes(m, a).filter(t => t.fixo);
+    const section = $('fixosTableSection');
+
+    if (!fixos.length) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+
+    const total = fixos.reduce((s, t) => s + t.valor, 0);
+    $('fixoCountBadge').textContent = fixos.length;
+    $('fixosTableTotal').textContent = fmt(total);
+
+    const body = $('fixosTableBody');
+
+    if (IS_MOBILE) {
+        body.innerHTML = fixos.sort((a, b) => {
+            const da = parseInt(a.data.split('-')[2]);
+            const db = parseInt(b.data.split('-')[2]);
+            return da - db;
+        }).map(t => {
+            const [y, mo, d] = t.data.split('-');
+            const cor = t.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
+            const pre = t.tipo === 'entrada' ? '+' : '−';
+            const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
+            return `<div class="mob-fixo-item">
+                <div class="mob-fixo-day">
+                    <input type="number" min="1" max="28" value="${parseInt(d)}"
+                        onchange="updateFixoDay(${t.id}, this.value)" title="Dia do mês">
+                </div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc}</div>
+                    <div style="font-size:11px;color:var(--text-3)">${t.cat} ${payBadge}</div>
+                </div>
+                <div style="font-weight:700;color:${cor};font-size:14px;white-space:nowrap">${pre} ${fmt(t.valor)}</div>
+                <div class="btn-row">
+                    <button class="icon-btn" title="Editar" onclick="openMobEdit(${t.id})">✏️</button>
+                    <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        body.innerHTML = fixos.sort((a, b) => {
+            const da = parseInt(a.data.split('-')[2]);
+            const db = parseInt(b.data.split('-')[2]);
+            return da - db;
+        }).map(t => {
+            const [y, mo, d] = t.data.split('-');
+            const cor = t.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
+            const pre = t.tipo === 'entrada' ? '+' : '−';
+            const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
+            return `<div class="fixo-row">
+                <div>
+                    <input type="number" class="fixo-day-input" min="1" max="28" value="${parseInt(d)}"
+                        onchange="updateFixoDay(${t.id}, this.value)" title="Dia do mês">
+                </div>
+                <div>
+                    <div class="fixo-row-desc">${t.desc} ${payBadge}</div>
+                    <div class="fixo-row-cat">${t.cat}</div>
+                </div>
+                <div class="fixo-row-val" style="color:${cor}">${pre} ${fmt(t.valor)}</div>
+                <div style="font-size:11px;color:var(--text-3)">dia ${parseInt(d)}/${String(m+1).padStart(2,'0')}</div>
+                <div class="btn-row">
+                    <button class="icon-btn" title="Editar" onclick="openInlineEdit(${t.id})">✏️</button>
+                    <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+}
+
+function updateFixoDay(id, newDay) {
+    const day = Math.max(1, Math.min(28, parseInt(newDay)));
+    if (isNaN(day)) return;
+    const t = tx.find(x => x.id === id);
+    if (!t) return;
+    const [y, m, d] = t.data.split('-');
+    const newDate = `${y}-${m}-${String(day).padStart(2, '0')}`;
+    // Also update all future instances of this fixo with the same desc
+    pushUndo(tx, `Dia fixo "${t.desc}" → dia ${day}`);
+    tx = tx.map(x => {
+        if (x.fixo && x.desc === t.desc) {
+            const [xy, xm, xd] = x.data.split('-');
+            const maxDay = new Date(parseInt(xy), parseInt(xm), 0).getDate();
+            const safeDay = Math.min(day, maxDay);
+            return { ...x, data: `${xy}-${xm}-${String(safeDay).padStart(2, '0')}` };
+        }
+        return x;
+    });
+    save();
+    atualizar();
+    toast(`📌 "${t.desc}" → dia ${day} de cada mês`);
+}
+
 // ── MAIN UPDATE ───────────────────────────────────────────────────────────────
 function atualizar() {
     const { m, a } = filtro(), lista = txMes(m, a);
@@ -2105,6 +2485,8 @@ function atualizar() {
     renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
     renderTrend();
     renderFaturas();
+    renderFixosTable();
+    renderCartoesMini();
     renderTabela();
 }
 
@@ -2757,19 +3139,30 @@ function renderCartoesMini() {
         return;
     }
     const { m, a } = filtro();
-    const faturas = getFaturasForMonth(m, a);
-    lbl.textContent = faturas.length
-        ? `${faturas.length} fatura${faturas.length > 1 ? 's' : ''} em ${MESES[m]}`
-        : 'Sem faturas este mês';
-    list.innerHTML = faturas.map(f => {
-        const [vy, vm, vd] = f.faturaDate.split('-');
-        return `<div class="fixos-mini-item">
-            <span class="n" style="display:flex;align-items:center;gap:6px">
-                <span style="width:8px;height:8px;border-radius:50%;background:${f.card.cor};display:inline-block;flex-shrink:0"></span>
-                ${f.card.nome}
-                <span style="font-size:10px;color:var(--text-3)">vence ${vd}/${vm}</span>
-            </span>
-            <span class="v">${fmt(f.total)}</span>
+    lbl.textContent = cards.length + (cards.length === 1 ? ' cartão' : ' cartões');
+    list.innerHTML = cards.map(c => {
+        // Show credit spending on this card for the current month (by spend date)
+        const monthSpend = tx.filter(t =>
+            t.cartaoId == c.id && t.pagamento === 'credito' &&
+            (() => { const d = new Date(t.data + 'T00:00:00'); return d.getMonth() === m && d.getFullYear() === a; })()
+        ).reduce((s, t) => s + t.valor, 0);
+        // Also check fatura due this month
+        const faturaTotal = tx.filter(t => {
+            if (t.cartaoId != c.id || t.pagamento !== 'credito' || !t.faturaData) return false;
+            const fd = new Date(t.faturaData + 'T00:00:00');
+            return fd.getMonth() === m && fd.getFullYear() === a;
+        }).reduce((s, t) => s + t.valor, 0);
+        const faturaLabel = faturaTotal > 0 ? `fatura: ${fmt(faturaTotal)}` : '';
+        const spendLabel  = monthSpend > 0 ? `gastos: ${fmt(monthSpend)}` : '';
+        const sub = [spendLabel, faturaLabel].filter(Boolean).join(' · ') || '—';
+        return `<div class="fixos-mini-item" style="flex-direction:column;align-items:stretch;gap:2px;padding:8px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="n" style="display:flex;align-items:center;gap:6px">
+                    <span style="width:8px;height:8px;border-radius:50%;background:${c.cor};display:inline-block;flex-shrink:0"></span>
+                    ${c.nome}
+                </span>
+            </div>
+            <div style="font-size:10px;color:var(--text-3);padding-left:14px">${sub}</div>
         </div>`;
     }).join('');
 }
@@ -2900,7 +3293,921 @@ async function fbLoadOnStart() {
     }
 }
 
+// ── IMPORT EXTRATO SYSTEM ─────────────────────────────────────────────────────
+
+let _importParsed = []; // Array of { date, desc, valor, tipo, cat, selected, isTransfer, isDuplicate, rawDesc }
+
+// --- Category auto-detection by keywords ---
+const CAT_RULES = [
+    // Alimentação
+    { keys: ['supermercado','mercado','carrefour','pao de acucar','assai','atacadao','extra','big','sams','costco','hortifruti','sacolao','mini mercado','mercearia','padaria','açougue'], cat: '🍔 Alimentação' },
+    // Restaurantes / delivery
+    { keys: ['restaurante','ifood','rappi','uber eats','ubereats','zé delivery','ze delivery','mcdonald','mcdonalds','burger king','subway','pizza','lanchonete','cafeteria','starbucks','outback','madero','habib','sushi','churrascaria','bar ','boteco','cantina'], cat: '🍽️ Restaurantes' },
+    // Transporte
+    { keys: ['uber ','99 ','99app','cabify','taxi','combustivel','combustível','gasolina','etanol','posto ','shell','ipiranga','br distribui','estacionamento','parking','pedágio','pedagio','sem parar','move','conectcar'], cat: '🚗 Transporte' },
+    // Assinaturas
+    { keys: ['netflix','spotify','disney','hbo','amazon prime','apple music','youtube premium','deezer','globoplay','paramount','crunchyroll','twitch','adobe','microsoft 365','google one','icloud','openai','chatgpt','midjourney','github'], cat: '📱 Assinaturas' },
+    // Saúde
+    { keys: ['farmacia','farmácia','drogaria','droga raia','drogasil','pacheco','hospital','clinica','clínica','médico','medico','dentista','laboratório','laboratorio','unimed','amil','sulamerica','hapvida','notredame','prevent senior','psicolog','fisioter','otica','ótica'], cat: '💊 Saúde' },
+    // Moradia
+    { keys: ['aluguel','condominio','condomínio','iptu','luz','energia','cemig','enel','cpfl','equatorial','celesc','agua','água','saneago','copasa','sabesp','casan','gás','gas encanado'], cat: '🏠 Moradia' },
+    // Internet / Telefone
+    { keys: ['claro','vivo','tim ','oi ','net ','internet','telefone','celular','telecom'], cat: '📡 Internet/Telefone' },
+    // Compras
+    { keys: ['amazon','mercado livre','magalu','magazine luiza','americanas','shopee','aliexpress','shein','renner','c&a','zara','riachuelo','centauro','decathlon','leroy merlin','tok stok','casas bahia','ponto frio','kalunga','livraria','papelaria'], cat: '🛒 Compras' },
+    // Roupas
+    { keys: ['hering','marisa','cea','youcom','farm','animale','shoulder','lacoste','adidas','nike','arezzo','vivara','pandora','tiffany'], cat: '👗 Roupas' },
+    // Lazer
+    { keys: ['cinema','cinemark','ingresso','parque','viagem','hotel','hostel','airbnb','booking','teatro','show','evento','ingresso','bilhete','passeio','museu'], cat: '🎉 Lazer' },
+    // Jogos
+    { keys: ['steam','playstation','psn','xbox','nintendo','epic games','riot','blizzard','ea sports','game'], cat: '🎮 Jogos' },
+    // Família
+    { keys: ['escola','creche','faculdade','universidade','cursinho','curso','educacao','educação','mensalidade escol'], cat: '👨‍👩‍👧 Família' },
+    // Salário / Renda
+    { keys: ['salario','salário','folha de pagamento','pgto salario','vencimento','remuneracao','remuneração','prolabore','pro-labore'], cat: '💰 Salário' },
+    // Investimentos
+    { keys: ['tesouro direto','cdb','lci','lca','fundo de invest','ações','acoes','btg','xp invest','rico invest','clear','nuinvest','inter invest','cripto','bitcoin','ethereum','binance','mercado bitcoin'], cat: '🛡️ Renda Fixa' },
+];
+
+function autoCategorizeTx(desc) {
+    const low = desc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const rule of CAT_RULES) {
+        for (const k of rule.keys) {
+            const kn = k.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (low.includes(kn)) return rule.cat;
+        }
+    }
+    return null;
+}
+
+// --- Transfer detection ---
+const XFER_PATTERNS = [
+    /transfer[eê]ncia\s*(entre|propri|mesma)/i,
+    /transf\s*(entre|propri|mesma)/i,
+    /ted\s*(mesma|propri)/i,
+    /aplica[cç][aã]o\s*(autom|cdb|poupan|rdb|tesouro)/i,
+    /resgate\s*(autom|cdb|poupan|rdb|invest)/i,
+    /^pagamento\s*de?\s*fatura/i,
+    /pgto\s*fatura/i,
+    /pagamento.*cartao.*credito/i,
+    /pagamento.*cartão.*crédito/i,
+];
+const XFER_KEYWORDS = [
+    'transferencia entre contas','transf entre contas','aplicacao automatica',
+    'resgate automatico','resgate aplicacao','movimentacao interna',
+    'pagamento de fatura','pgto fatura cartao','pagto fatura',
+];
+
+function isTransfer(desc, trnType) {
+    if (trnType && trnType.toUpperCase() === 'XFER') return true;
+    const low = desc.toLowerCase();
+    for (const kw of XFER_KEYWORDS) { if (low.includes(kw)) return true; }
+    for (const rx of XFER_PATTERNS) { if (rx.test(desc)) return true; }
+    return false;
+}
+
+// --- Duplicate detection ---
+function isDuplicate(date, desc, valor) {
+    const low = desc.toLowerCase();
+    return tx.some(t => {
+        return t.data === date && Math.abs(t.valor - valor) < 0.01 &&
+               t.desc.toLowerCase().includes(low.slice(0, 15));
+    });
+}
+
+// --- OFX Parser ---
+function parseOFX(text) {
+    const results = [];
+    // Detect account type
+    const isCreditCard = /<ACCTTYPE>CREDITCARD/i.test(text) || /<CCSTMTTRNRS>/i.test(text);
+
+    // Extract transactions
+    const txBlocks = text.split(/<STMTTRN>/i).slice(1);
+    for (const block of txBlocks) {
+        const end = block.indexOf('</STMTTRN>');
+        const chunk = end !== -1 ? block.slice(0, end) : block.split(/<STMTTRN>/i)[0];
+
+        const getTag = (tag) => {
+            const rx = new RegExp('<' + tag + '>([^<\\r\\n]+)', 'i');
+            const m = chunk.match(rx);
+            return m ? m[1].trim() : '';
+        };
+
+        const trnType = getTag('TRNTYPE');
+        const rawAmt  = parseFloat(getTag('TRNAMT').replace(',', '.'));
+        const rawDate = getTag('DTPOSTED');
+        const name    = getTag('NAME') || getTag('MEMO') || getTag('PAYEE');
+        const memo    = getTag('MEMO');
+        const desc    = name || memo || 'Sem descrição';
+
+        if (isNaN(rawAmt) || !rawDate) continue;
+
+        // Parse OFX date: YYYYMMDD or YYYYMMDDHHMMSS
+        const y = rawDate.slice(0, 4), m = rawDate.slice(4, 6), d = rawDate.slice(6, 8);
+        const dateStr = `${y}-${m}-${d}`;
+
+        // Determine tipo: positive = entrada, negative = saida
+        const valor = Math.abs(rawAmt);
+        let tipo;
+        if (isCreditCard) {
+            tipo = rawAmt > 0 ? 'entrada' : 'saida'; // positive on CC = payment/credit
+        } else {
+            tipo = rawAmt > 0 ? 'entrada' : 'saida';
+        }
+
+        const xfer = isTransfer(desc, trnType);
+        const autoCat = autoCategorizeTx(desc);
+        const dup = isDuplicate(dateStr, desc, valor);
+        const defaultCat = tipo === 'entrada'
+            ? (autoCat || '⚙️ Outros')
+            : (autoCat || '🛒 Compras');
+
+        results.push({
+            date: dateStr, desc: cleanDesc(desc), rawDesc: desc, valor, tipo,
+            cat: defaultCat, selected: !xfer && !dup,
+            isTransfer: xfer, isDuplicate: dup, pagamento: isCreditCard ? 'credito' : 'debito'
+        });
+    }
+    return results;
+}
+
+function cleanDesc(desc) {
+    // Clean up common OFX/CSV noise
+    return desc
+        .replace(/\s{2,}/g, ' ')
+        .replace(/^\d{2}\/\d{2}\s*-?\s*/, '') // leading date prefix
+        .replace(/\s*-\s*\d{2}\/\d{2}$/, '') // trailing date suffix
+        .trim()
+        .split(' ')
+        .map(w => w.length <= 3 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+}
+
+// --- CSV Parser (multi-bank) ---
+function parseCSV(text) {
+    // Detect separator
+    const firstLines = text.split('\n').slice(0, 5).join('\n');
+    const sep = firstLines.includes(';') ? ';' : ',';
+
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length < 2) return [];
+
+    // Parse rows (handle quoted fields)
+    function splitRow(line) {
+        const result = [];
+        let current = '', inQuote = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') { inQuote = !inQuote; continue; }
+            if (ch === sep && !inQuote) { result.push(current.trim()); current = ''; continue; }
+            current += ch;
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    const header = splitRow(lines[0]).map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    const rows = lines.slice(1).map(splitRow);
+
+    // Try to detect format
+    const format = detectCSVFormat(header, rows, sep);
+    if (!format) return [];
+
+    const results = [];
+    for (const row of rows) {
+        if (row.length < 3) continue;
+        const dateStr = parseFlexDate(row[format.dateCol]);
+        const desc    = row[format.descCol] || '';
+        let rawVal;
+        if (format.valCol !== undefined) {
+            rawVal = parseFlexNumber(row[format.valCol]);
+        } else if (format.creditCol !== undefined && format.debitCol !== undefined) {
+            const cred = parseFlexNumber(row[format.creditCol]);
+            const deb  = parseFlexNumber(row[format.debitCol]);
+            rawVal = cred > 0 ? cred : -deb;
+        } else continue;
+
+        if (!dateStr || isNaN(rawVal) || rawVal === 0) continue;
+        if (!desc && Math.abs(rawVal) < 0.01) continue;
+
+        const valor = Math.abs(rawVal);
+        const tipo  = rawVal > 0 ? 'entrada' : 'saida';
+        const xfer  = isTransfer(desc, null);
+        const autoCat = autoCategorizeTx(desc);
+        const dup = isDuplicate(dateStr, desc, valor);
+        const defaultCat = tipo === 'entrada'
+            ? (autoCat || '⚙️ Outros')
+            : (autoCat || '🛒 Compras');
+
+        results.push({
+            date: dateStr, desc: cleanDesc(desc), rawDesc: desc, valor, tipo,
+            cat: defaultCat, selected: !xfer && !dup,
+            isTransfer: xfer, isDuplicate: dup, pagamento: 'debito'
+        });
+    }
+    return results;
+}
+
+function detectCSVFormat(header, rows, sep) {
+    // Try known bank formats by header
+    const h = header.join('|');
+
+    // Nubank: "date","category","title","amount" or Portuguese
+    if (h.includes('title') || h.includes('titulo')) {
+        const dateCol = header.findIndex(c => c.includes('dat'));
+        const descCol = header.findIndex(c => c.includes('title') || c.includes('titulo'));
+        const valCol  = header.findIndex(c => c.includes('amount') || c.includes('valor'));
+        if (dateCol >= 0 && descCol >= 0 && valCol >= 0) return { dateCol, descCol, valCol };
+    }
+
+    // Inter / Generic: look for "descricao", "valor", "data"
+    const dateCol = header.findIndex(c => c.includes('data') || c.includes('date') || c === 'dt');
+    const descCol = header.findIndex(c => c.includes('descri') || c.includes('histori') || c.includes('lancamento') || c.includes('memo') || c.includes('detail'));
+    const valCol  = header.findIndex(c => c.includes('valor') || c.includes('amount') || c.includes('quantia'));
+
+    // Separate credit/debit columns
+    const creditCol = header.findIndex(c => c.includes('credito') || c.includes('credit') || c.includes('entrada'));
+    const debitCol  = header.findIndex(c => c.includes('debito') || c.includes('debit') || c.includes('saida'));
+
+    if (dateCol >= 0 && descCol >= 0 && valCol >= 0) return { dateCol, descCol, valCol };
+    if (dateCol >= 0 && descCol >= 0 && creditCol >= 0 && debitCol >= 0) return { dateCol, descCol, creditCol, debitCol };
+
+    // Fallback: heuristic — assume date in col 0, desc in col 1, value in last numeric col
+    if (rows.length > 0 && rows[0].length >= 3) {
+        // Check if first row first col looks like a date
+        if (parseFlexDate(rows[0][0])) {
+            return { dateCol: 0, descCol: 1, valCol: rows[0].length - 1 };
+        }
+    }
+
+    return null;
+}
+
+function parseFlexDate(str) {
+    if (!str) return null;
+    str = str.trim().replace(/['"]/g, '');
+    // YYYY-MM-DD
+    let m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    // DD/MM/YYYY or DD-MM-YYYY
+    m = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    // DD/MM/YY
+    m = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{2})$/);
+    if (m) { const y = parseInt(m[3]) > 50 ? '19' + m[3] : '20' + m[3]; return `${y}-${m[2]}-${m[1]}`; }
+    return null;
+}
+
+function parseFlexNumber(str) {
+    if (!str) return NaN;
+    str = str.trim().replace(/['"]/g, '');
+    // Handle Brazilian format: 1.234,56 → 1234.56
+    if (/\d\.\d{3},\d{2}$/.test(str)) {
+        str = str.replace(/\./g, '').replace(',', '.');
+    } else if (/,\d{2}$/.test(str)) {
+        str = str.replace(',', '.');
+    }
+    // Handle negative with parentheses: (123.45)
+    if (/^\(/.test(str)) {
+        str = '-' + str.replace(/[()]/g, '');
+    }
+    return parseFloat(str);
+}
+
+// --- Modal logic ---
+function abrirImportExtrato() {
+    resetImport();
+    // Populate card select
+    const sel = $('importCardId');
+    sel.innerHTML = '<option value="">— Nenhum —</option>';
+    cards.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.text = c.nome; sel.add(o); });
+    $('importAccType').onchange = () => {
+        $('importCardField').style.display = $('importAccType').value === 'credito' ? '' : 'none';
+    };
+    $('importAccType').onchange();
+    $('ovImport').classList.add('open');
+}
+
+function closeImport() {
+    $('ovImport').classList.remove('open');
+}
+
+function resetImport() {
+    _importParsed = [];
+    $('importStep1').style.display = '';
+    $('importStep2').style.display = 'none';
+    $('importFooter').style.display = 'none';
+    $('importFileInput').value = '';
+}
+
+function handleImportDrop(e) {
+    const file = e.dataTransfer?.files?.[0];
+    if (file) processImportFile(file);
+}
+
+function handleImportFile(input) {
+    const file = input.files?.[0];
+    if (file) processImportFile(file);
+}
+
+function processImportFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const text = reader.result;
+        const ext = file.name.toLowerCase().split('.').pop();
+
+        let parsed;
+        if (ext === 'ofx' || ext === 'qfx') {
+            parsed = parseOFX(text);
+        } else {
+            parsed = parseCSV(text);
+        }
+
+        if (!parsed || !parsed.length) {
+            toast('⚠️ Nenhuma transação encontrada. Verifique o formato.', '#b45309');
+            return;
+        }
+
+        // Apply account type settings
+        const accType = $('importAccType').value;
+        const cardId  = $('importCardId').value;
+        if (accType === 'credito') {
+            parsed.forEach(p => {
+                p.pagamento = 'credito';
+                if (cardId) {
+                    p.cartaoId = parseInt(cardId);
+                    p.faturaData = calcFaturaData(parseInt(cardId), p.date);
+                }
+            });
+        }
+
+        _importParsed = parsed;
+        showImportReview();
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function showImportReview() {
+    $('importStep1').style.display = 'none';
+    $('importStep2').style.display = '';
+    $('importFooter').style.display = '';
+    renderImportStats();
+    renderImportTable();
+}
+
+function renderImportStats() {
+    const total    = _importParsed.length;
+    const xfers    = _importParsed.filter(p => p.isTransfer).length;
+    const dups     = _importParsed.filter(p => p.isDuplicate).length;
+    const selected = _importParsed.filter(p => p.selected).length;
+    const entradas = _importParsed.filter(p => p.selected && p.tipo === 'entrada').reduce((s, p) => s + p.valor, 0);
+    const saidas   = _importParsed.filter(p => p.selected && p.tipo === 'saida').reduce((s, p) => s + p.valor, 0);
+
+    $('importStats').innerHTML = `
+        <div class="import-stat blue"><span>Total</span><strong>${total}</strong></div>
+        <div class="import-stat green"><span>Entradas</span><strong>${fmt(entradas)}</strong></div>
+        <div class="import-stat red"><span>Saídas</span><strong>${fmt(saidas)}</strong></div>
+        <div class="import-stat gray"><span>Transferências</span><strong>${xfers}</strong></div>
+        <div class="import-stat gray"><span>Duplicados</span><strong>${dups}</strong></div>
+    `;
+    $('importCount').textContent = `${selected} de ${total} selecionados`;
+}
+
+function renderImportTable() {
+    const hideXfer = $('importHideXfer').checked;
+    const hideDup  = $('importHideDup').checked;
+
+    $('importTbody').innerHTML = _importParsed.map((p, idx) => {
+        if (hideXfer && p.isTransfer) return '';
+        if (hideDup && p.isDuplicate) return '';
+
+        const [y, m, d] = p.date.split('-');
+        const cor = p.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
+        const pre = p.tipo === 'entrada' ? '+' : '−';
+        const cls = p.isTransfer ? 'transfer' : (p.isDuplicate ? 'duplicate' : '');
+        const badge = p.isTransfer
+            ? '<span class="import-badge xfer">TRANSF</span>'
+            : (p.isDuplicate ? '<span class="import-badge dup">DUPLIC</span>' : '');
+
+        // Category options for the current tipo
+        const catOptions = (cats[p.tipo] || []).map(c =>
+            `<option value="${c}" ${p.cat === c ? 'selected' : ''}>${c}</option>`
+        ).join('');
+
+        return `<tr class="${cls}">
+            <td><input type="checkbox" ${p.selected ? 'checked' : ''} onchange="_importParsed[${idx}].selected=this.checked;renderImportStats()"></td>
+            <td style="white-space:nowrap;font-size:11px;color:var(--text-3)">${d}/${m}/${y}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.rawDesc}">${p.desc}${badge}</td>
+            <td style="font-weight:600;color:${cor};white-space:nowrap">${pre} ${fmt(p.valor)}</td>
+            <td><select onchange="_importParsed[${idx}].tipo=this.value;_importParsed[${idx}].cat=(cats[this.value]||[])[0]||'';renderImportTable()">
+                <option value="saida" ${p.tipo === 'saida' ? 'selected' : ''}>Gasto</option>
+                <option value="entrada" ${p.tipo === 'entrada' ? 'selected' : ''}>Ganho</option>
+                <option value="investimento" ${p.tipo === 'investimento' ? 'selected' : ''}>Invest.</option>
+            </select></td>
+            <td><select onchange="_importParsed[${idx}].cat=this.value">${catOptions}</select></td>
+            <td>${badge || '✓'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function toggleImportAll() {
+    const checked = $('importSelectAll').checked;
+    const hideXfer = $('importHideXfer').checked;
+    const hideDup  = $('importHideDup').checked;
+    _importParsed.forEach(p => {
+        if (hideXfer && p.isTransfer) return;
+        if (hideDup && p.isDuplicate) return;
+        p.selected = checked;
+    });
+    renderImportTable();
+    renderImportStats();
+}
+
+function confirmarImport() {
+    const toImport = _importParsed.filter(p => p.selected);
+    if (!toImport.length) return toast('⚠️ Nenhuma transação selecionada.', '#b45309');
+
+    pushUndo(tx, `Importação de ${toImport.length} transações`);
+
+    const base = Date.now();
+    toImport.forEach((p, i) => {
+        const entry = {
+            id: base + i,
+            desc: p.desc,
+            valor: p.valor,
+            data: p.date,
+            tipo: p.tipo,
+            cat: p.cat,
+            fixo: false,
+            pagamento: p.pagamento || (p.tipo === 'saida' ? 'debito' : null),
+        };
+        if (p.cartaoId)   entry.cartaoId   = p.cartaoId;
+        if (p.faturaData)  entry.faturaData  = p.faturaData;
+        tx.push(entry);
+    });
+
+    save(); atualizar();
+    closeImport();
+    toast(`✅ ${toImport.length} transações importadas!`, '#16a34a');
+}
+
 // ── BOOT — auth listener handles init() call above ────────────────────────────
+// ── BANK EXTRACT IMPORT ──────────────────────────────────────────────────────
+let _extParsed = []; // array of { checked, date, desc, valor, tipo, cat, flag, origDesc }
+
+const EXT_CAT_RULES = [
+    { kw: ['supermercado','mercado','atacadão','atacadao','carrefour','pão de açúcar','pao de acucar','extra hiper','condor','angeloni','bistek','fort atacadista','big bompreço'], cat: '🍔 Alimentação' },
+    { kw: ['uber trip','uber *','99 ','cabify','taxi','táxi','gasolina','combustível','combustivel','estacionamento','ipva','pedágio','pedagio','sem parar','conectcar','auto posto','shell','ipiranga','posto'], cat: '🚗 Transporte' },
+    { kw: ['netflix','spotify','disney','hbo','amazon prime','youtube premium','apple.com','google one','icloud','deezer','globoplay','paramount','crunchyroll','star+','twitch'], cat: '📱 Assinaturas' },
+    { kw: ['restaurante','burger','pizza','sushi','ifood','rappi','lanchonete','padaria','café','cafeteria','starbucks','subway','mcdonald','habib','outback','bar ','boteco','churrascaria','pizzaria'], cat: '🍽️ Restaurantes' },
+    { kw: ['farmácia','farmacia','drogaria','droga raia','drogasil','hospital','clínica','clinica','médico','medico','dentista','unimed','amil','sulamerica','hapvida','odonto','laboratorio','laboratório','saúde','saude'], cat: '💊 Saúde' },
+    { kw: ['aluguel','condomínio','condominio','iptu','energia','cemig','celesc','copel','cpfl','enel','água','agua','sanepar','compesa','gás','gas natural','comgas','internet','claro','vivo','tim','oi fibra'], cat: '🏠 Moradia' },
+    { kw: ['shopping','loja','amazon','mercado livre','mercadolivre','shopee','magalu','magazine luiza','americanas','casas bahia','renner','c&a','zara','shein','aliexpress','kabum','ponto frio'], cat: '🛒 Compras' },
+    { kw: ['cinema','teatro','show','ingresso','ingressos','bar ','balada','festa','parque','diversão','diversao','boliche','karaoke','sinuca','escape','lazer'], cat: '🎉 Lazer' },
+    { kw: ['salário','salario','pagamento','prolabore','pro-labore','folha','holerite','remuneração','remuneracao','freelance'], cat: '💰 Salário' },
+    { kw: ['dividendo','dividend','rendimento','juros','provento','jscp','jcp','yield'], cat: '💸 Dividendos' },
+    { kw: ['tesouro','cdb','lci','lca','fundo','debenture','renda fixa','poupança','poupanca'], cat: '🛡️ Renda Fixa' },
+    { kw: ['ação','ações','acao','acoes','b3 ','bolsa','etf','fii','fiis','btg','xp ','clear','rico','nuinvest','inter invest'], cat: '📈 Ações' },
+    { kw: ['bitcoin','btc','ethereum','eth','cripto','crypto','binance','mercado bitcoin','foxbit'], cat: '₿ Cripto' },
+    { kw: ['jogo','game','steam','playstation','psn','xbox','nintendo','riot','epic games','blizzard'], cat: '🎮 Jogos' },
+    { kw: ['roupa','vestuário','vestuario','calçado','calcado','tenis','sapato','havan','riachuelo','marisa','centauro','netshoes'], cat: '👗 Roupas' },
+];
+
+const EXT_TRANSFER_KW = [
+    'transferencia entre contas','transf entre contas','movimentacao interna','movimentação interna',
+    'aplicação automática','aplicacao automatica','resgate automático','resgate automatico',
+    'resgate aplicação','resgate aplicacao','aplicação','aplicacao','aporte invest',
+    'pagamento de fatura','pgto fatura','pagto cartao','pag cartao','pag fatura',
+    'tarifa','iof','anuidade','juros mora','multa atraso',
+    'saldo anterior','saldo do dia',
+];
+
+const EXT_TRANSFER_LIKELY = [
+    'pix enviado','pix recebido','ted enviado','ted recebido','doc enviado','doc recebido',
+    'transf','transferência','transferencia',
+];
+
+function _extAutoCategory(desc) {
+    const low = desc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const rule of EXT_CAT_RULES) {
+        for (const kw of rule.kw) {
+            const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (low.includes(kwNorm)) return rule.cat;
+        }
+    }
+    return null;
+}
+
+function _extDetectTransfer(desc) {
+    const low = desc.toLowerCase();
+    for (const kw of EXT_TRANSFER_KW) {
+        if (low.includes(kw)) return 'transfer'; // hard skip
+    }
+    for (const kw of EXT_TRANSFER_LIKELY) {
+        if (low.includes(kw)) return 'maybe'; // flag but still checkable
+    }
+    return null;
+}
+
+function _extIsDuplicate(date, valor, desc) {
+    const low = desc.toLowerCase().slice(0, 20);
+    return tx.some(t => {
+        if (t.data !== date) return false;
+        if (Math.abs(t.valor - Math.abs(valor)) > 0.02) return false;
+        if (t.desc.toLowerCase().slice(0, 20) === low) return true;
+        // fuzzy: same date + same amount is suspicious
+        return Math.abs(t.valor - Math.abs(valor)) < 0.01;
+    });
+}
+
+// ── CSV PARSER ──────────────────────────────────────────────────
+function _extParseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return null;
+
+    // Detect separator
+    const sep = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ';' : ',';
+
+    function splitLine(line) {
+        const result = [];
+        let current = '', inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') { inQuotes = !inQuotes; continue; }
+            if (ch === sep && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+            current += ch;
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    const header = splitLine(lines[0]).map(h => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '').trim());
+    const rows = lines.slice(1).map(l => splitLine(l)).filter(r => r.length >= 2);
+
+    // Auto-detect columns by header names
+    const dateAliases  = ['data','date','data lancamento','data transacao','data da transacao','data do lancamento','data compra'];
+    const descAliases  = ['descricao','description','titulo','title','historico','lancamento','memo','nome','estabelecimento'];
+    const valorAliases = ['valor','amount','value','quantia','preco','montante'];
+
+    let iDate = -1, iDesc = -1, iValor = -1;
+    header.forEach((h, i) => {
+        if (iDate  === -1 && dateAliases.some(a => h.includes(a)))  iDate  = i;
+        if (iDesc  === -1 && descAliases.some(a => h.includes(a)))  iDesc  = i;
+        if (iValor === -1 && valorAliases.some(a => h.includes(a))) iValor = i;
+    });
+
+    // Nubank CSV fallback: "Data","Valor","Identificador","Descrição" or "date","title","amount"
+    if (iDate === -1 || iDesc === -1 || iValor === -1) {
+        // Try positional for Nubank format
+        if (header.length >= 3) {
+            // Nubank card: date, category, title, amount
+            if (header.length >= 4 && (header[0].includes('date') || header[0].includes('data'))) {
+                iDate = 0; iDesc = 2; iValor = 3;
+            } else {
+                iDate = 0; iDesc = 1; iValor = 2;
+            }
+        }
+    }
+
+    if (iDate === -1 || iValor === -1) return null;
+    if (iDesc === -1) iDesc = header.findIndex((h, i) => i !== iDate && i !== iValor); // fallback
+
+    const results = [];
+    for (const row of rows) {
+        if (row.length <= Math.max(iDate, iDesc, iValor)) continue;
+        const rawDate  = row[iDate];
+        const rawDesc  = row[iDesc] || '';
+        const rawValor = row[iValor];
+
+        // Parse date (DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY)
+        let date = _extParseDate(rawDate);
+        if (!date) continue;
+
+        // Parse value
+        let valor = _extParseValor(rawValor);
+        if (valor === null || valor === 0) continue;
+
+        results.push({ date, desc: rawDesc.trim(), valor });
+    }
+    return results.length ? results : null;
+}
+
+function _extParseDate(raw) {
+    if (!raw) return null;
+    raw = raw.trim();
+    // YYYY-MM-DD
+    let m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    // DD/MM/YYYY or DD-MM-YYYY
+    m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) {
+        const day = m[1].padStart(2, '0'), mon = m[2].padStart(2, '0');
+        return `${m[3]}-${mon}-${day}`;
+    }
+    // MM/DD/YYYY fallback (unlikely for BR but just in case)
+    return null;
+}
+
+function _extParseValor(raw) {
+    if (!raw || typeof raw !== 'string') {
+        if (typeof raw === 'number') return raw;
+        return null;
+    }
+    raw = raw.trim().replace(/[R$\s]/g, '');
+    // Handle BR format: 1.234,56 → 1234.56
+    if (raw.includes(',') && raw.includes('.')) {
+        // If comma is after the last dot, it's BR format
+        if (raw.lastIndexOf(',') > raw.lastIndexOf('.')) {
+            raw = raw.replace(/\./g, '').replace(',', '.');
+        } else {
+            raw = raw.replace(/,/g, '');
+        }
+    } else if (raw.includes(',') && !raw.includes('.')) {
+        raw = raw.replace(',', '.');
+    }
+    const v = parseFloat(raw);
+    return isNaN(v) ? null : v;
+}
+
+// ── OFX PARSER ──────────────────────────────────────────────────
+function _extParseOFX(text) {
+    // OFX can be SGML (not well-formed XML), so regex parse
+    const transactions = [];
+    const stmtTrnRegex = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi;
+    let match;
+    while ((match = stmtTrnRegex.exec(text)) !== null) {
+        const block = match[1];
+        const getField = (name) => {
+            const m2 = block.match(new RegExp('<' + name + '>([^<\\n]+)', 'i'));
+            return m2 ? m2[1].trim() : null;
+        };
+        const rawDate  = getField('DTPOSTED');
+        const rawAmt   = getField('TRNAMT');
+        const rawMemo  = getField('MEMO') || getField('NAME') || '';
+        const rawType  = getField('TRNTYPE');
+
+        if (!rawDate || !rawAmt) continue;
+
+        // OFX date: YYYYMMDD or YYYYMMDDHHMMSS
+        const date = rawDate.length >= 8
+            ? `${rawDate.slice(0,4)}-${rawDate.slice(4,6)}-${rawDate.slice(6,8)}`
+            : null;
+        if (!date) continue;
+
+        const valor = parseFloat(rawAmt.replace(',', '.'));
+        if (isNaN(valor) || valor === 0) continue;
+
+        transactions.push({ date, desc: rawMemo.trim(), valor });
+    }
+    return transactions.length ? transactions : null;
+}
+
+// ── MAIN IMPORT LOGIC ───────────────────────────────────────────
+function abrirExtrato() {
+    $('extStep1').style.display = '';
+    $('extStep2').style.display = 'none';
+    $('extBackBtn').style.display = 'none';
+    $('extImportBtn').style.display = 'none';
+    $('extFileInput').value = '';
+    $('extAccType').value = 'debito';
+    // Populate card selector
+    const sel = $('extCardId');
+    sel.innerHTML = '<option value="">— Nenhum —</option>';
+    cards.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.text = c.nome; sel.add(o); });
+    extOnAccTypeChange();
+    _extParsed = [];
+    $('ovExtrato').classList.add('open');
+}
+
+function extOnAccTypeChange() {
+    const isCredit = $('extAccType').value === 'credito';
+    $('extCardField').style.display = isCredit ? '' : 'none';
+}
+
+function closeExtrato() {
+    $('ovExtrato').classList.remove('open');
+    _extParsed = [];
+}
+
+// Drag and drop
+(function() {
+    const drop = document.getElementById('extDrop');
+    if (!drop) return;
+    ['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop', ev => {
+        if (ev.dataTransfer.files.length) extHandleFile(ev.dataTransfer.files[0]);
+    });
+})();
+
+function extHandleFile(file) {
+    if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    const reader = new FileReader();
+    reader.onload = () => {
+        const text = reader.result;
+        let raw = null;
+
+        if (ext === 'ofx' || ext === 'qfx') {
+            raw = _extParseOFX(text);
+        } else {
+            raw = _extParseCSV(text);
+        }
+
+        if (!raw || !raw.length) {
+            toast('⚠️ Não foi possível ler o extrato. Verifique o formato.', '#b45309');
+            return;
+        }
+
+        // Process each transaction
+        _extParsed = raw.map((r, i) => {
+            const absVal = Math.abs(r.valor);
+            const isIncome = r.valor > 0;
+            const transferFlag = _extDetectTransfer(r.desc);
+            const isDup = _extIsDuplicate(r.date, r.valor, r.desc);
+            const autoCat = _extAutoCategory(r.desc);
+
+            let tipo = isIncome ? 'entrada' : 'saida';
+            let cat = autoCat || (isIncome ? (cats.entrada?.[0] || '⚙️ Outros') : (cats.saida?.[0] || '🛒 Compras'));
+
+            // Default: check new non-transfers, uncheck transfers & duplicates
+            let checked = true;
+            let flag = 'new';
+            if (transferFlag === 'transfer') { checked = false; flag = 'transfer'; }
+            else if (transferFlag === 'maybe') { checked = false; flag = 'maybe_transfer'; }
+            if (isDup) { checked = false; flag = 'dup'; }
+
+            return { idx: i, checked, date: r.date, desc: r.desc, valor: absVal, tipo, cat, flag, origDesc: r.desc };
+        });
+
+        _extRenderPreview();
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function _extRenderPreview() {
+    $('extStep1').style.display = 'none';
+    $('extStep2').style.display = '';
+    $('extBackBtn').style.display = '';
+    $('extImportBtn').style.display = '';
+
+    // Stats
+    const total    = _extParsed.length;
+    const newCount = _extParsed.filter(r => r.flag === 'new').length;
+    const dupCount = _extParsed.filter(r => r.flag === 'dup').length;
+    const trCount  = _extParsed.filter(r => r.flag === 'transfer' || r.flag === 'maybe_transfer').length;
+    const selCount = _extParsed.filter(r => r.checked).length;
+
+    $('extStats').innerHTML = `
+        <div class="ext-stat green"><strong>${total}</strong> transações encontradas</div>
+        <div class="ext-stat"><strong>${newCount}</strong> novas</div>
+        ${dupCount ? `<div class="ext-stat amber"><strong>${dupCount}</strong> possíveis duplicatas</div>` : ''}
+        ${trCount ? `<div class="ext-stat gray"><strong>${trCount}</strong> transferências</div>` : ''}
+    `;
+
+    // Build table
+    const tbody = $('extTbody');
+    tbody.innerHTML = _extParsed.map((r, i) => {
+        const [y, m, d] = r.date.split('-');
+        const rowClass = (!r.checked && (r.flag === 'transfer' || r.flag === 'dup')) ? 'ext-skip' : (r.flag === 'dup' ? 'ext-dup' : '');
+        const cor = r.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
+
+        // Type options
+        const tipoOpts = [
+            `<option value="saida" ${r.tipo === 'saida' ? 'selected' : ''}>Gasto</option>`,
+            `<option value="entrada" ${r.tipo === 'entrada' ? 'selected' : ''}>Ganho</option>`,
+            `<option value="investimento" ${r.tipo === 'investimento' ? 'selected' : ''}>Invest.</option>`,
+        ].join('');
+
+        // Category options
+        const catList = cats[r.tipo] || cats.saida || [];
+        let catOpts = catList.map(c => `<option value="${c}" ${r.cat === c ? 'selected' : ''}>${c}</option>`).join('');
+        // If auto-cat not in list, add it
+        if (r.cat && !catList.includes(r.cat)) {
+            catOpts = `<option value="${r.cat}" selected>${r.cat}</option>` + catOpts;
+        }
+
+        // Flag badge
+        let flagBadge = '';
+        if (r.flag === 'transfer') flagBadge = '<span class="ext-badge transf">TRANSF</span>';
+        else if (r.flag === 'maybe_transfer') flagBadge = '<span class="ext-badge transf">PIX/TED</span>';
+        else if (r.flag === 'dup') flagBadge = '<span class="ext-badge dup">DUPLICATA?</span>';
+        else flagBadge = '<span class="ext-badge new">NOVO</span>';
+
+        return `<tr class="${rowClass}" id="extRow-${i}">
+            <td><input type="checkbox" ${r.checked ? 'checked' : ''} onchange="_extToggle(${i},this.checked)"></td>
+            <td style="white-space:nowrap;font-size:11px;color:var(--text-3)">${d}/${m}/${y}</td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.desc.replace(/"/g,'&quot;')}">${r.desc}</td>
+            <td style="text-align:right;font-weight:600;color:${cor};white-space:nowrap">${r.tipo === 'entrada' ? '+' : '−'} ${fmt(r.valor)}</td>
+            <td><select onchange="_extChangeType(${i},this.value)">${tipoOpts}</select></td>
+            <td><select onchange="_extChangeCat(${i},this.value)" id="extCat-${i}">${catOpts}</select></td>
+            <td>${flagBadge}</td>
+        </tr>`;
+    }).join('');
+
+    _extUpdateSelectedCount();
+}
+
+function _extToggle(idx, checked) {
+    _extParsed[idx].checked = checked;
+    const row = document.getElementById('extRow-' + idx);
+    if (row) row.className = !checked ? 'ext-skip' : (_extParsed[idx].flag === 'dup' ? 'ext-dup' : '');
+    _extUpdateSelectedCount();
+}
+
+function _extChangeType(idx, tipo) {
+    _extParsed[idx].tipo = tipo;
+    // Update category dropdown
+    const catList = cats[tipo] || [];
+    const sel = document.getElementById('extCat-' + idx);
+    if (sel) {
+        const prevCat = _extParsed[idx].cat;
+        sel.innerHTML = catList.map(c => `<option value="${c}" ${c === prevCat ? 'selected' : ''}>${c}</option>`).join('');
+        if (catList.length) _extParsed[idx].cat = sel.value;
+    }
+}
+
+function _extChangeCat(idx, cat) {
+    _extParsed[idx].cat = cat;
+}
+
+function _extUpdateSelectedCount() {
+    const count = _extParsed.filter(r => r.checked).length;
+    $('extSelectedCount').textContent = `${count} selecionado${count !== 1 ? 's' : ''}`;
+    $('extImportBtn').disabled = count === 0;
+    $('extImportBtn').textContent = `Importar ${count} Lançamento${count !== 1 ? 's' : ''}`;
+}
+
+function extSelectAll(val) {
+    _extParsed.forEach((r, i) => {
+        r.checked = val;
+        const cb = document.querySelector(`#extRow-${i} input[type="checkbox"]`);
+        if (cb) cb.checked = val;
+        const row = document.getElementById('extRow-' + i);
+        if (row) row.className = !val ? 'ext-skip' : (r.flag === 'dup' ? 'ext-dup' : '');
+    });
+    $('extCheckAll').checked = val;
+    _extUpdateSelectedCount();
+}
+
+function extSelectNew() {
+    _extParsed.forEach((r, i) => {
+        const isNew = r.flag === 'new';
+        r.checked = isNew;
+        const cb = document.querySelector(`#extRow-${i} input[type="checkbox"]`);
+        if (cb) cb.checked = isNew;
+        const row = document.getElementById('extRow-' + i);
+        if (row) row.className = !isNew ? 'ext-skip' : '';
+    });
+    $('extCheckAll').checked = false;
+    _extUpdateSelectedCount();
+}
+
+function extToggleAll(checked) {
+    extSelectAll(checked);
+}
+
+function extGoBack() {
+    $('extStep1').style.display = '';
+    $('extStep2').style.display = 'none';
+    $('extBackBtn').style.display = 'none';
+    $('extImportBtn').style.display = 'none';
+    _extParsed = [];
+}
+
+function extConfirmImport() {
+    const toImport = _extParsed.filter(r => r.checked);
+    if (!toImport.length) return;
+
+    const isCredit = $('extAccType').value === 'credito';
+    const cardId   = isCredit ? $('extCardId').value : null;
+
+    pushUndo(tx, `Importação de extrato (${toImport.length} lançamentos)`);
+
+    const base = Date.now();
+    toImport.forEach((r, i) => {
+        const entry = {
+            id: base + i,
+            desc: r.desc,
+            valor: r.valor,
+            data: r.date,
+            tipo: r.tipo,
+            cat: r.cat,
+            fixo: false,
+            pagamento: isCredit ? 'credito' : (r.tipo === 'saida' ? 'debito' : null),
+            cartaoId: cardId ? parseInt(cardId) : null,
+            faturaData: (isCredit && cardId) ? calcFaturaData(parseInt(cardId), r.date) : null,
+        };
+        tx.push(entry);
+    });
+
+    save();
+    atualizar();
+    if (typeof renderGoals === 'function') renderGoals();
+    closeExtrato();
+    toast(`✅ ${toImport.length} lançamento${toImport.length > 1 ? 's' : ''} importado${toImport.length > 1 ? 's' : ''}!`, '#16a34a');
+}
+
 // If Firebase is slow to respond, show login screen by default
 $('loginScreen').classList.remove('hidden');
 </script>
