@@ -990,7 +990,6 @@
                 </div>
             </div>
         </div>
-        </div>
         <div class="history-box">
             <div class="history-header">
                 <div class="tabs">
@@ -2070,7 +2069,12 @@ function navTo(view, btn) {
     if (btn) btn.classList.add('active');
 
     const isDash = view === 'dashboard';
-    $('view-dashboard').style.display = isDash ? (IS_MOBILE ? 'flex' : 'grid') : 'none';
+    const dashEl = $('view-dashboard');
+    dashEl.style.display = isDash ? (IS_MOBILE ? 'flex' : 'grid') : 'none';
+    dashEl.style.visibility = isDash ? '' : 'hidden';
+    dashEl.style.position = isDash ? '' : 'absolute';
+    dashEl.style.pointerEvents = isDash ? '' : 'none';
+
     ['anual','mensal','metas','budget'].forEach(v => $('view-' + v).classList.toggle('active', v === view));
 
     const hideMes = view === 'anual' || view === 'metas' || view === 'budget';
