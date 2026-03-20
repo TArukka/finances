@@ -607,6 +607,15 @@
         .mob-form-save:active { opacity: .85; }
 
         body.mobile #toast { bottom: 80px; }
+        /* FIXO PAID */
+        .fixo-paid-btn { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); background: none; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; color: var(--text-3); }
+        .fixo-paid-btn:hover { border-color: var(--success); color: var(--success); }
+        .fixo-paid-btn.paid { border-color: var(--success); background: var(--success); color: white; }
+        tr.fixo-is-paid > td { opacity: .45; }
+        tr.fixo-is-paid > td:first-child { opacity: 1; }
+        tr.fixo-is-paid .fixo-amount { text-decoration: line-through; }
+        .fixo-paid-count { font-size: 10px; font-weight: 600; color: var(--text-3); margin-left: 6px; }
+
         /* BUDGET */
         .budget-item { padding: 14px 16px; border-bottom: 1px solid var(--border-light); }
         .budget-item:last-child { border-bottom: none; }
@@ -994,7 +1003,7 @@
             </div>
             <div class="fixos-table-section open" id="fixosTableSection" style="display:none">
                 <div class="fixos-table-header" onclick="document.getElementById('fixosTableSection').classList.toggle('open')">
-                    <div class="fixos-table-title">📌 Gastos Fixos <span class="fixo-count-badge" id="fixoCountBadge"></span></div>
+                    <div class="fixos-table-title">📌 Gastos Fixos <span class="fixo-count-badge" id="fixoCountBadge"></span><span class="fixo-paid-count" id="fixoPaidCount"></span></div>
                     <div class="fixos-table-total" id="fixosTableTotal"></div>
                     <div class="fixos-table-arrow">▼</div>
                 </div>
@@ -2629,27 +2638,28 @@ function renderFixosTable() {
     section.style.display = '';
 
     const total = fixos.reduce((s, t) => s + t.valor, 0);
+    const paidCount = fixos.filter(t => t.pago).length;
     $('fixoCountBadge').textContent = fixos.length;
     $('fixosTableTotal').textContent = fmt(total);
+    const paidEl = $('fixoPaidCount');
+    if (paidEl) paidEl.textContent = paidCount > 0 ? `${paidCount}/${fixos.length} pagos` : '';
 
     const body = $('fixosTableBody');
     const sorted2 = [...fixos].sort((a, b) => parseInt(a.data.split('-')[2]) - parseInt(b.data.split('-')[2]));
 
     if (IS_MOBILE) {
         body.innerHTML = sorted2.map(t => {
-            const day = parseInt(t.data.split('-')[2]);
             const cor = t.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
             const pre = t.tipo === 'entrada' ? '+' : '−';
             const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
-            return `<div class="mob-fixo-item">
-                <input type="number" class="mob-fixo-day-input" min="1" max="28" value="${day}"
-                    onchange="updateFixoDay(${t.id}, this.value)">
+            return `<div class="mob-fixo-item" style="${t.pago?'opacity:.5':''}">
+                <button class="fixo-paid-btn ${t.pago?'paid':''}" onclick="toggleFixoPago(${t.id})">${t.pago?'✓':'○'}</button>
                 <div style="flex:1;min-width:0" onclick="openMobEdit(${t.id})">
-                    <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.desc} ${payBadge}</div>
+                    <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${t.pago?'text-decoration:line-through':''}">${t.desc} ${payBadge}</div>
                     <div style="font-size:11px;color:var(--text-3)">${t.cat}</div>
                 </div>
                 <div style="text-align:right">
-                    <div style="font-weight:700;color:${cor};font-size:13px;white-space:nowrap">${pre} ${fmt(t.valor)}</div>
+                    <div style="font-weight:700;color:${cor};font-size:13px;white-space:nowrap;${t.pago?'text-decoration:line-through':''}">${pre} ${fmt(t.valor)}</div>
                 </div>
             </div>`;
         }).join('');
@@ -2672,18 +2682,21 @@ function renderFixosTable() {
         const pagOpts = ['debito','credito'].map(v =>
             `<option value="${v}" ${(t.pagamento||'debito')===v?'selected':''}>${v==='debito'?'Débito':'Crédito'}</option>`).join('');
 
-        return `<tr id="ftr-${t.id}" class="${isEd?'fixo-editing':''}">
+        return `<tr id="ftr-${t.id}" class="${isEd?'fixo-editing':''}${t.pago?' fixo-is-paid':''}">
+            <td style="width:36px;padding-right:0">
+                <button class="fixo-paid-btn ${t.pago?'paid':''}" title="${t.pago?'Marcar como não pago':'Marcar como pago'}" onclick="toggleFixoPago(${t.id})" style="margin:auto">${t.pago?'✓':'○'}</button>
+            </td>
             <td style="width:52px;font-size:12px;color:var(--text-3);font-weight:500;white-space:nowrap">${dateLabel}</td>
             <td><span style="font-weight:500">${t.desc}</span> ${payBadge}
                 <div style="font-size:11px;color:var(--text-3)">${t.cat}</div></td>
-            <td style="font-weight:600;color:${cor};white-space:nowrap;text-align:right">${pre} ${fmt(t.valor)}</td>
+            <td class="fixo-amount" style="font-weight:600;color:${cor};white-space:nowrap;text-align:right">${pre} ${fmt(t.valor)}</td>
             <td style="width:60px"><div class="btn-row">
                 <button class="icon-btn" title="Editar" onclick="openFixoEdit(${t.id})">✏️</button>
                 <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
             </div></td>
         </tr>
         <tr id="fie-${t.id}" class="fixo-ie ${isEd?'open':''}">
-            <td colspan="4">
+            <td colspan="5">
                 <div class="fixo-ie-inner" style="grid-template-columns:60px 1fr 1fr 1fr 1fr auto">
                     <div class="ie-field"><label>Dia</label><input id="fie-day-${t.id}" value="${parseInt(td)}" type="number" min="1" max="28" style="text-align:center"></div>
                     <div class="ie-field"><label>Descrição</label><input id="fie-desc-${t.id}" value="${t.desc.replace(/"/g,'&quot;')}" type="text"></div>
@@ -2772,6 +2785,28 @@ function saveFixoEdit(id) {
     closeFixoEdit();
     save(); atualizar();
     toast('✓ Fixo atualizado!');
+}
+
+function toggleFixoPago(id) {
+    const t = tx.find(x => x.id === id);
+    if (!t) return;
+    t.pago = !t.pago;
+    save();
+    // Update DOM without full re-render for snappiness
+    const row = document.getElementById('ftr-' + id);
+    const btn = row?.querySelector('.fixo-paid-btn');
+    if (btn) {
+        btn.classList.toggle('paid', t.pago);
+        btn.textContent = t.pago ? '✓' : '○';
+        btn.title = t.pago ? 'Marcar como não pago' : 'Marcar como pago';
+    }
+    if (row) row.classList.toggle('fixo-is-paid', t.pago);
+    // Update paid count in header
+    const { m, a } = filtro();
+    const fixos = txMes(m, a).filter(x => x.fixo);
+    const paidCount = fixos.filter(x => x.pago).length;
+    const paidEl = $('fixoPaidCount');
+    if (paidEl) paidEl.textContent = paidCount > 0 ? `${paidCount}/${fixos.length} pagos` : '';
 }
 
 function updateFixoDay(id, newDay) {
