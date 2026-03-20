@@ -124,25 +124,25 @@
         .fixos-table-section.open .fixos-table-arrow { transform: rotate(180deg); }
         .fixos-table-body { display: none; }
         .fixos-table-section.open .fixos-table-body { display: block; }
-        .fixo-row { display: grid; grid-template-columns: 50px 1fr 100px 100px auto; align-items: center; gap: 8px; padding: 9px 16px; border-bottom: 1px solid var(--border-light); font-size: 13px; }
-        .fixo-row:last-child { border-bottom: none; }
-        .fixo-row:hover { background: var(--bg); }
-        .fixo-day-input { width: 44px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; text-align: center; color: var(--text); background: var(--surface); outline: none; }
+        .fixos-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .fixos-table td { padding: 9px 14px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+        .fixos-table tr:last-child td { border-bottom: none; }
+        .fixos-table tr:hover td { background: var(--bg); }
+        .fixo-day-input { width: 38px; padding: 3px 4px; border: 1px solid var(--border); border-radius: 5px; font-size: 12px; font-family: inherit; text-align: center; color: var(--text); background: var(--surface); outline: none; }
         .fixo-day-input:focus { border-color: var(--accent); }
-        .fixo-row-desc { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .fixo-row-cat { font-size: 11px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .fixo-row-val { font-weight: 600; color: var(--danger); text-align: right; white-space: nowrap; }
         .fixo-count-badge { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+        /* Fixo inline edit */
+        .fixo-ie { display: none; background: #fffbeb; }
+        .fixo-ie.open { display: table-row; }
+        .fixo-ie td { padding: 12px 14px; border-bottom: 1px solid #fde68a; }
+        .fixo-ie-inner { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; }
+        tr.fixo-editing > td { background: #fffbeb !important; }
+        @media (max-width: 900px) { .fixo-ie-inner { grid-template-columns: 1fr 1fr; } }
 
         /* Mobile fixos */
-        .mob-fixos-section { margin: 8px 0; border: 1px solid #fde68a; border-radius: 10px; overflow: hidden; background: #fffbeb; }
-        .mob-fixos-header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; cursor: pointer; }
-        .mob-fixos-body { display: none; border-top: 1px solid #fde68a; }
-        .mob-fixos-section.open .mob-fixos-body { display: block; }
-        .mob-fixo-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #fef3c7; }
+        .mob-fixo-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-light); }
         .mob-fixo-item:last-child { border-bottom: none; }
-        .mob-fixo-day { width: 38px; text-align: center; }
-        .mob-fixo-day input { width: 36px; padding: 4px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; text-align: center; font-family: inherit; }
+        .mob-fixo-day-input { width: 36px; padding: 4px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; text-align: center; font-family: inherit; background: var(--surface); outline: none; flex-shrink: 0; }
         .fatura-card { border: 1px solid var(--border); border-radius: 9px; margin-bottom: 8px; overflow: hidden; background: var(--surface); }
         .fatura-card-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; user-select: none; transition: background .1s; }
         .fatura-card-header:hover { background: var(--bg); }
@@ -2335,6 +2335,8 @@ function toggleFaturaCard(idx) {
 }
 
 // ── FIXOS TABLE ──────────────────────────────────────────────────────────────
+let _openFixoEditId = null;
+
 function renderFixosTable() {
     const { m, a } = filtro();
     const fixos = txMes(m, a).filter(t => t.fixo);
@@ -2351,61 +2353,122 @@ function renderFixosTable() {
     $('fixosTableTotal').textContent = fmt(total);
 
     const body = $('fixosTableBody');
+    const sorted2 = [...fixos].sort((a, b) => parseInt(a.data.split('-')[2]) - parseInt(b.data.split('-')[2]));
 
     if (IS_MOBILE) {
-        body.innerHTML = fixos.sort((a, b) => {
-            const da = parseInt(a.data.split('-')[2]);
-            const db = parseInt(b.data.split('-')[2]);
-            return da - db;
-        }).map(t => {
-            const [y, mo, d] = t.data.split('-');
+        body.innerHTML = sorted2.map(t => {
+            const day = parseInt(t.data.split('-')[2]);
             const cor = t.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
             const pre = t.tipo === 'entrada' ? '+' : '−';
             const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
             return `<div class="mob-fixo-item">
-                <div class="mob-fixo-day">
-                    <input type="number" min="1" max="28" value="${parseInt(d)}"
-                        onchange="updateFixoDay(${t.id}, this.value)" title="Dia do mês">
+                <input type="number" class="mob-fixo-day-input" min="1" max="28" value="${day}"
+                    onchange="updateFixoDay(${t.id}, this.value)">
+                <div style="flex:1;min-width:0" onclick="openMobEdit(${t.id})">
+                    <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.desc} ${payBadge}</div>
+                    <div style="font-size:11px;color:var(--text-3)">${t.cat}</div>
                 </div>
-                <div style="flex:1;min-width:0">
-                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc}</div>
-                    <div style="font-size:11px;color:var(--text-3)">${t.cat} ${payBadge}</div>
-                </div>
-                <div style="font-weight:700;color:${cor};font-size:14px;white-space:nowrap">${pre} ${fmt(t.valor)}</div>
-                <div class="btn-row">
-                    <button class="icon-btn" title="Editar" onclick="openMobEdit(${t.id})">✏️</button>
-                    <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
+                <div style="text-align:right">
+                    <div style="font-weight:700;color:${cor};font-size:13px;white-space:nowrap">${pre} ${fmt(t.valor)}</div>
                 </div>
             </div>`;
         }).join('');
-    } else {
-        body.innerHTML = fixos.sort((a, b) => {
-            const da = parseInt(a.data.split('-')[2]);
-            const db = parseInt(b.data.split('-')[2]);
-            return da - db;
-        }).map(t => {
-            const [y, mo, d] = t.data.split('-');
-            const cor = t.tipo === 'entrada' ? 'var(--success)' : 'var(--danger)';
-            const pre = t.tipo === 'entrada' ? '+' : '−';
-            const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
-            return `<div class="fixo-row">
-                <div>
-                    <input type="number" class="fixo-day-input" min="1" max="28" value="${parseInt(d)}"
-                        onchange="updateFixoDay(${t.id}, this.value)" title="Dia do mês">
-                </div>
-                <div>
-                    <div class="fixo-row-desc">${t.desc} ${payBadge}</div>
-                    <div class="fixo-row-cat">${t.cat}</div>
-                </div>
-                <div class="fixo-row-val" style="color:${cor}">${pre} ${fmt(t.valor)}</div>
-                <div style="font-size:11px;color:var(--text-3)">dia ${parseInt(d)}/${String(m+1).padStart(2,'0')}</div>
-                <div class="btn-row">
-                    <button class="icon-btn" title="Editar" onclick="openInlineEdit(${t.id})">✏️</button>
-                    <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
-                </div>
-            </div>`;
-        }).join('');
+        return;
     }
+
+    // Desktop: proper table with inline edit
+    body.innerHTML = `<table class="fixos-table">${sorted2.map(t => {
+        const day = parseInt(t.data.split('-')[2]);
+        const cor = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
+        const pre = t.tipo === 'entrada' ? '+' : '−';
+        const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
+        const isEd = _openFixoEditId === t.id;
+
+        const tipoOpts = ['saida','entrada','investimento'].map(v =>
+            `<option value="${v}" ${t.tipo===v?'selected':''}>${v==='saida'?'Gasto':v==='entrada'?'Ganho':'Invest.'}</option>`).join('');
+        const catOpts = (cats[t.tipo]||[]).map(c =>
+            `<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('');
+        const pagOpts = ['debito','credito'].map(v =>
+            `<option value="${v}" ${(t.pagamento||'debito')===v?'selected':''}>${v==='debito'?'Débito':'Crédito'}</option>`).join('');
+
+        return `<tr id="ftr-${t.id}" class="${isEd?'fixo-editing':''}">
+            <td style="width:50px">
+                <input type="number" class="fixo-day-input" min="1" max="28" value="${day}"
+                    onchange="updateFixoDay(${t.id}, this.value)">
+            </td>
+            <td><span style="font-weight:500">${t.desc}</span> ${payBadge}
+                <div style="font-size:11px;color:var(--text-3)">${t.cat}</div></td>
+            <td style="font-weight:600;color:${cor};white-space:nowrap;text-align:right">${pre} ${fmt(t.valor)}</td>
+            <td style="width:60px"><div class="btn-row">
+                <button class="icon-btn" title="Editar" onclick="openFixoEdit(${t.id})">✏️</button>
+                <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
+            </div></td>
+        </tr>
+        <tr id="fie-${t.id}" class="fixo-ie ${isEd?'open':''}">
+            <td colspan="4">
+                <div class="fixo-ie-inner">
+                    <div class="ie-field"><label>Descrição</label><input id="fie-desc-${t.id}" value="${t.desc.replace(/"/g,'&quot;')}" type="text"></div>
+                    <div class="ie-field"><label>Valor (R$)</label><input id="fie-valor-${t.id}" value="${t.valor.toFixed(2).replace('.',',')}" type="text"></div>
+                    <div class="ie-field"><label>Tipo</label><select id="fie-tipo-${t.id}" onchange="fieUpdateCats(${t.id})">${tipoOpts}</select></div>
+                    <div class="ie-field"><label>Categoria</label><select id="fie-cat-${t.id}">${catOpts}</select></div>
+                    <div class="ie-actions">
+                        <button class="ie-save" onclick="saveFixoEdit(${t.id})">✓ Salvar</button>
+                        <button class="ie-cancel" onclick="closeFixoEdit()">✕</button>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;margin-top:8px;align-items:center">
+                    <div><label class="ie-check">Pagamento:&nbsp;
+                        <select id="fie-pag-${t.id}" style="padding:2px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:inherit">${pagOpts}</select>
+                    </label></div>
+                    <label class="ie-check"><input type="checkbox" id="fie-fixo-${t.id}" checked> Gasto fixo mensal</label>
+                </div>
+            </td>
+        </tr>`;
+    }).join('')}</table>`;
+}
+
+function openFixoEdit(id) {
+    if (_openFixoEditId === id) { closeFixoEdit(); return; }
+    closeFixoEdit();
+    _openFixoEditId = id;
+    const el = document.getElementById('fie-' + id);
+    const tr = document.getElementById('ftr-' + id);
+    if (el) el.classList.add('open');
+    if (tr) tr.classList.add('fixo-editing');
+    const inp = document.getElementById('fie-desc-' + id);
+    if (inp) inp.focus();
+}
+
+function closeFixoEdit() {
+    if (!_openFixoEditId) return;
+    const el = document.getElementById('fie-' + _openFixoEditId);
+    const tr = document.getElementById('ftr-' + _openFixoEditId);
+    if (el) el.classList.remove('open');
+    if (tr) tr.classList.remove('fixo-editing');
+    _openFixoEditId = null;
+}
+
+function fieUpdateCats(id) {
+    const tipo = document.getElementById('fie-tipo-' + id).value;
+    document.getElementById('fie-cat-' + id).innerHTML = (cats[tipo]||[]).map(c => `<option>${c}</option>`).join('');
+}
+
+function saveFixoEdit(id) {
+    const desc  = document.getElementById('fie-desc-'  + id).value.trim();
+    const valor = parseFloat(document.getElementById('fie-valor-' + id).value.replace(/\./g,'').replace(',','.'));
+    const tipo  = document.getElementById('fie-tipo-'  + id).value;
+    const cat   = document.getElementById('fie-cat-'   + id).value;
+    const pag   = tipo === 'saida' ? document.getElementById('fie-pag-' + id).value : null;
+    const fixo  = document.getElementById('fie-fixo-'  + id).checked;
+
+    if (!desc)              return toast('⚠️ Descrição vazia.', '#b45309');
+    if (isNaN(valor) || valor <= 0) return toast('⚠️ Valor inválido.', '#b45309');
+
+    pushUndo(tx, `Edição do fixo "${desc}"`);
+    tx = tx.map(t => t.id == id ? { ...t, desc, valor, tipo, cat, pagamento: pag, fixo } : t);
+    closeFixoEdit();
+    save(); atualizar();
+    toast('✓ Fixo atualizado!');
 }
 
 function updateFixoDay(id, newDay) {
