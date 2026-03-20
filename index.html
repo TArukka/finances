@@ -108,29 +108,36 @@
         .tag-deb  { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #ccfbf1; color: #0f766e; margin-left: 5px; vertical-align: middle; }
         .tag-fixo { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #fef3c7; color: #92400e; margin-left: 6px; vertical-align: middle; }
         .tag-card { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; margin-left: 5px; vertical-align: middle; }
-
-        /* FATURA INFO BOX */
+        /* FATURA INFO */
         .fatura-info { border-radius: 7px; padding: 8px 10px; font-size: 11px; margin-bottom: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; line-height: 1.5; }
-
-        /* CARDS MINI (sidebar) */
-        .cards-mini { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
-
-        /* CARD MANAGEMENT MODAL */
+        /* CARDS MODAL */
         #ovCartoes .modal { width: 500px; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
         .cartoes-head { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); }
         .cartoes-body { overflow-y: auto; padding: 16px 24px; flex: 1; }
-        .cartao-list-item { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 9px; border: 1px solid var(--border); margin-bottom: 8px; transition: background .1s; }
-        .cartao-list-item:hover { background: var(--bg); }
-        .cartao-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
-        .cartao-info-name { font-weight: 600; font-size: 13px; }
-        .cartao-info-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+        .cartao-item { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 9px; border: 1px solid var(--border); margin-bottom: 8px; }
+        .cartao-item:hover { background: var(--bg); }
+        .cartao-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .cartao-name { font-weight: 600; font-size: 13px; }
+        .cartao-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
         .cartao-acts { display: flex; gap: 3px; }
         .cartao-add-form { border-top: 1px solid var(--border); padding: 16px 24px 20px; }
         .cartao-add-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--text-3); margin-bottom: 12px; }
         .card-color-picker { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 4px; }
-        .card-color-opt { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, transform .1s; flex-shrink: 0; }
-        .card-color-opt.selected { border-color: var(--text); transform: scale(1.2); }
+        .card-color-opt { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: border-color .15s; flex-shrink: 0; }
+        .card-color-opt.sel { border-color: var(--text); }
 
+        /* GROUP HEADERS */
+        .tx-group-header td { background: var(--bg) !important; padding: 8px 14px 5px; cursor: default !important; border-bottom: 1px solid var(--border); }
+        .tx-group-header:hover td { background: var(--bg) !important; }
+        .gh-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--text-2); display: flex; align-items: center; gap: 8px; }
+        .gh-count { font-size: 10px; color: var(--text-3); font-weight: 500; }
+        .gh-total { font-size: 12px; font-weight: 700; margin-left: auto; }
+        .gh-total.red    { color: var(--danger); }
+        .gh-total.green  { color: var(--success); }
+        .gh-total.purple { color: var(--invest); }
+        /* GROUP TOGGLE BUTTON */
+        .group-toggle { display: flex; align-items: center; gap: 5px; border: 1px solid var(--border); background: var(--surface); padding: 4px 11px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-3); cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap; }
+        .group-toggle.active { background: var(--accent); color: white; border-color: var(--accent); }
         /* HISTORY TABLE */
         .history-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
         .history-header { padding: 16px 16px 0; }
@@ -535,7 +542,7 @@
             </select>
         </div>
         <div class="field" id="mobCartaoField" style="display:none">
-            <label>Cartão de Crédito</label>
+            <label>Cartão</label>
             <select id="mob-cartao" onchange="mobOnCartaoChange()"></select>
         </div>
         <div id="mobFaturaInfo" class="fatura-info" style="display:none"></div>
@@ -589,7 +596,7 @@
             </select>
         </div>
         <div class="field" id="mobEditCartaoField" style="display:none">
-            <label>Cartão de Crédito</label>
+            <label>Cartão</label>
             <select id="mob-edit-cartao" onchange="mobEditCartaoChange()"></select>
         </div>
         <div id="mobEditFaturaInfo" class="fatura-info" style="display:none"></div>
@@ -670,7 +677,7 @@
                 </select>
             </div>
             <div class="field" id="cartaoField" style="display:none">
-                <label>Cartão de Crédito</label>
+                <label>Cartão</label>
                 <select id="cartao" onchange="onCartaoChange()"></select>
             </div>
             <div id="faturaInfo" class="fatura-info" style="display:none"></div>
@@ -694,8 +701,8 @@
         <hr style="border:none;border-top:1px solid var(--border)">
         <div>
             <div class="section-label">Cartões de Crédito</div>
-            <div class="cards-mini">
-                <div class="fixos-mini-header">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                     <span id="cartoesMiniLabel" style="font-size:12px;color:var(--text-3)">Nenhum cartão</span>
                     <button class="link-btn" onclick="abrirCartoes()">Gerenciar →</button>
                 </div>
@@ -768,8 +775,9 @@
                     <button class="tab t-saida"   id="tab-saida"   onclick="setTab('saida')">Saídas</button>
                     <button class="tab t-invest"  id="tab-invest"  onclick="setTab('investimento')">Investimentos</button>
                 </div>
-                <div class="search-row">
-                    <input type="text" id="busca" placeholder="Buscar...">
+                <div class="search-row" style="display:flex;gap:8px;align-items:center">
+                    <input type="text" id="busca" placeholder="Buscar..." style="flex:1">
+                    <button class="group-toggle" id="btnGroupCat" onclick="toggleGroupMode()" title="Agrupar por categoria">⊞ Categoria</button>
                 </div>
             </div>
             <table>
@@ -1041,41 +1049,35 @@
 </div>
 
 
-<!-- MODAL CARTÕES -->
+<!-- MODAL CARTÕES DE CRÉDITO -->
 <div class="overlay" id="ovCartoes" onclick="if(event.target===this)closeCartoes()">
     <div class="modal">
         <div class="cartoes-head">
             <div style="display:flex;justify-content:space-between;align-items:center">
                 <div>
                     <div class="modal-title" style="margin-bottom:0">💳 Cartões de Crédito</div>
-                    <div style="font-size:11px;color:var(--text-3);margin-top:3px">Cadastre seus cartões e gerencie faturas</div>
+                    <div style="font-size:11px;color:var(--text-3);margin-top:3px">Fechamento e vencimento definem em qual mês a despesa aparece</div>
                 </div>
-                <button class="icon-btn" onclick="closeCartoes()" style="font-size:16px;opacity:.4">✕</button>
+                <button class="icon-btn" onclick="closeCartoes()" style="font-size:16px;opacity:.5">✕</button>
             </div>
         </div>
-        <div class="cartoes-body">
-            <div id="cartaoListBody"><div class="empty-state" style="padding:20px">Nenhum cartão cadastrado.</div></div>
+        <div class="cartoes-body" id="cartaoListBody">
+            <div class="empty-state" style="padding:20px">Nenhum cartão.</div>
         </div>
         <div class="cartao-add-form">
             <div class="cartao-add-title" id="cartaoFormTitle">Novo Cartão</div>
             <input type="hidden" id="cartaoEditId">
-            <div class="field"><label>Nome do cartão</label><input type="text" id="cartaoNome" placeholder="Ex: Nubank, Itaú Platinum"></div>
+            <div class="field"><label>Nome</label><input type="text" id="cartaoNome" placeholder="Ex: Nubank, Itaú Platinum"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div class="field">
-                    <label>Dia de fechamento</label>
-                    <input type="number" id="cartaoFechamento" min="1" max="28" placeholder="Ex: 15">
-                </div>
-                <div class="field">
-                    <label>Dia de vencimento</label>
-                    <input type="number" id="cartaoVencimento" min="1" max="28" placeholder="Ex: 22">
-                </div>
+                <div class="field"><label>Dia fechamento</label><input type="number" id="cartaoFech" min="1" max="28" placeholder="Ex: 15"></div>
+                <div class="field"><label>Dia vencimento</label><input type="number" id="cartaoVenc" min="1" max="28" placeholder="Ex: 22"></div>
             </div>
             <div class="field" style="margin-bottom:4px"><label>Cor</label>
                 <div class="card-color-picker" id="cardColorPicker"></div>
             </div>
             <div style="display:flex;gap:8px;margin-top:12px">
-                <button class="btn-mcancel" style="flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="resetCartaoForm()">Limpar</button>
-                <button class="btn-confirm" style="flex:2;padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none" onclick="salvarCartao()">Salvar Cartão</button>
+                <button class="btn-mcancel" style="flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--border)" onclick="resetCartaoForm()">Limpar</button>
+                <button class="btn-confirm" style="flex:2;padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;color:white;background:var(--accent)" onclick="salvarCartao()">Salvar Cartão</button>
             </div>
         </div>
     </div>
@@ -1090,43 +1092,24 @@ const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini
 if (IS_MOBILE) document.body.classList.add('mobile');
 
 // ── DOM CACHE ─────────────────────────────────────────────────────────────────
-// Eliminates ~275 getElementById calls per render cycle
-const _domCache = {};
-function $(id) {
-    return _domCache[id] || (_domCache[id] = document.getElementById(id));
-}
-// Invalidate if element is replaced (e.g. innerHTML on parent)
-function $clear(id) { delete _domCache[id]; }
+const _dc = {};
+function $(id) { return _dc[id] || (_dc[id] = document.getElementById(id)); }
+function $clear(id) { delete _dc[id]; }
 
-// ── UTILITIES ─────────────────────────────────────────────────────────────────
-function debounce(fn, ms) {
-    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
-}
-
-function parseValor(str) {
-    return parseFloat(str.replace(/\./g, '').replace(',', '.'));
-}
-
+// ── SHARED UTILITIES ──────────────────────────────────────────────────────────
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+function parseValor(s) { return parseFloat(s.replace(/\./g, '').replace(',', '.')); }
 function validateTx(desc, valor, data) {
-    if (!desc)                        { toast('⚠️ Digite uma descrição.', '#b45309'); return false; }
-    if (isNaN(valor) || valor <= 0)   { toast('⚠️ Valor inválido.', '#b45309'); return false; }
-    if (!data)                        { toast('⚠️ Selecione uma data.', '#b45309'); return false; }
+    if (!desc)                      { toast('⚠️ Digite uma descrição.', '#b45309'); return false; }
+    if (isNaN(valor) || valor <= 0) { toast('⚠️ Valor inválido.', '#b45309'); return false; }
+    if (!data)                      { toast('⚠️ Selecione uma data.', '#b45309'); return false; }
     return true;
 }
-
-function populateCatSelect(selEl, tipo, selected) {
-    selEl.innerHTML = '';
-    (cats[tipo] || []).forEach(c => {
-        const o = document.createElement('option');
-        o.value = c; o.text = c;
-        if (c === selected) o.selected = true;
-        selEl.add(o);
-    });
+function populateCatSelect(el, tipo, selected) {
+    el.innerHTML = '';
+    (cats[tipo] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; if (c === selected) o.selected = true; el.add(o); });
 }
-
-function closeOverlay(id, e) {
-    if (!e || e.target === $(id)) $(id).classList.remove('open');
-}
+function closeOverlay(id, e) { if (!e || e.target === $(id)) $(id).classList.remove('open'); }
 
 // ── MOBILE HELPERS ────────────────────────────────────────────────────────────
 const MOB_VIEW_LABELS = { dashboard: 'Início', anual: 'Visão Anual', mensal: 'Mensal', metas: 'Metas' };
@@ -1150,8 +1133,7 @@ function mobFiltroChange() {
 
 function openMobForm() {
     $('mobFormTitle').textContent = 'Novo Lançamento';
-    $('mob-desc').value  = '';
-    $('mob-valor').value = '';
+    $('mob-desc').value = ''; $('mob-valor').value = '';
     $('mob-fixo').checked = false;
     $('mob-data').valueAsDate = new Date();
     mobOnTipoChange();
@@ -1159,13 +1141,17 @@ function openMobForm() {
     setTimeout(() => $('mob-desc').focus(), 300);
 }
 
-function closeMobForm() {
-    $('mobFormSheet').classList.remove('open');
-}
+function closeMobForm() { $('mobFormSheet').classList.remove('open'); }
 
-function _baseMobOnTipoChange() {
+function mobOnTipoChange() {
     const tipo = $('mob-tipo').value;
     $('mobPagamentoField').style.display = tipo === 'saida' ? '' : 'none';
+    if (tipo !== 'saida') {
+        $('mobCartaoField').style.display = 'none';
+        $('mobFaturaInfo').style.display  = 'none';
+    } else {
+        mobOnPagChange();
+    }
     populateCatSelect($('mob-categoria'), tipo);
 }
 
@@ -1176,8 +1162,9 @@ function mobAdicionar() {
     const tipo  = $('mob-tipo').value;
     const cat   = $('mob-categoria').value;
     const fixo  = $('mob-fixo').checked;
-    const pagamento = tipo === 'saida' ? $('mob-pagamento').value : null;
-    const cartaoId  = (pagamento === 'credito') ? ($('mob-cartao').value || null) : null;
+    const pagamento  = tipo === 'saida' ? $('mob-pagamento').value : null;
+    const cartaoSel  = $('mob-cartao');
+    const cartaoId   = (pagamento === 'credito' && cartaoSel && cartaoSel.value) ? cartaoSel.value : null;
     const faturaData = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, data) : null;
 
     if (!validateTx(desc, valor, data)) return;
@@ -1199,20 +1186,20 @@ function mobAdicionar() {
 function openMobEdit(id) {
     const t = tx.find(x => x.id === id);
     if (!t) return;
-    $('mob-edit-id').value    = id;
-    $('mob-edit-desc').value  = t.desc;
+    $('mob-edit-id').value = id;
+    $('mob-edit-desc').value = t.desc;
     $('mob-edit-valor').value = t.valor.toFixed(2).replace('.', ',');
-    $('mob-edit-data').value  = t.data;
-    $('mob-edit-tipo').value  = t.tipo;
+    $('mob-edit-data').value = t.data;
+    $('mob-edit-tipo').value = t.tipo;
     $('mob-edit-fixo').checked = t.fixo;
     if (t.pagamento) $('mob-edit-pag').value = t.pagamento;
     mobEditTipoChange(t.cat);
     if (t.pagamento === 'credito') {
-        $('mobEditCartaoField').style.display = '';
+        $('mobEditCartaoField').style.display = cards.length ? '' : 'none';
         _populateCardSelect('mob-edit-cartao', t.cartaoId);
-        const fi = calcFaturaInfo(t.cartaoId, t.data);
+        const fi = _faturaInfoHtml(t.cartaoId, t.data);
         const el = $('mobEditFaturaInfo');
-        if (fi) { el.innerHTML = fi; el.style.display = ''; }
+        if (fi) { el.innerHTML = fi; el.style.display = ''; } else { el.style.display = 'none'; }
     }
     $('mobEditSheet').classList.add('open');
 }
@@ -1221,26 +1208,11 @@ function closeMobEdit() { $('mobEditSheet').classList.remove('open'); }
 
 function mobEditTipoChange(selectedCat) {
     const tipo = $('mob-edit-tipo').value;
-    $('mobEditPagField').style.display   = tipo === 'saida' ? '' : 'none';
-    $('mobEditCartaoField').style.display = 'none';
-    $('mobEditFaturaInfo').style.display  = 'none';
+    $('mobEditPagField').style.display    = tipo === 'saida' ? '' : 'none';
+    $('mobEditCartaoField').style.display  = 'none';
+    $('mobEditFaturaInfo').style.display   = 'none';
     if (tipo === 'saida') mobEditPagChange();
-    const sel = $('mob-edit-cat');
-    populateCatSelect(sel, tipo, selectedCat || sel.value);
-}
-
-function mobEditPagChange() {
-    const pag = $('mob-edit-pag').value;
-    const show = pag === 'credito' && cards.length > 0;
-    $('mobEditCartaoField').style.display = show ? '' : 'none';
-    $('mobEditFaturaInfo').style.display  = 'none';
-    if (show) { _populateCardSelect('mob-edit-cartao'); mobEditCartaoChange(); }
-}
-
-function mobEditCartaoChange() {
-    const fi = calcFaturaInfo($('mob-edit-cartao').value, $('mob-edit-data').value);
-    const el = $('mobEditFaturaInfo');
-    if (fi) { el.innerHTML = fi; el.style.display = ''; } else { el.style.display = 'none'; }
+    populateCatSelect($('mob-edit-cat'), tipo, selectedCat || $('mob-edit-cat').value);
 }
 
 function mobEditSave() {
@@ -1252,7 +1224,8 @@ function mobEditSave() {
     const cat   = $('mob-edit-cat').value;
     const fixo  = $('mob-edit-fixo').checked;
     const pagamento  = tipo === 'saida' ? $('mob-edit-pag').value : null;
-    const cartaoId   = (pagamento === 'credito') ? ($('mob-edit-cartao').value || null) : null;
+    const cartaoSel  = $('mob-edit-cartao');
+    const cartaoId   = (pagamento === 'credito' && cartaoSel && cartaoSel.value) ? cartaoSel.value : null;
     const faturaData = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, data) : null;
 
     if (!desc || isNaN(valor) || valor <= 0 || !data) return toast('⚠️ Preencha todos os campos.', '#b45309');
@@ -1295,13 +1268,12 @@ function renderMobList() {
             ? (t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : '<span class="tag-deb">DÉB</span>')
             : '';
         const fixoBadge = t.fixo ? '<span class="tag-fixo">FIXO</span>' : '';
-        const mobCard = t.cartaoId ? cards.find(c => c.id == t.cartaoId) : null;
-        const mobCardBadge = mobCard ? `<span class="tag-card" style="background:${mobCard.cor}22;color:${mobCard.cor}">${mobCard.nome}</span>` : '';
+        const cardBadge = t.cartaoId ? (()=>{ const c = cards.find(x=>x.id==t.cartaoId); return c ? `<span class="tag-card" style="background:${c.cor}22;color:${c.cor}">${c.nome}</span>` : ''; })() : '';
         return `<div class="mob-tx-card" onclick="openMobEdit(${t.id})">
             <div class="mob-tx-dot ${dotClass}">${icon}</div>
             <div class="mob-tx-info">
                 <div class="mob-tx-desc">${t.desc}</div>
-                <div class="mob-tx-meta">${t.cat}${payBadge}${fixoBadge}${mobCardBadge}</div>
+                <div class="mob-tx-meta">${t.cat}${payBadge}${fixoBadge}${cardBadge}</div>
             </div>
             <div class="mob-tx-right">
                 <div class="mob-tx-val" style="color:${cor}">${pre} ${fmt(t.valor)}</div>
@@ -1340,7 +1312,7 @@ const SEED = [
 if (!localStorage.getItem('fin5_data')) localStorage.setItem('fin5_data', JSON.stringify(SEED));
 
 let tx    = JSON.parse(localStorage.getItem('fin5_data')).map(t => ({ pagamento: t.tipo === 'saida' ? 'debito' : null, ...t }));
-let cards = JSON.parse(localStorage.getItem('fin5_cards')) || [];
+let cards = JSON.parse(localStorage.getItem('fin5_cards') || '[]');
 let cats  = JSON.parse(localStorage.getItem('fin5_cats')) || {
     saida:        ["🏠 Moradia","🍔 Alimentação","🚗 Transporte","🎉 Lazer","💊 Saúde","🛒 Compras","💳 Fatura Cartão","👨‍👩‍👧 Família","📡 Internet/Telefone","📱 Assinaturas","🍽️ Restaurantes","🎮 Jogos","👗 Roupas"],
     entrada:      ["💰 Salário","💸 Dividendos","👨‍👩‍👧 Família","🔄 Transferência","⚙️ Outros"],
@@ -1357,6 +1329,7 @@ let currentView = 'dashboard';
 let selectedGoalColor = GOAL_COLORS[0];
 let _pendingFixo = null;
 let _openInlineId = null;
+let groupMode = 'none'; // 'none' | 'cat'
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmt     = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -1419,9 +1392,7 @@ function init() {
     renderGoals();
     renderCartoesMini();
 
-    // Debounced search
     $('busca').addEventListener('input', debounce(renderTabela, 150));
-
     document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); } });
 }
 
@@ -1457,7 +1428,6 @@ function goToMensal(m, a) {
 
 // ── UNDO ──────────────────────────────────────────────────────────────────────
 function pushUndo(snap, label) {
-    // structuredClone is faster than JSON roundtrip and handles more types
     undoStack.push({ snap: structuredClone(snap), label });
     if (undoStack.length > 30) undoStack.shift();
     const b = $('btnUndo');
@@ -1476,9 +1446,9 @@ function sortBy(col) {
     sortDir = sortCol === col ? (sortDir === 'asc' ? 'desc' : 'asc') : (col === 'valor' ? 'desc' : 'asc');
     sortCol = col;
     ['data','desc','cat','valor'].forEach(c => {
-        const si = $('si-' + c);
-        si.textContent = '↕';
-        si.closest('th').classList.remove('sort-asc','sort-desc');
+        const th = $('si-' + c).closest('th');
+        $('si-' + c).textContent = '↕';
+        th.classList.remove('sort-asc','sort-desc');
     });
     const si = $('si-' + col);
     si.textContent = sortDir === 'asc' ? '↑' : '↓';
@@ -1530,8 +1500,9 @@ function adicionar() {
     const tipo  = $('tipo').value;
     const cat   = $('categoria').value;
     const fixo  = $('fixo').checked;
-    const pagamento = tipo === 'saida' ? $('pagamento').value : null;
-    const cartaoId  = (pagamento === 'credito') ? ($('cartao').value || null) : null;
+    const pagamento  = tipo === 'saida' ? $('pagamento').value : null;
+    const cartaoSel  = $('cartao');
+    const cartaoId   = (pagamento === 'credito' && cartaoSel && cartaoSel.value) ? cartaoSel.value : null;
     const faturaData = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, data) : null;
 
     if (!validateTx(desc, valor, data)) return;
@@ -1559,7 +1530,7 @@ function adicionar() {
 }
 
 function _showFixoRepModal(desc, valor, data, tipo, cat, pagamento, afterEditId, cartaoId, faturaData) {
-    _pendingFixo = { desc, valor, data, tipo, cat, pagamento, afterEditId, cartaoId: cartaoId || null, faturaData: faturaData || null };
+    _pendingFixo = { desc, valor, data, tipo, cat, pagamento, afterEditId, cartaoId: cartaoId||null, faturaData: faturaData||null };
     $('fixoRepMsg').textContent = afterEditId
         ? `"${desc}" foi marcado como fixo. Replicar para os próximos meses?`
         : `Replicar "${desc}" como gasto fixo para os próximos meses?`;
@@ -1575,9 +1546,9 @@ function closeFixoRep(opcao) {
     if (opcao === 'sim') {
         const d = new Date(data + 'T00:00:00'), base = Date.now();
         for (let i = d.getMonth(); i <= 11; i++) {
-            const nd = new Date(d.getFullYear(), i, d.getDate());
+            const nd    = new Date(d.getFullYear(), i, d.getDate());
             const ndStr = nd.toISOString().split('T')[0];
-            const fd = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, ndStr) : null;
+            const fd    = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, ndStr) : null;
             tx.push({ id: base + (i * 1000), desc, valor, data: ndStr, tipo, cat, fixo: true, pagamento, cartaoId, faturaData: fd });
         }
         if (afterEditId) tx = tx.filter(t => t.id != afterEditId);
@@ -1742,50 +1713,49 @@ function renderTabela() {
     const tbody = $('tbody'), empty = $('emptyState');
     if (!lista.length) { tbody.innerHTML = ''; empty.style.display = 'block'; _openInlineId = null; if (IS_MOBILE) renderMobList(); return; }
     empty.style.display = 'none';
-
     if (IS_MOBILE) { renderMobList(); return; }
 
-    tbody.innerHTML = lista.map(t => {
+    function _rowHtml(t) {
         const [y, mo, d] = t.data.split('-');
-        const cor  = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
-        const pre  = t.tipo === 'entrada' ? '+' : '−';
+        const cor    = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
+        const pre    = t.tipo === 'entrada' ? '+' : '\u2212';
         const payTag = t.tipo === 'saida'
-            ? (t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : '<span class="tag-deb">DÉB</span>')
+            ? (t.pagamento === 'credito' ? '<span class="tag-cred">CR\u00C9D</span>' : '<span class="tag-deb">D\u00C9B</span>')
             : '';
+        const card    = t.cartaoId ? cards.find(c => c.id == t.cartaoId) : null;
+        const cardTag = card ? `<span class="tag-card" style="background:${card.cor}22;color:${card.cor}">${card.nome}</span>` : '';
         const isEditing = _openInlineId === t.id;
         const tipoOpts = ['saida','entrada','investimento'].map(v =>
             `<option value="${v}" ${t.tipo === v ? 'selected' : ''}>${v === 'saida' ? 'Gasto' : v === 'entrada' ? 'Ganho' : 'Investimento'}</option>`).join('');
         const catOpts  = (cats[t.tipo] || []).map(c => `<option value="${c}" ${t.cat === c ? 'selected' : ''}>${c}</option>`).join('');
         const pagOpts  = ['debito','credito'].map(v =>
-            `<option value="${v}" ${(t.pagamento || 'debito') === v ? 'selected' : ''}>${v === 'debito' ? 'Débito' : 'Crédito'}</option>`).join('');
+            `<option value="${v}" ${(t.pagamento || 'debito') === v ? 'selected' : ''}>${v === 'debito' ? 'D\u00e9bito' : 'Cr\u00e9dito'}</option>`).join('');
         const cardOpts = cards.map(c => `<option value="${c.id}" ${t.cartaoId == c.id ? 'selected' : ''}>${c.nome}</option>`).join('');
-        const card = t.cartaoId ? cards.find(c => c.id == t.cartaoId) : null;
-        const cardTag = card ? `<span class="tag-card" style="background:${card.cor}22;color:${card.cor}">${card.nome}</span>` : '';
 
         return `<tr id="tr-${t.id}" class="${isEditing ? 'editing' : ''}">
             <td style="color:var(--text-3);font-size:12px;white-space:nowrap">${d}/${mo}</td>
             <td><span style="font-weight:500">${t.desc}</span>${payTag}${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}${cardTag}</td>
-            <td style="font-size:12px;color:var(--text-3)">${t.cat}</td>
+            <td style="font-size:12px;color:var(--text-3)">${groupMode === 'cat' ? '' : t.cat}</td>
             <td style="font-weight:600;color:${cor};white-space:nowrap">${pre} ${fmt(t.valor)}</td>
             <td><div class="btn-row">
-                <button class="icon-btn" title="Editar" onclick="openInlineEdit(${t.id})">✏️</button>
-                <button class="icon-btn" title="Remover" onclick="remover(${t.id})">🗑️</button>
+                <button class="icon-btn" title="Editar" onclick="openInlineEdit(${t.id})">&#9999;&#65039;</button>
+                <button class="icon-btn" title="Remover" onclick="remover(${t.id})">&#128465;&#65039;</button>
             </div></td>
         </tr>
         <tr id="ie-${t.id}" class="ie-row ${isEditing ? 'open' : ''}">
             <td colspan="5">
                 <div class="ie-inner">
-                    <div class="ie-field"><label>Descrição</label><input id="ie-desc-${t.id}" value="${t.desc.replace(/"/g,'&quot;')}" type="text"></div>
+                    <div class="ie-field"><label>Descri\u00e7\u00e3o</label><input id="ie-desc-${t.id}" value="${t.desc.replace(/"/g,'&quot;')}" type="text"></div>
                     <div class="ie-field"><label>Valor (R$)</label><input id="ie-valor-${t.id}" value="${t.valor.toFixed(2).replace('.',',')}" type="text"></div>
-                    <div class="ie-field"><label>Data</label><input id="ie-data-${t.id}" value="${t.data}" type="date"></div>
+                    <div class="ie-field"><label>Data</label><input id="ie-data-${t.id}" value="${t.data}" type="date" oninput="ieUpdateCartao(${t.id})"></div>
                     <div class="ie-field"><label>Tipo</label><select id="ie-tipo-${t.id}" onchange="ieUpdateCats(${t.id})">${tipoOpts}</select></div>
                     <div class="ie-field"><label>Categoria</label><select id="ie-cat-${t.id}">${catOpts}</select></div>
                     <div class="ie-actions">
-                        <button class="ie-save" onclick="saveInlineEdit(${t.id})">✓ Salvar</button>
-                        <button class="ie-cancel" onclick="closeInlineEdit()">✕</button>
+                        <button class="ie-save" onclick="saveInlineEdit(${t.id})">\u2713 Salvar</button>
+                        <button class="ie-cancel" onclick="closeInlineEdit()">\u2715</button>
                     </div>
                 </div>
-                <div style="display:flex;gap:20px;margin-top:8px;align-items:center;flex-wrap:wrap">
+                <div style="display:flex;gap:16px;margin-top:8px;align-items:center;flex-wrap:wrap">
                     <label class="ie-check"><input type="checkbox" id="ie-fixo-${t.id}" ${t.fixo ? 'checked' : ''}> Gasto fixo mensal</label>
                     <div id="ie-pag-wrap-${t.id}" style="${t.tipo !== 'saida' ? 'display:none' : ''}">
                         <label class="ie-check">Pagamento:&nbsp;
@@ -1793,60 +1763,108 @@ function renderTabela() {
                         </label>
                     </div>
                     <div id="ie-cartao-wrap-${t.id}" style="${(t.pagamento !== 'credito' || !cards.length) ? 'display:none' : ''}">
-                        <label class="ie-check">Cartão:&nbsp;
-                            <select id="ie-cartao-${t.id}" style="padding:2px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:inherit">${cardOpts}</select>
+                        <label class="ie-check">Cart\u00e3o:&nbsp;
+                            <select id="ie-cartao-${t.id}" style="padding:2px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:inherit"><option value="">\u2014</option>${cardOpts}</select>
                         </label>
                     </div>
                 </div>
             </td>
         </tr>`;
-    }).join('');
+    }
+
+    if (groupMode === 'cat') {
+        // Group by category, sorted by total desc
+        const groupMap = {};
+        lista.forEach(t => {
+            if (!groupMap[t.cat]) groupMap[t.cat] = { cat: t.cat, tipo: t.tipo, items: [] };
+            groupMap[t.cat].items.push(t);
+        });
+        const groups = Object.values(groupMap).sort((a, b) => {
+            const ta = a.items.reduce((s, t) => s + t.valor, 0);
+            const tb = b.items.reduce((s, t) => s + t.valor, 0);
+            return tb - ta;
+        });
+
+        tbody.innerHTML = groups.map(g => {
+            const total    = g.items.reduce((s, t) => s + t.valor, 0);
+            const isSaida  = g.items.every(t => t.tipo === 'saida');
+            const isEntrada = g.items.every(t => t.tipo === 'entrada');
+            const isInvest = g.items.every(t => t.tipo === 'investimento');
+            const totClass = isEntrada ? 'green' : isInvest ? 'purple' : 'red';
+            const totPre   = isEntrada ? '+' : '\u2212';
+
+            const headerRow = `<tr class="tx-group-header">
+                <td colspan="5">
+                    <div class="gh-label">
+                        <span>${g.cat}</span>
+                        <span class="gh-count">${g.items.length} ${g.items.length === 1 ? 'item' : 'itens'}</span>
+                        <span class="gh-total ${totClass}">${totPre} ${fmt(total)}</span>
+                    </div>
+                </td>
+            </tr>`;
+            return headerRow + g.items.map(_rowHtml).join('');
+        }).join('');
+    } else {
+        tbody.innerHTML = lista.map(_rowHtml).join('');
+    }
+}
+
+function toggleGroupMode() {
+    groupMode = groupMode === 'cat' ? 'none' : 'cat';
+    const btn = $('btnGroupCat');
+    if (btn) btn.classList.toggle('active', groupMode === 'cat');
+    renderTabela();
 }
 
 function openInlineEdit(id) {
     if (_openInlineId === id) { closeInlineEdit(); return; }
     closeInlineEdit();
     _openInlineId = id;
-    $('ie-' + id).classList.add('open');
-    $('tr-' + id).classList.add('editing');
-    $('ie-desc-' + id).focus();
+    document.getElementById('ie-' + id).classList.add('open');
+    document.getElementById('tr-' + id).classList.add('editing');
+    document.getElementById('ie-desc-' + id).focus();
 }
 
 function closeInlineEdit() {
     if (!_openInlineId) return;
-    $('ie-'  + _openInlineId)?.classList.remove('open');
-    $('tr-'  + _openInlineId)?.classList.remove('editing');
+    document.getElementById('ie-'  + _openInlineId)?.classList.remove('open');
+    document.getElementById('tr-'  + _openInlineId)?.classList.remove('editing');
     _openInlineId = null;
 }
 
 function ieUpdateCats(id) {
-    const tipo = $('ie-tipo-' + id).value;
-    $('ie-cat-' + id).innerHTML = (cats[tipo] || []).map(c => `<option>${c}</option>`).join('');
-    $('ie-pag-wrap-' + id).style.display = tipo === 'saida' ? '' : 'none';
-    if (tipo !== 'saida') $('ie-cartao-wrap-' + id).style.display = 'none';
+    const tipo = document.getElementById('ie-tipo-' + id).value;
+    document.getElementById('ie-cat-' + id).innerHTML = (cats[tipo] || []).map(c => `<option>${c}</option>`).join('');
+    document.getElementById('ie-pag-wrap-' + id).style.display = tipo === 'saida' ? '' : 'none';
+    if (tipo !== 'saida') document.getElementById('ie-cartao-wrap-' + id).style.display = 'none';
     else ieUpdateCartao(id);
 }
 
 function ieUpdateCartao(id) {
-    const pag = $('ie-pag-' + id).value;
-    const wrap = $('ie-cartao-wrap-' + id);
+    const pagEl = document.getElementById('ie-pag-' + id);
+    if (!pagEl) return;
+    const pag  = pagEl.value;
+    const wrap = document.getElementById('ie-cartao-wrap-' + id);
+    if (!wrap) return;
     wrap.style.display = (pag === 'credito' && cards.length > 0) ? '' : 'none';
     if (pag === 'credito' && cards.length > 0) {
-        const sel = $('ie-cartao-' + id);
-        if (!sel.options.length) sel.innerHTML = cards.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        const sel = document.getElementById('ie-cartao-' + id);
+        if (sel && !sel.querySelector('option[value]')?.value) {
+            sel.innerHTML = '<option value="">—</option>' + cards.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+        }
     }
 }
 
 function saveInlineEdit(id) {
-    const desc    = $('ie-desc-'  + id).value.trim();
-    const valor   = parseValor($('ie-valor-' + id).value);
-    const data    = $('ie-data-'  + id).value;
-    const tipo    = $('ie-tipo-'  + id).value;
-    const cat     = $('ie-cat-'   + id).value;
-    const fixo    = $('ie-fixo-'  + id).checked;
-    const pagamento  = tipo === 'saida' ? $('ie-pag-' + id).value : null;
-    const cartaoSel  = $('ie-cartao-' + id);
-    const cartaoId   = (pagamento === 'credito' && cartaoSel) ? (cartaoSel.value || null) : null;
+    const desc    = document.getElementById('ie-desc-'  + id).value.trim();
+    const valor   = parseValor(document.getElementById('ie-valor-' + id).value);
+    const data    = document.getElementById('ie-data-'  + id).value;
+    const tipo    = document.getElementById('ie-tipo-'  + id).value;
+    const cat     = document.getElementById('ie-cat-'   + id).value;
+    const fixo    = document.getElementById('ie-fixo-'  + id).checked;
+    const pagamento  = tipo === 'saida' ? document.getElementById('ie-pag-' + id).value : null;
+    const cartaoSel  = document.getElementById('ie-cartao-' + id);
+    const cartaoId   = (pagamento === 'credito' && cartaoSel && cartaoSel.value) ? cartaoSel.value : null;
     const faturaData = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, data) : null;
 
     if (!desc)              return toast('⚠️ Descrição vazia.', '#b45309');
@@ -1870,16 +1888,12 @@ function saveInlineEdit(id) {
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
 
 // Update chart data in-place (avoids destroy/recreate flicker + GC pressure)
-function updateChart(key, labels, datasets) {
-    const chart = charts[key];
-    if (!chart) return false;
-    chart.data.labels = labels;
-    datasets.forEach((ds, i) => {
-        if (chart.data.datasets[i]) {
-            chart.data.datasets[i].data = ds.data;
-        }
-    });
-    chart.update('none'); // 'none' skips animation for instant update
+function _updateChart(key, labels, datasets) {
+    const c = charts[key];
+    if (!c) return false;
+    c.data.labels = labels;
+    datasets.forEach((ds, i) => { if (c.data.datasets[i]) c.data.datasets[i].data = ds.data; });
+    c.update('none');
     return true;
 }
 
@@ -1934,7 +1948,8 @@ function atualizar() {
     }
 
     $('pillMes').textContent = MESES[m] + ' ' + a;
-    const mobM = $('mobFiltroMes'), mobA = $('mobFiltroAno');
+    const mobM = $('mobFiltroMes');
+    const mobA = $('mobFiltroAno');
     if (mobM) mobM.value = m;
     if (mobA) mobA.value = a;
 
@@ -1963,17 +1978,15 @@ function renderTrend() {
         gas.push(l.filter(t => t.tipo === 'saida').reduce((s, t) => s + t.valor, 0));
         inv.push(l.filter(t => t.tipo === 'investimento').reduce((s, t) => s + t.valor, 0));
     }
-    const datasets = [
+    const ds = [
         { label: 'Entradas', data: ent, backgroundColor: '#dcfce7', borderColor: '#16a34a', borderWidth: 1.5, borderRadius: 3 },
         { label: 'Gastos',   data: gas, backgroundColor: '#fee2e2', borderColor: '#dc2626', borderWidth: 1.5, borderRadius: 3 },
         { label: 'Invest.',  data: inv, backgroundColor: '#ede9fe', borderColor: '#6d28d9', borderWidth: 1.5, borderRadius: 3 }
     ];
-    // Update in-place if chart exists, otherwise create
-    if (!updateChart('trend', labels, datasets)) {
+    if (!_updateChart('trend', labels, ds)) {
         destroyChart('trend');
         charts['trend'] = new Chart($('graficoTrend').getContext('2d'), {
-            type: 'bar',
-            data: { labels, datasets },
+            type: 'bar', data: { labels, datasets: ds },
             options: { ...CHART_COMMON_OPTS, scales: AXIS_OPTS }
         });
     }
@@ -1986,11 +1999,11 @@ function renderAnual() {
     let aEnt = 0, aGas = 0, aInv = 0, aCred = 0, aDeb = 0;
     const catAnual = {}, rows = [];
 
-    // Single-pass: aggregate per-month data
     const nowDate = new Date();
     const curMonth = nowDate.getMonth(), curYear = nowDate.getFullYear();
     let sNowEnt = 0, sNowGas = 0, sNowInv = 0;
 
+    // Single pass: aggregate per-month + "saldo até agora" in one loop
     for (let m = 0; m < 12; m++) {
         const lista = txMes(m, a);
         let ent = 0, gas = 0, inv = 0, cred = 0, deb = 0;
@@ -2000,14 +2013,11 @@ function renderAnual() {
             else { gas += t.valor; catAnual[t.cat] = (catAnual[t.cat] || 0) + t.valor; if (t.pagamento === 'credito') cred += t.valor; else deb += t.valor; }
         });
         aEnt += ent; aGas += gas; aInv += inv; aCred += cred; aDeb += deb;
-        // Accumulate "saldo até agora" in same loop (avoids second 12-month pass)
         if (a === curYear && m <= curMonth) { sNowEnt += ent; sNowGas += gas; sNowInv += inv; }
         rows.push({ m, ent, gas, inv, cred, deb, saldo: ent - gas - inv });
     }
 
-    // For non-current years, use full year
     if (a !== curYear) { sNowEnt = aEnt; sNowGas = aGas; sNowInv = aInv; }
-
     const aSaldo = aEnt - aGas - aInv;
     const saldoNow = sNowEnt - sNowGas - sNowInv;
 
@@ -2025,17 +2035,16 @@ function renderAnual() {
         : (a < curYear ? 'Ano completo' : 'Ainda não começou');
 
     const anualLabels = MESES.map(m => m.slice(0, 3));
-    const anualDatasets = [
+    const anualDs = [
         { label: 'Entradas', data: rows.map(r => r.ent),  backgroundColor: '#dcfce7', borderColor: '#16a34a', borderWidth: 1.5, borderRadius: 3 },
         { label: 'Débito',   data: rows.map(r => r.deb),  backgroundColor: '#ccfbf1', borderColor: '#0f766e', borderWidth: 1.5, borderRadius: 3 },
         { label: 'Crédito',  data: rows.map(r => r.cred), backgroundColor: '#e0f2fe', borderColor: '#0284c7', borderWidth: 1.5, borderRadius: 3 },
         { label: 'Invest.',  data: rows.map(r => r.inv),  backgroundColor: '#ede9fe', borderColor: '#6d28d9', borderWidth: 1.5, borderRadius: 3 }
     ];
-    if (!updateChart('anual', anualLabels, anualDatasets)) {
+    if (!_updateChart('anual', anualLabels, anualDs)) {
         destroyChart('anual');
         charts['anual'] = new Chart($('graficoAnual').getContext('2d'), {
-            type: 'bar',
-            data: { labels: anualLabels, datasets: anualDatasets },
+            type: 'bar', data: { labels: anualLabels, datasets: anualDs },
             options: { ...CHART_COMMON_OPTS, scales: AXIS_OPTS }
         });
     }
@@ -2096,7 +2105,6 @@ function renderMensal() {
     const daysInMonth = new Date(a, m + 1, 0).getDate();
     const dayData = Array(daysInMonth).fill(0);
     saidas.forEach(t => { dayData[parseInt(t.data.split('-')[2]) - 1] += t.valor; });
-    // Day chart: must recreate since day count changes per month
     destroyChart('dia');
     charts['dia'] = new Chart($('graficoDia').getContext('2d'), {
         type: 'bar',
@@ -2289,7 +2297,7 @@ fbAuth.onAuthStateChanged(user => {
         _currentUser = user;
         showApp(user);
         init();
-        syncNow();
+        fbLoadOnStart();
         setupAutoSync();
     } else {
         _currentUser = null;
@@ -2493,96 +2501,109 @@ function setupAutoSync() {
 }
 
 
-// ═══════════════════════════════════════════════════════════
-// ── CREDIT CARD MANAGEMENT ──────────────────────────────────
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// CREDIT CARD MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
 
 const CARD_COLORS = ['#6d28d9','#0284c7','#dc2626','#16a34a','#f59e0b','#ec4899','#0f766e','#b45309','#0e7490','#1d4ed8'];
-let selectedCardColor = CARD_COLORS[0];
+let _selCardColor = CARD_COLORS[0];
 
-// ── FATURA CALC ───────────────────────────────────────────────
-// Returns the ISO date string (YYYY-MM-DD) of the billing due date for a spend.
-// Rule: if spend day <= fechamento, bill is current month; otherwise next month.
-// The returned date uses the vencimento day of the bill's due month.
+// ── FATURA CALCULATION ────────────────────────────────────────
+// If spend day <= fechamento → this closing cycle → due next month on vencimento
+// If spend day >  fechamento → next closing cycle → due month after on vencimento
 function calcFaturaData(cardId, spendDate) {
     const card = cards.find(c => c.id == cardId);
-    if (!card) return null;
+    if (!card || !spendDate) return null;
     const d = new Date(spendDate + 'T00:00:00');
-    const spendDay = d.getDate();
-    let dueYear  = d.getFullYear();
-    let dueMonth = d.getMonth(); // 0-indexed month of the closing cycle
-    if (spendDay > card.fechamento) dueMonth += 1; // rolls into next cycle
-    // Vencimento is one month after the closing month
-    dueMonth += 1;
-    if (dueMonth > 11) { dueMonth -= 12; dueYear++; }
-    const maxDay = new Date(dueYear, dueMonth + 1, 0).getDate();
-    const venc = Math.min(card.vencimento, maxDay);
-    return `${dueYear}-${String(dueMonth + 1).padStart(2,'0')}-${String(venc).padStart(2,'0')}`;
+    let dueYear = d.getFullYear();
+    let dueMon  = d.getMonth(); // 0-indexed closing month
+    if (d.getDate() > card.fechamento) dueMon++; // spills into next cycle
+    dueMon++; // vencimento is the month after closing
+    if (dueMon > 11) { dueMon -= 12; dueYear++; }
+    const maxDay = new Date(dueYear, dueMon + 1, 0).getDate();
+    const venc   = Math.min(card.vencimento, maxDay);
+    return `${dueYear}-${String(dueMon + 1).padStart(2,'0')}-${String(venc).padStart(2,'0')}`;
 }
 
-// Returns an HTML string describing the billing cycle for the fatura info box.
-function calcFaturaInfo(cardId, spendDate) {
+function _faturaInfoHtml(cardId, spendDate) {
     if (!cardId || !spendDate) return null;
     const card = cards.find(c => c.id == cardId);
     if (!card) return null;
-    const fatData = calcFaturaData(cardId, spendDate);
-    if (!fatData) return null;
-    const [fy, fm, fd] = fatData.split('-');
-    return `💳 <strong>${card.nome}</strong> · Fatura de <strong>${MESES[parseInt(fm)-1]}</strong> (vence dia ${parseInt(fd)})`;
+    const fd = calcFaturaData(cardId, spendDate);
+    if (!fd) return null;
+    const [fy, fm] = fd.split('-');
+    return `💳 <strong>${card.nome}</strong> &mdash; fatura de <strong>${MESES[parseInt(fm)-1]}</strong> (vence dia ${card.vencimento})`;
 }
 
-// ── DESKTOP FORM HANDLERS ─────────────────────────────────────
+// ── DESKTOP FORM CARD HANDLERS ────────────────────────────────
 function onPagChange() {
     const pag  = $('pagamento').value;
     const show = pag === 'credito' && cards.length > 0;
     $('cartaoField').style.display = show ? '' : 'none';
     $('faturaInfo').style.display  = 'none';
-    if (show) { _populateCardSelect('cartao'); onCartaoChange(); }
+    if (show) {
+        _populateCardSelect('cartao');
+        onCartaoChange();
+    }
 }
 
 function onCartaoChange() {
     const cartaoId = $('cartao')?.value;
     const data     = $('data').value;
-    const fi = calcFaturaInfo(cartaoId, data);
-    const el = $('faturaInfo');
-    if (fi) { el.innerHTML = fi; el.style.display = ''; } else { el.style.display = 'none'; }
+    const html     = _faturaInfoHtml(cartaoId, data);
+    const el       = $('faturaInfo');
+    if (html) { el.innerHTML = html; el.style.display = ''; }
+    else       { el.style.display = 'none'; }
 }
 
-// ── MOBILE FORM HANDLERS ──────────────────────────────────────
+// ── MOBILE FORM CARD HANDLERS ─────────────────────────────────
 function mobOnPagChange() {
-    const pag = $('mob-pagamento').value;
+    const pag  = $('mob-pagamento').value;
     const show = pag === 'credito' && cards.length > 0;
     $('mobCartaoField').style.display = show ? '' : 'none';
     $('mobFaturaInfo').style.display  = 'none';
-    if (show) { _populateCardSelect('mob-cartao'); mobOnCartaoChange(); }
-}
-
-function mobOnCartaoChange() {
-    const cartaoId = $('mob-cartao').value;
-    const data     = $('mob-data').value;
-    const fi = calcFaturaInfo(cartaoId, data);
-    const el = $('mobFaturaInfo');
-    if (fi) { el.innerHTML = fi; el.style.display = ''; } else { el.style.display = 'none'; }
-}
-
-// mobOnTipoChange: base category/payment logic + credit card field handling
-function mobOnTipoChange() {
-    _baseMobOnTipoChange();
-    const tipo = $('mob-tipo').value;
-    if (tipo !== 'saida') {
-        $('mobCartaoField').style.display = 'none';
-        $('mobFaturaInfo').style.display  = 'none';
-    } else {
-        mobOnPagChange();
+    if (show) {
+        _populateCardSelect('mob-cartao');
+        mobOnCartaoChange();
     }
 }
 
-// ── SHARED HELPER ─────────────────────────────────────────────
+function mobOnCartaoChange() {
+    const cartaoId = $('mob-cartao')?.value;
+    const data     = $('mob-data').value;
+    const html     = _faturaInfoHtml(cartaoId, data);
+    const el       = $('mobFaturaInfo');
+    if (html) { el.innerHTML = html; el.style.display = ''; }
+    else       { el.style.display = 'none'; }
+}
+
+// ── MOBILE EDIT CARD HANDLERS ─────────────────────────────────
+function mobEditPagChange() {
+    const pag  = $('mob-edit-pag').value;
+    const show = pag === 'credito' && cards.length > 0;
+    $('mobEditCartaoField').style.display = show ? '' : 'none';
+    $('mobEditFaturaInfo').style.display  = 'none';
+    if (show) {
+        _populateCardSelect('mob-edit-cartao');
+        mobEditCartaoChange();
+    }
+}
+
+function mobEditCartaoChange() {
+    const cartaoId = $('mob-edit-cartao')?.value;
+    const data     = $('mob-edit-data').value;
+    const html     = _faturaInfoHtml(cartaoId, data);
+    const el       = $('mobEditFaturaInfo');
+    if (html) { el.innerHTML = html; el.style.display = ''; }
+    else       { el.style.display = 'none'; }
+}
+
+// ── SHARED ────────────────────────────────────────────────────
 function _populateCardSelect(selId, selectedId) {
     const sel = $(selId);
     if (!sel) return;
-    const prev = selectedId || sel.value;
-    sel.innerHTML = '<option value="">Sem cartão específico</option>' +
+    const prev = selectedId !== undefined ? selectedId : sel.value;
+    sel.innerHTML = '<option value="">— sem cartão —</option>' +
         cards.map(c => `<option value="${c.id}" ${c.id == prev ? 'selected' : ''}>${c.nome}</option>`).join('');
 }
 
@@ -2592,23 +2613,22 @@ function renderCartoesMini() {
     const list = $('cartoesMiniList');
     if (!lbl || !list) return;
     if (!cards.length) {
-        lbl.textContent  = 'Nenhum cartão';
-        list.innerHTML   = '';
+        lbl.textContent = 'Nenhum cartão';
+        list.innerHTML  = '';
         return;
     }
-    lbl.textContent = cards.length + (cards.length === 1 ? ' cartão' : ' cartões');
+    lbl.textContent = cards.length + (cards.length === 1 ? ' cartão' : ' cartões cadastrados');
     const { m, a } = filtro();
     list.innerHTML = cards.map(c => {
-        // sum credit txs attributed to this card in the currently-viewed month
         const total = tx.filter(t => {
             if (t.cartaoId != c.id || t.pagamento !== 'credito') return false;
-            const dateStr = t.faturaData || t.data;
-            const d = new Date(dateStr + 'T00:00:00');
-            return d.getMonth() === m && d.getFullYear() === a;
+            const ds = t.faturaData || t.data;
+            const dd = new Date(ds + 'T00:00:00');
+            return dd.getMonth() === m && dd.getFullYear() === a;
         }).reduce((s, t) => s + t.valor, 0);
         return `<div class="fixos-mini-item">
             <span class="n" style="display:flex;align-items:center;gap:6px">
-                <span style="width:8px;height:8px;border-radius:50%;background:${c.cor};flex-shrink:0;display:inline-block"></span>
+                <span style="width:8px;height:8px;border-radius:50%;background:${c.cor};display:inline-block;flex-shrink:0"></span>
                 ${c.nome}
             </span>
             <span class="v">${total > 0 ? fmt(total) : '—'}</span>
@@ -2618,8 +2638,9 @@ function renderCartoesMini() {
 
 // ── CARD MODAL ────────────────────────────────────────────────
 function abrirCartoes() {
-    renderCardColorPicker();
-    renderCartaoList();
+    _selCardColor = CARD_COLORS[0];
+    _renderCardColorPicker();
+    _renderCartaoList();
     $('ovCartoes').classList.add('open');
 }
 
@@ -2628,88 +2649,117 @@ function closeCartoes() {
     resetCartaoForm();
 }
 
-function renderCartaoList() {
+function _renderCartaoList() {
     const body = $('cartaoListBody');
-    if (!cards.length) { body.innerHTML = '<div class="empty-state" style="padding:20px">Nenhum cartão cadastrado.</div>'; return; }
+    if (!body) return;
+    if (!cards.length) {
+        body.innerHTML = '<div class="empty-state" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum cartão cadastrado.</div>';
+        return;
+    }
     body.innerHTML = cards.map(c => `
-        <div class="cartao-list-item">
+        <div class="cartao-item">
             <div class="cartao-dot" style="background:${c.cor}"></div>
             <div>
-                <div class="cartao-info-name">${c.nome}</div>
-                <div class="cartao-info-meta">Fecha dia ${c.fechamento} · Vence dia ${c.vencimento}</div>
+                <div class="cartao-name">${c.nome}</div>
+                <div class="cartao-meta">Fecha dia <strong>${c.fechamento}</strong> · Vence dia <strong>${c.vencimento}</strong></div>
             </div>
             <div class="cartao-acts">
-                <button class="icon-btn" onclick="editarCartao(${c.id})">✏️</button>
-                <button class="icon-btn" onclick="removerCartao(${c.id})">🗑️</button>
+                <button class="icon-btn" onclick="editarCartao(${c.id})" title="Editar">✏️</button>
+                <button class="icon-btn" onclick="removerCartao(${c.id})" title="Remover">🗑️</button>
             </div>
         </div>`).join('');
 }
 
-function renderCardColorPicker() {
-    $('cardColorPicker').innerHTML = CARD_COLORS.map(c =>
-        `<div class="card-color-opt ${c === selectedCardColor ? 'selected' : ''}" style="background:${c}" onclick="selectCardColor('${c}')"></div>`
+function _renderCardColorPicker() {
+    const el = $('cardColorPicker');
+    if (!el) return;
+    el.innerHTML = CARD_COLORS.map(c =>
+        `<div class="card-color-opt ${c === _selCardColor ? 'sel' : ''}" style="background:${c}" onclick="selectCardColor('${c}')"></div>`
     ).join('');
 }
 
-function selectCardColor(c) { selectedCardColor = c; renderCardColorPicker(); }
+function selectCardColor(c) { _selCardColor = c; _renderCardColorPicker(); }
 
 function salvarCartao() {
-    const nome       = $('cartaoNome').value.trim();
-    const fechamento = parseInt($('cartaoFechamento').value);
-    const vencimento = parseInt($('cartaoVencimento').value);
-    const editId     = $('cartaoEditId').value;
+    const nome = $('cartaoNome').value.trim();
+    const fech = parseInt($('cartaoFech').value);
+    const venc = parseInt($('cartaoVenc').value);
+    const editId = $('cartaoEditId').value;
 
-    if (!nome)                               return toast('⚠️ Digite o nome do cartão.', '#b45309');
-    if (!fechamento || fechamento < 1 || fechamento > 28) return toast('⚠️ Dia de fechamento inválido (1-28).', '#b45309');
-    if (!vencimento || vencimento < 1 || vencimento > 28) return toast('⚠️ Dia de vencimento inválido (1-28).', '#b45309');
+    if (!nome)                        return toast('⚠️ Digite o nome do cartão.', '#b45309');
+    if (!fech || fech < 1 || fech > 28) return toast('⚠️ Dia de fechamento inválido (1-28).', '#b45309');
+    if (!venc || venc < 1 || venc > 28) return toast('⚠️ Dia de vencimento inválido (1-28).', '#b45309');
 
     if (editId) {
         const idx = cards.findIndex(c => c.id == editId);
-        cards[idx] = { ...cards[idx], nome, fechamento, vencimento, cor: selectedCardColor };
+        if (idx !== -1) cards[idx] = { ...cards[idx], nome, fechamento: fech, vencimento: venc, cor: _selCardColor };
         toast('✓ Cartão atualizado!');
     } else {
-        cards.push({ id: Date.now(), nome, fechamento, vencimento, cor: selectedCardColor });
+        cards.push({ id: Date.now(), nome, fechamento: fech, vencimento: venc, cor: _selCardColor });
         toast('💳 Cartão adicionado!');
     }
     saveCards();
-    renderCartaoList();
+    _renderCartaoList();
     renderCartoesMini();
-    onPagChange();   // refresh desktop card select if visible
+    // refresh card selects if currently visible
+    if ($('cartaoField').style.display !== 'none') onPagChange();
     resetCartaoForm();
 }
 
 function editarCartao(id) {
     const c = cards.find(x => x.id === id);
     if (!c) return;
-    $('cartaoEditId').value    = id;
-    $('cartaoNome').value      = c.nome;
-    $('cartaoFechamento').value = c.fechamento;
-    $('cartaoVencimento').value = c.vencimento;
-    selectedCardColor = c.cor;
-    renderCardColorPicker();
+    $('cartaoEditId').value = id;
+    $('cartaoNome').value   = c.nome;
+    $('cartaoFech').value   = c.fechamento;
+    $('cartaoVenc').value   = c.vencimento;
+    _selCardColor = c.cor;
+    _renderCardColorPicker();
     $('cartaoFormTitle').textContent = 'Editar Cartão';
     $('cartaoNome').focus();
 }
 
 function removerCartao(id) {
     const c = cards.find(x => x.id === id);
-    if (!confirm(`Remover o cartão "${c.nome}"? As transações vinculadas não serão deletadas.`)) return;
+    if (!c || !confirm(`Remover "${c.nome}"? As transações vinculadas não serão deletadas.`)) return;
     cards = cards.filter(x => x.id !== id);
     saveCards();
-    renderCartaoList();
+    _renderCartaoList();
     renderCartoesMini();
-    onPagChange();
     toast('Cartão removido.', '#52525b');
 }
 
 function resetCartaoForm() {
-    $('cartaoEditId').value     = '';
-    $('cartaoNome').value       = '';
-    $('cartaoFechamento').value = '';
-    $('cartaoVencimento').value = '';
+    $('cartaoEditId').value = '';
+    $('cartaoNome').value   = '';
+    $('cartaoFech').value   = '';
+    $('cartaoVenc').value   = '';
     $('cartaoFormTitle').textContent = 'Novo Cartão';
-    selectedCardColor = CARD_COLORS[0];
-    renderCardColorPicker();
+    _selCardColor = CARD_COLORS[0];
+    _renderCardColorPicker();
+}
+
+// ── FIREBASE STARTUP LOAD (always pull remote on page load) ───
+async function fbLoadOnStart() {
+    setSyncState('busy', 'Carregando…');
+    try {
+        const remote = await _dbGet();
+        if (remote) {
+            _applyPayload(remote);
+            localStorage.setItem('fb_localTs',   String(remote.ts || Date.now()));
+            localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, k: remote.k }));
+        } else {
+            await _dbPut(_buildPayload());
+            toast('🔥 Dados iniciais enviados ao Firebase!', '#f97316');
+        }
+        localStorage.setItem('fb_lastSync', String(Date.now()));
+        updateSyncTime();
+        setSyncState('ok', 'Sync');
+    } catch (e) {
+        setSyncState('err', 'Sync');
+        toast('❌ Falha ao carregar: ' + e.message, '#dc2626');
+        console.error('Firebase load error:', e);
+    }
 }
 
 // ── BOOT — auth listener handles init() call above ────────────────────────────
