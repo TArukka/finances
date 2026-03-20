@@ -1879,8 +1879,7 @@ function budgetStatus(pct) {
 }
 
 function renderBudget() {
-    const now = new Date();
-    const m = now.getMonth(), a = now.getFullYear();
+    const { m, a } = filtro();
     $('budgetSubtitle').textContent = `Orçamento de ${MESES[m]} ${a}`;
     $('budgetMesLabel').textContent = `${MESES[m]} ${a}`;
 
@@ -1926,6 +1925,7 @@ function renderBudget() {
         return;
     }
     emptyEl.style.display = 'none';
+    listEl.innerHTML = ''; // clear completely before re-render
 
     // Sort: over first, then by pct desc
     const sorted = [...budgets].map(b => {
@@ -1934,7 +1934,7 @@ function renderBudget() {
         return { ...b, spent, pct };
     }).sort((a, b) => b.pct - a.pct);
 
-    listEl.innerHTML = sorted.map((b, i) => {
+    listEl.innerHTML = sorted.map((b) => {
         const left = b.limit - b.spent;
         const st = budgetStatus(b.pct);
         const barW = Math.min(b.pct, 100);
@@ -2011,15 +2011,21 @@ function renderBudgetWidget() {
         const st   = budgetStatus(b.pct);
         const clr  = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
         const left = b.limit - b.spent;
-        const label = b.cat.replace(/^\S+\s/, ''); // strip emoji
-        return `<div class="bw-item">
+        const label = b.cat.replace(/^\S+\s/, '');
+        const isOver = st === 'over';
+        return `<div class="bw-item" style="position:relative;cursor:default"
+            onmouseenter="this.querySelector('.bw-tooltip').style.opacity='1';this.querySelector('.bw-tooltip').style.transform='translateY(0)'"
+            onmouseleave="this.querySelector('.bw-tooltip').style.opacity='0';this.querySelector('.bw-tooltip').style.transform='translateY(4px)'">
             <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1">
                 <span style="width:8px;height:8px;border-radius:50%;background:${clr};flex-shrink:0;display:inline-block"></span>
-                <span class="bw-label" style="font-size:11px" title="${b.cat}">${label}</span>
+                <span class="bw-label" style="font-size:11px${isOver ? ';text-decoration:line-through;opacity:.6' : ''}" title="${b.cat}">${label}</span>
+                ${isOver ? `<span style="font-size:9px;font-weight:700;color:var(--danger);background:#fee2e2;padding:1px 5px;border-radius:4px;white-space:nowrap">⚠ over</span>` : ''}
             </div>
             <div style="text-align:right;white-space:nowrap;font-size:10px">
                 <span class="bw-pct ${st}">${b.pct}%</span>
-                <span style="color:var(--text-3);margin-left:4px">${left < 0 ? '⚠' : fmt(left)}</span>
+            </div>
+            <div class="bw-tooltip" style="position:absolute;bottom:calc(100% + 5px);left:0;right:0;background:#18181b;color:#fff;font-size:10px;padding:5px 8px;border-radius:6px;opacity:0;transform:translateY(4px);transition:all .15s;pointer-events:none;z-index:10;white-space:nowrap;text-align:center">
+                ${fmt(b.spent)} <span style="opacity:.5">de</span> ${fmt(b.limit)}${isOver ? ` · <span style="color:#fca5a5">+${fmt(Math.abs(left))}</span>` : ` · restam ${fmt(left)}`}
             </div>
         </div>`;
     }).join(''));
