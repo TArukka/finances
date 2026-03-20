@@ -97,8 +97,8 @@
         .savings-fill  { height: 3px; background: var(--success); border-radius: 2px; transition: width .5s; }
 
         /* CHARTS */
-        .charts { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 12px; }
-        .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+        .charts { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 12px; min-width: 0; }
+        .chart-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; overflow: hidden; }
         .chart-box-label { font-size: 11px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
         .chart-wrap { height: 160px; position: relative; }
         .chart-empty { height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-3); font-size: 12px; gap: 6px; }
@@ -1008,7 +1008,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:left">Mês</th>
-                        <th>Entradas</th><th>Débito</th><th>Crédito</th><th>Investido</th><th>Saldo</th>
+                        <th>Entradas</th><th>Débito</th><th>Crédito</th><th>Investido</th><th>Saldo</th><th>Saldo Acumulado</th>
                     </tr>
                 </thead>
                 <tbody id="anualTbody"></tbody>
@@ -1652,7 +1652,7 @@ const CAT_COLORS  = ['#ef4444','#f59e0b','#3b82f6','#10b981','#ec4899','#8b5cf6'
 
 const CHART_COMMON_OPTS = {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10, family: 'Inter' }, padding: 8 } } }
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 7, font: { size: 9, family: 'Inter' }, padding: 6, usePointStyle: true, pointStyleWidth: 7 } } }
 };
 const AXIS_OPTS = {
     x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' } } },
@@ -2270,7 +2270,7 @@ function renderDonut(dados, cid, wid, emptyIcon, colors, emptyH = 160) {
     charts[cid] = new Chart($(cid).getContext('2d'), {
         type: 'doughnut',
         data: { labels: keys, datasets: [{ data: Object.values(dados), backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
-        options: { ...CHART_COMMON_OPTS, cutout: '65%' }
+        options: { ...CHART_COMMON_OPTS, cutout: '62%', layout: { padding: { bottom: 4 } } }
     });
 }
 
@@ -2590,7 +2590,7 @@ function atualizar() {
             + (nomes.length > 5 ? `<div style="text-align:center;margin-top:6px"><button class="link-btn" onclick="abrirPopupFixos()">ver todos (${nomes.length})</button></div>` : '')
         : '<span style="font-size:12px;color:var(--text-3)">Nenhum fixo.</span>';
 
-    renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS);
+    renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS, 210);
     renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
     renderTrend();
     renderFaturas();
@@ -2687,9 +2687,12 @@ function renderAnual() {
 
     renderDonut(catAnual, 'grafAnualCat', 'wrapAnualCat', '📉', CAT_COLORS, 240);
 
+    let runSaldo = 0;
     $('anualTbody').innerHTML = rows.map(r => {
         const hasData = r.ent || r.gas || r.inv;
+        runSaldo += r.saldo;
         const sc = r.saldo >= 0 ? 'green-val' : 'red-val';
+        const rsc = runSaldo >= 0 ? 'green-val' : 'red-val';
         return `<tr class="${hasData ? 'clickable' : ''}" onclick="${hasData ? `goToMensal(${r.m},${a})` : ''}">
             <td>${MESES[r.m]}</td>
             <td class="green-val">${r.ent ? fmt(r.ent) : '—'}</td>
@@ -2697,6 +2700,7 @@ function renderAnual() {
             <td class="blue-val">${r.cred ? fmt(r.cred) : '—'}</td>
             <td class="purple-val">${r.inv ? fmt(r.inv) : '—'}</td>
             <td class="${hasData ? sc : ''}">${hasData ? fmt(r.saldo) : '—'}</td>
+            <td class="${hasData ? rsc : ''}" style="font-weight:700">${hasData ? fmt(runSaldo) : '—'}</td>
         </tr>`;
     }).join('');
 }
