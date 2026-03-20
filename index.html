@@ -607,6 +607,39 @@
         .mob-form-save:active { opacity: .85; }
 
         body.mobile #toast { bottom: 80px; }
+        /* BUDGET */
+        .budget-item { padding: 14px 16px; border-bottom: 1px solid var(--border-light); }
+        .budget-item:last-child { border-bottom: none; }
+        .budget-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+        .budget-item-name { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+        .budget-item-amounts { font-size: 12px; color: var(--text-2); white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+        .budget-item-actions { display: flex; gap: 2px; }
+        .budget-bar-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .budget-bar-fill { height: 8px; border-radius: 4px; transition: width .5s; }
+        .budget-bar-fill.ok   { background: var(--success); }
+        .budget-bar-fill.warn { background: #f59e0b; }
+        .budget-bar-fill.over { background: var(--danger); }
+        .budget-status { font-size: 11px; margin-top: 5px; font-weight: 500; }
+        .budget-status.ok   { color: var(--success); }
+        .budget-status.warn { color: #f59e0b; }
+        .budget-status.over { color: var(--danger); }
+        .budget-input-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; padding: 12px 16px; background: #f8f8fa; border-bottom: 1px solid var(--border); }
+        .budget-kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+        .budget-kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text-3); margin-bottom: 5px; }
+        .budget-kpi-val { font-size: 20px; font-weight: 700; }
+        .budget-kpi-sub { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+        /* Widget mini bars */
+        .bw-item { display: grid; grid-template-columns: 140px 1fr auto; align-items: center; gap: 10px; }
+        .bw-label { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bw-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        .bw-fill { height: 6px; border-radius: 3px; transition: width .4s; }
+        .bw-fill.ok   { background: var(--success); }
+        .bw-fill.warn { background: #f59e0b; }
+        .bw-fill.over { background: var(--danger); }
+        .bw-pct { font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .bw-pct.ok   { color: var(--success); }
+        .bw-pct.warn { color: #f59e0b; }
+        .bw-pct.over { color: var(--danger); }
     </style>
 </head>
 <body>
@@ -620,6 +653,7 @@
             <button class="nav-pill" onclick="navTo('anual',this)">Anual</button>
             <button class="nav-pill" onclick="navTo('mensal',this)">Mensal</button>
             <button class="nav-pill" onclick="navTo('metas',this)">Metas</button>
+            <button class="nav-pill" onclick="navTo('budget',this)">Orçamento</button>
         </nav>
         <div class="month-pill" id="pillMes">—</div>
     </div>
@@ -932,6 +966,15 @@
                 <div class="chart-wrap"><canvas id="graficoTrend"></canvas></div>
             </div>
         </div>
+        </div>
+        <!-- BUDGET MINI WIDGET -->
+        <div id="budgetWidget" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+            <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-light)">
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2)">Orçamento do Mês</div>
+                <button onclick="navTo('budget',document.querySelectorAll('.nav-pill')[4])" style="font-size:11px;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:inherit;text-decoration:underline">ver tudo</button>
+            </div>
+            <div id="budgetWidgetList" style="padding:12px 16px;display:flex;flex-direction:column;gap:10px"></div>
+        </div>
         <div class="history-box">
             <div class="history-header">
                 <div class="tabs">
@@ -1080,6 +1123,34 @@
             <button class="btn-save" style="width:auto;padding:8px 18px;margin-top:0" onclick="abrirNovaGoal()">+ Nova Meta</button>
         </div>
         <div class="goals-grid" id="goalsGrid"></div>
+    </div>
+</div>
+
+<!-- BUDGET VIEW -->
+<div id="view-budget" class="view">
+    <div class="view-inner">
+        <div class="view-header">
+            <div>
+                <div class="view-title">Orçamento Mensal</div>
+                <div class="view-subtitle" id="budgetSubtitle">Defina limites por categoria e acompanhe seus gastos</div>
+            </div>
+            <button class="btn-save" style="width:auto;padding:8px 18px;margin-top:0" onclick="addBudgetItem()">+ Adicionar Categoria</button>
+        </div>
+
+        <!-- Summary bar -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px" id="budgetSummary"></div>
+
+        <!-- Budget items -->
+        <div class="data-table-box">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                <div class="data-table-title" style="padding:0;border:none">Categorias com orçamento</div>
+                <div style="font-size:11px;color:var(--text-3)" id="budgetMesLabel"></div>
+            </div>
+            <div id="budgetList" style="padding:0"></div>
+            <div id="budgetEmpty" style="text-align:center;padding:32px;color:var(--text-3);font-size:13px;display:none">
+                Nenhum orçamento definido. Clique em "+ Adicionar Categoria" para começar.
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1681,6 +1752,7 @@ let cats  = JSON.parse(localStorage.getItem('fin5_cats')) || {
     investimento: ["🛡️ Renda Fixa","📈 Ações","₿ Cripto","🏦 Fundo"]
 };
 let goals = JSON.parse(localStorage.getItem('fin5_goals')) || [];
+let budgets = JSON.parse(localStorage.getItem('fin5_budgets') || '[]'); // [{cat, limit}]
 
 let undoStack = [];
 let sortCol   = 'data', sortDir = 'desc';
@@ -1704,6 +1776,7 @@ const save    = () => localStorage.setItem('fin5_data', JSON.stringify(tx));
 const saveGoals = () => localStorage.setItem('fin5_goals', JSON.stringify(goals));
 const saveCats  = () => localStorage.setItem('fin5_cats', JSON.stringify(cats));
 const saveCards = () => localStorage.setItem('fin5_cards', JSON.stringify(cards));
+const saveBudgets = () => localStorage.setItem('fin5_budgets', JSON.stringify(budgets));
 
 function toast(msg, bg = '#18181b') {
     const el = $('toast');
@@ -1757,6 +1830,207 @@ function init() {
     document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); } });
 }
 
+// ── BUDGET ────────────────────────────────────────────────────────────────────
+function getBudgetSpend(cat, m, a) {
+    return txMes(m, a)
+        .filter(t => t.tipo === 'saida' && t.cat === cat)
+        .reduce((s, t) => s + t.valor, 0);
+}
+
+function budgetStatus(pct) {
+    if (pct >= 100) return 'over';
+    if (pct >= 80)  return 'warn';
+    return 'ok';
+}
+
+function renderBudget() {
+    const now = new Date();
+    const m = now.getMonth(), a = now.getFullYear();
+    $('budgetSubtitle').textContent = `Orçamento de ${MESES[m]} ${a}`;
+    $('budgetMesLabel').textContent = `${MESES[m]} ${a}`;
+
+    // Summary KPIs
+    let totalLimit = 0, totalSpent = 0, overCount = 0;
+    budgets.forEach(b => {
+        const spent = getBudgetSpend(b.cat, m, a);
+        totalLimit += b.limit;
+        totalSpent += spent;
+        if (spent > b.limit) overCount++;
+    });
+    const summaryEl = $('budgetSummary');
+    if (!budgets.length) {
+        summaryEl.innerHTML = '';
+    } else {
+        const totalLeft = totalLimit - totalSpent;
+        const overallPct = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0;
+        const sc = budgetStatus(overallPct);
+        summaryEl.innerHTML = `
+            <div class="budget-kpi" style="border-left:3px solid var(--success)">
+                <div class="budget-kpi-label">Orçamento Total</div>
+                <div class="budget-kpi-val green">${fmt(totalLimit)}</div>
+                <div class="budget-kpi-sub">${budgets.length} categoria${budgets.length !== 1 ? 's' : ''}</div>
+            </div>
+            <div class="budget-kpi" style="border-left:3px solid var(--danger)">
+                <div class="budget-kpi-label">Gasto até agora</div>
+                <div class="budget-kpi-val red">${fmt(totalSpent)}</div>
+                <div class="budget-kpi-sub">${overallPct}% do orçamento</div>
+            </div>
+            <div class="budget-kpi" style="border-left:3px solid ${totalLeft < 0 ? 'var(--danger)' : '#f59e0b'}">
+                <div class="budget-kpi-label">${totalLeft < 0 ? 'Ultrapassado' : 'Disponível'}</div>
+                <div class="budget-kpi-val" style="color:${totalLeft < 0 ? 'var(--danger)' : '#f59e0b'}">${fmt(Math.abs(totalLeft))}</div>
+                <div class="budget-kpi-sub">${overCount > 0 ? `⚠️ ${overCount} categoria${overCount !== 1 ? 's' : ''} no limite` : '✓ Dentro do orçamento'}</div>
+            </div>`;
+    }
+
+    // List
+    const listEl = $('budgetList');
+    const emptyEl = $('budgetEmpty');
+    if (!budgets.length) {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+    }
+    emptyEl.style.display = 'none';
+
+    // Sort: over first, then by pct desc
+    const sorted = [...budgets].map(b => {
+        const spent = getBudgetSpend(b.cat, m, a);
+        const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
+        return { ...b, spent, pct };
+    }).sort((a, b) => b.pct - a.pct);
+
+    listEl.innerHTML = sorted.map((b, i) => {
+        const left = b.limit - b.spent;
+        const st = budgetStatus(b.pct);
+        const barW = Math.min(b.pct, 100);
+        const statusMsg = b.pct >= 100
+            ? `⚠️ Ultrapassou em ${fmt(Math.abs(left))}`
+            : b.pct >= 80
+            ? `⚡ Restam apenas ${fmt(left)} (${100 - b.pct}%)`
+            : `✓ Restam ${fmt(left)} (${100 - b.pct}%)`;
+
+        // find original index in budgets array
+        const origIdx = budgets.findIndex(x => x.cat === b.cat);
+        return `<div class="budget-item" id="bitem-${origIdx}">
+            <div class="budget-item-header">
+                <div class="budget-item-name">${b.cat}</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <div class="budget-item-amounts">
+                        <span style="color:var(--danger);font-weight:600">${fmt(b.spent)}</span>
+                        <span style="color:var(--text-3)">de</span>
+                        <span style="font-weight:600">${fmt(b.limit)}</span>
+                        <span style="background:${st==='over'?'#fee2e2':st==='warn'?'#fef3c7':'#dcfce7'};color:${st==='over'?'var(--danger)':st==='warn'?'#92400e':'var(--success)'};font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:4px">${b.pct}%</span>
+                    </div>
+                    <div class="budget-item-actions">
+                        <button class="icon-btn" title="Editar" onclick="editBudgetItem(${origIdx})">✏️</button>
+                        <button class="icon-btn" title="Remover" onclick="deleteBudgetItem(${origIdx})">🗑️</button>
+                    </div>
+                </div>
+            </div>
+            <div class="budget-bar-track">
+                <div class="budget-bar-fill ${st}" style="width:${barW}%"></div>
+            </div>
+            <div class="budget-status ${st}">${statusMsg}</div>
+        </div>`;
+    }).join('');
+}
+
+function renderBudgetWidget() {
+    const widget = $('budgetWidget');
+    const listEl = $('budgetWidgetList');
+    if (!budgets.length) { widget.style.display = 'none'; return; }
+
+    const now = new Date(), m = now.getMonth(), a = now.getFullYear();
+    widget.style.display = 'block';
+
+    const items = budgets.map(b => {
+        const spent = getBudgetSpend(b.cat, m, a);
+        const pct = b.limit > 0 ? Math.round((spent / b.limit) * 100) : 0;
+        return { ...b, spent, pct };
+    }).sort((a, b) => b.pct - a.pct).slice(0, 6); // show top 6
+
+    listEl.innerHTML = items.map(b => {
+        const st = budgetStatus(b.pct);
+        const barW = Math.min(b.pct, 100);
+        return `<div class="bw-item">
+            <div class="bw-label" title="${b.cat}">${b.cat}</div>
+            <div class="bw-track"><div class="bw-fill ${st}" style="width:${barW}%"></div></div>
+            <div class="bw-pct ${st}">${b.pct}%</div>
+        </div>`;
+    }).join('');
+}
+
+let _editBudgetIdx = null;
+
+function addBudgetItem() {
+    _editBudgetIdx = null;
+    openBudgetForm({ cat: '', limit: '' });
+}
+
+function editBudgetItem(idx) {
+    _editBudgetIdx = idx;
+    openBudgetForm(budgets[idx]);
+}
+
+function openBudgetForm(data) {
+    // Build category options (saida cats)
+    const usedCats = budgets.map((b, i) => i !== _editBudgetIdx ? b.cat : null).filter(Boolean);
+    const available = (cats.saida || []).filter(c => !usedCats.includes(c));
+    const catOpts = available.map(c => `<option value="${c}" ${data.cat === c ? 'selected' : ''}>${c}</option>`).join('');
+
+    const el = document.getElementById('budgetFormRow');
+    if (el) el.remove();
+
+    const listEl = $('budgetList');
+    const formHTML = `<div id="budgetFormRow" class="budget-input-row">
+        <div class="ie-field"><label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Categoria</label>
+            <select id="bf-cat" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;width:100%">
+                <option value="">Selecione...</option>${catOpts}
+            </select></div>
+        <div class="ie-field"><label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3)">Limite (R$)</label>
+            <input id="bf-limit" type="text" inputmode="decimal" value="${data.limit ? String(data.limit).replace('.',',') : ''}" placeholder="0,00"
+                style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;width:100%">
+        </div>
+        <div style="display:flex;gap:4px;padding-bottom:1px">
+            <button class="ie-save" onclick="saveBudgetForm()">✓ Salvar</button>
+            <button class="ie-cancel" onclick="document.getElementById('budgetFormRow').remove()">✕</button>
+        </div>
+    </div>`;
+
+    if (_editBudgetIdx !== null) {
+        const itemEl = document.getElementById('bitem-' + _editBudgetIdx);
+        if (itemEl) { itemEl.insertAdjacentHTML('beforebegin', formHTML); return; }
+    }
+    listEl.insertAdjacentHTML('afterbegin', formHTML);
+}
+
+function saveBudgetForm() {
+    const cat = $('bf-cat').value;
+    const limitRaw = $('bf-limit').value.replace(/\./g, '').replace(',', '.');
+    const limit = parseFloat(limitRaw);
+    if (!cat) return toast('⚠️ Selecione uma categoria.', '#b45309');
+    if (isNaN(limit) || limit <= 0) return toast('⚠️ Limite inválido.', '#b45309');
+
+    if (_editBudgetIdx !== null) {
+        budgets[_editBudgetIdx] = { cat, limit };
+    } else {
+        budgets.push({ cat, limit });
+    }
+    saveBudgets();
+    document.getElementById('budgetFormRow')?.remove();
+    renderBudget();
+    renderBudgetWidget();
+    toast('✓ Orçamento salvo!');
+}
+
+function deleteBudgetItem(idx) {
+    budgets.splice(idx, 1);
+    saveBudgets();
+    renderBudget();
+    renderBudgetWidget();
+    toast('🗑️ Orçamento removido.');
+}
+
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 function navTo(view, btn) {
     currentView = view;
@@ -1765,15 +2039,16 @@ function navTo(view, btn) {
 
     const isDash = view === 'dashboard';
     $('view-dashboard').style.display = isDash ? (IS_MOBILE ? 'flex' : 'grid') : 'none';
-    ['anual','mensal','metas'].forEach(v => $('view-' + v).classList.toggle('active', v === view));
+    ['anual','mensal','metas','budget'].forEach(v => $('view-' + v).classList.toggle('active', v === view));
 
-    const hideMes = view === 'anual' || view === 'metas';
+    const hideMes = view === 'anual' || view === 'metas' || view === 'budget';
     $('filtroMes').style.display = hideMes ? 'none' : '';
     $('pillMes').style.display   = hideMes ? 'none' : '';
 
     if (view === 'anual')  renderAnual();
     if (view === 'mensal') renderMensal();
     if (view === 'metas')  renderGoals();
+    if (view === 'budget') renderBudget();
 }
 
 function onFiltroChange() {
@@ -2597,6 +2872,7 @@ function atualizar() {
     renderFixosTable();
     renderCartoesMini();
     renderTabela();
+    renderBudgetWidget();
 }
 
 function renderTrend() {
