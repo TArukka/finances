@@ -159,7 +159,7 @@
         .month-nav-label { font-size: 12px; font-weight: 600; color: var(--text); min-width: 110px; text-align: center; white-space: nowrap; padding: 0 2px; }
         body.mobile .month-nav-bar { display: none; }
 
-        .fixos-table-section { border-bottom: 3px solid var(--bg); margin-bottom: 4px; }
+        .fixos-table-section { border-bottom: 4px solid var(--bg); margin-bottom: 0; }
         .fixos-table-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; }
         .fixos-table-header:hover { background: var(--bg); }
         .fixos-table-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #92400e; flex: 1; display: flex; align-items: center; gap: 6px; }
@@ -343,7 +343,7 @@
         .search-row input { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-family: inherit; outline: none; }
         .search-row input:focus { border-color: var(--accent); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 0 14px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+        th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 12px 14px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; background: var(--bg); }
         th.sortable { cursor: pointer; user-select: none; }
         th.sortable:hover { color: var(--text-2); }
         th .si { margin-left: 3px; opacity: .4; }
@@ -412,7 +412,7 @@
         .data-table-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
         .data-table-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-2); padding: 14px 16px; border-bottom: 1px solid var(--border); }
         .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .data-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: right; }
+        .data-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: right; background: var(--bg); }
         .data-table th:first-child { text-align: left; }
         .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-light); text-align: right; }
         .data-table td:first-child { text-align: left; font-weight: 500; }
@@ -778,6 +778,11 @@
             <span class="month-nav-label" id="monthNavLabel">—</span>
             <button class="month-nav-btn" onclick="changeMonth(1)" title="Próximo mês">›</button>
         </div>
+        <div class="month-nav-bar" id="yearNavBar" style="margin-left:4px">
+            <button class="month-nav-btn" onclick="changeYear(-1)" title="Ano anterior">‹</button>
+            <span class="month-nav-label" id="yearNavLabel" style="min-width:44px">—</span>
+            <button class="month-nav-btn" onclick="changeYear(1)" title="Próximo ano">›</button>
+        </div>
         <select id="filtroMes" onchange="onFiltroChange()" style="display:none"></select>
         <select id="filtroAno" onchange="onFiltroChange()" style="display:none"></select>
     </div>
@@ -1065,9 +1070,9 @@
                 <div class="chart-box-label">Investimentos</div>
                 <div id="wrapInvest"><div class="chart-empty"><span style="font-size:24px;opacity:.3">💼</span>Sem dados</div></div>
             </div>
-            <div class="chart-box">
-                <div class="chart-box-label">Tendência — 6 meses</div>
-                <div class="chart-wrap"><canvas id="graficoTrend"></canvas></div>
+            <div class="chart-box" id="budgetRemainingBox">
+                <div class="chart-box-label">Orçamento do Mês</div>
+                <div id="wrapBudgetRemaining"><div class="chart-empty"><span style="font-size:24px;opacity:.3">💰</span>Defina um orçamento</div></div>
             </div>
         </div>
         <div class="history-box">
@@ -1095,7 +1100,7 @@
                 </div>
                 <div class="fixos-table-body" id="fixosTableBody"></div>
             </div>
-            <div id="txSectionDivider" style="display:none;height:8px;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);"></div>
+            <div id="txSectionDivider" style="display:none;height:12px;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);"></div>
             <table>
                 <thead>
                     <tr>
@@ -1236,10 +1241,17 @@
 
         <!-- Budget Total -->
         <div style="display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
-            <div class="field" style="margin:0;flex:0 0 200px">
-                <label style="font-size:11px;font-weight:600;color:var(--text-2)">Orçamento Total do Mês</label>
+            <div class="field" style="margin:0;flex:0 0 220px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                    <label style="font-size:11px;font-weight:600;color:var(--text-2)">Orçamento Total do Mês</label>
+                    <span id="budgetTypeBadge"></span>
+                </div>
                 <input type="text" id="budgetTotal" placeholder="R$ 5.000" oninput="onBudgetTotalChange()"
                     style="font-size:16px;font-weight:700;padding:10px 12px">
+                <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+                    <button onclick="openAplicarMeses()" style="font-size:11px;font-weight:600;padding:5px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--text-2);white-space:nowrap">📅 Aplicar a meses</button>
+                    <button id="btnResetMonthBudget" onclick="resetMonthBudget()" style="display:none;font-size:11px;font-weight:600;padding:5px 10px;border:1px solid #fed7aa;background:#fff7ed;border-radius:6px;cursor:pointer;color:#b45309;white-space:nowrap">↩ Usar padrão</button>
+                </div>
             </div>
             <div style="flex:1;display:flex;gap:14px;flex-wrap:wrap">
                 <div class="kpi" style="flex:1;min-width:120px">
@@ -1317,6 +1329,37 @@
             </div>
         </div>
         <div class="fixos-popup-body" id="fixosPopupBody"></div>
+    </div>
+</div>
+
+<!-- MODAL APLICAR ORÇAMENTO A MESES -->
+<div class="overlay" id="ovAplicarMeses" onclick="if(event.target===this)$('ovAplicarMeses').classList.remove('open')">
+    <div class="modal" style="width:420px">
+        <div class="modal-title">📅 Aplicar Orçamento a Meses</div>
+        <div class="modal-sub">Defina um valor e selecione os meses de <span id="aplicarMesesAno"></span> que devem usar esse orçamento.</div>
+        <div class="field">
+            <label>Valor do Orçamento (R$)</label>
+            <input type="text" id="aplicarMesesValor" placeholder="5.000" inputmode="decimal"
+                style="font-size:16px;font-weight:700;padding:10px 12px">
+        </div>
+        <div style="margin-bottom:12px">
+            <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px">Meses</div>
+            <div id="aplicarMesesGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <button onclick="$('aplicarMesesGrid').querySelectorAll('input').forEach(c=>c.checked=true)"
+                    class="link-btn">Selecionar todos</button>
+                <button onclick="$('aplicarMesesGrid').querySelectorAll('input').forEach(c=>c.checked=false)"
+                    class="link-btn">Limpar</button>
+            </div>
+        </div>
+        <label class="check-row" style="margin-bottom:4px">
+            <input type="checkbox" id="aplicarComoDefault" style="accent-color:var(--accent)">
+            Definir também como orçamento padrão (todos os outros meses)
+        </label>
+        <div class="modal-footer">
+            <button class="btn-mcancel" onclick="$('ovAplicarMeses').classList.remove('open')">Cancelar</button>
+            <button class="btn-confirm" onclick="confirmarAplicarMeses()">Aplicar</button>
+        </div>
     </div>
 </div>
 
@@ -2053,9 +2096,10 @@ function navTo(view, btn) {
     ['anual','mensal','metas'].forEach(v => $('view-' + v).classList.toggle('active', v === view));
 
     const hideMes = view === 'anual' || view === 'metas';
-    $('filtroMes').style.display = hideMes ? 'none' : '';
     const navBar = $('monthNavBar');
     if (navBar) navBar.style.display = hideMes ? 'none' : '';
+    const yearNav = $('yearNavBar');
+    if (yearNav) yearNav.style.display = hideMes ? 'none' : '';
 
     if (view === 'dashboard' && _dashDirty) { _dashDirty = false; atualizar(); }
     if (view === 'anual')  renderAnual();
@@ -2670,7 +2714,7 @@ function renderFixosTable() {
     $('fixosTableTotal').textContent = fmt(total);
 
     const body = $('fixosTableBody');
-    const sorted2 = [...fixos].sort((a, b) => parseInt(a.data.split('-')[2]) - parseInt(b.data.split('-')[2]));
+    const sorted2 = [...fixos].sort((a, b) => b.valor - a.valor);
 
     if (IS_MOBILE) {
         body.innerHTML = sorted2.map(t => {
@@ -2867,7 +2911,7 @@ function atualizar() {
     if (currentView === 'dashboard') {
         renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS);
         renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
-        renderTrend();
+        renderBudgetRemaining();
         renderFaturas();
         renderFixosTable();
         renderCartoesMini();
@@ -2877,35 +2921,60 @@ function atualizar() {
     }
 }
 
-function renderTrend() {
-    const now = new Date(), labels = [], ent = [], gas = [], inv = [];
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        labels.push(MESES[d.getMonth()].slice(0, 3));
-        const l = txMes(d.getMonth(), d.getFullYear());
-        // Single pass instead of 3x filter+reduce
-        let e = 0, g = 0, v = 0;
-        for (let j = 0; j < l.length; j++) {
-            const t = l[j];
-            if (t.tipo === 'entrada') e += t.valor;
-            else if (t.tipo === 'saida') g += t.valor;
-            else v += t.valor;
-        }
-        ent.push(e); gas.push(g); inv.push(v);
+// ── BUDGET REMAINING (dashboard panel) ───────────────────────────────────────
+function renderBudgetRemaining() {
+    const wrap = $('wrapBudgetRemaining');
+    if (!wrap) return;
+    const { m, a } = filtro();
+    const totalBudget = getBudgetTotal(m, a);
+    const saidas = txMes(m, a).filter(t => t.tipo === 'saida');
+    const totalSpent = saidas.reduce((s, t) => s + t.valor, 0);
+
+    if (!totalBudget) {
+        wrap.innerHTML = `<div class="chart-empty"><span style="font-size:24px;opacity:.3">💰</span>Defina um orçamento<br><small style="font-size:10px;color:var(--text-3)">em Orçamento → Total</small></div>`;
+        return;
     }
-    const cc = _chartColors();
-    const ds = [
-        { label: 'Entradas', data: ent, backgroundColor: cc.entBg, borderColor: cc.entBd, borderWidth: 1.5, borderRadius: 3 },
-        { label: 'Gastos',   data: gas, backgroundColor: cc.gasBg, borderColor: cc.gasBd, borderWidth: 1.5, borderRadius: 3 },
-        { label: 'Invest.',  data: inv, backgroundColor: cc.invBg, borderColor: cc.invBd, borderWidth: 1.5, borderRadius: 3 }
-    ];
-    if (!_updateChart('trend', labels, ds)) {
-        destroyChart('trend');
-        charts['trend'] = new Chart($('graficoTrend').getContext('2d'), {
-            type: 'bar', data: { labels, datasets: ds },
-            options: { ...CHART_COMMON_OPTS, scales: AXIS_OPTS }
-        });
-    }
+
+    const remaining = totalBudget - totalSpent;
+    const pctUsed = Math.min(100, Math.round((totalSpent / totalBudget) * 100));
+    const overBudget = totalSpent > totalBudget;
+    const barColor = overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--success)';
+
+    // Per-category bars (top 4 by allocated %)
+    const cats2 = [...budget.categorias]
+        .filter(c => c.pct > 0)
+        .sort((a, b) => b.pct - a.pct)
+        .slice(0, 5);
+
+    const catBars = cats2.map(c => {
+        const allocated = totalBudget * (c.pct / 100);
+        const spent = _getSpentForBudgetCat(c, saidas);
+        const p = allocated > 0 ? Math.min(100, Math.round((spent / allocated) * 100)) : 0;
+        const col = p > 100 ? 'var(--danger)' : p > 80 ? '#f59e0b' : 'var(--success)';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+            <span style="font-size:13px;width:18px;text-align:center;flex-shrink:0">${c.icon || '📦'}</span>
+            <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+                <div style="height:5px;border-radius:3px;background:${col};width:${p}%;transition:width .4s"></div>
+            </div>
+            <span style="font-size:10px;color:var(--text-3);width:28px;text-align:right;flex-shrink:0">${p}%</span>
+        </div>`;
+    }).join('');
+
+    wrap.innerHTML = `
+        <div style="padding:2px 0 10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+                <span style="font-size:11px;color:var(--text-3)">${overBudget ? '⚠️ Acima do orçamento' : 'Restante'}</span>
+                <span style="font-size:18px;font-weight:700;color:${overBudget ? 'var(--danger)' : 'var(--success)'}">${fmt(Math.abs(remaining))}</span>
+            </div>
+            <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:5px">
+                <div style="height:8px;border-radius:4px;background:${barColor};width:${pctUsed}%;transition:width .5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-bottom:12px">
+                <span>${fmt(totalSpent)} gasto</span>
+                <span>${pctUsed}% de ${fmt(totalBudget)}</span>
+            </div>
+            ${catBars ? `<div style="border-top:1px solid var(--border-light);padding-top:8px">${catBars}</div>` : ''}
+        </div>`;
 }
 
 // ── ANNUAL VIEW ───────────────────────────────────────────────────────────────
@@ -3254,10 +3323,87 @@ function selectBudgetIcon(icon) {
 let budget = JSON.parse(localStorage.getItem('fin5_budget') || '{"total":0,"categorias":[]}');
 if (!budget.categorias) budget.categorias = [];
 if (!budget.total) budget.total = 0;
+if (!budget.monthTotals) budget.monthTotals = {};   // "YYYY-MM" → number overrides
 const saveBudget = () => localStorage.setItem('fin5_budget', JSON.stringify(budget));
+
+// Returns the effective total for a given month — custom override or global default
+function getBudgetTotal(m, a) {
+    const key = `${a}-${String(m + 1).padStart(2, '0')}`;
+    return (budget.monthTotals[key] != null) ? budget.monthTotals[key] : budget.total;
+}
+function isMonthCustom(m, a) {
+    const key = `${a}-${String(m + 1).padStart(2, '0')}`;
+    return budget.monthTotals[key] != null;
+}
 
 let _budgetMonth = new Date().getMonth();
 let _budgetYear  = new Date().getFullYear();
+
+function resetMonthBudget() {
+    const key = `${_budgetYear}-${String(_budgetMonth + 1).padStart(2, '0')}`;
+    delete budget.monthTotals[key];
+    saveBudget();
+    renderBudget();
+    toast('↩ Voltou ao orçamento padrão.', '#52525b');
+}
+
+function openAplicarMeses() {
+    // Populate month checkboxes for the current budget year
+    const container = $('aplicarMesesGrid');
+    if (!container) return;
+    const a = _budgetYear;
+    container.innerHTML = MESES.map((nome, i) => {
+        const key = `${a}-${String(i + 1).padStart(2, '0')}`;
+        const hasCustom = budget.monthTotals[key] != null;
+        const isDefault = !hasCustom;
+        return `<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:13px;font-weight:500">
+            <input type="checkbox" value="${i}" ${isDefault ? '' : ''} style="accent-color:var(--accent)"> ${nome.slice(0,3)}
+        </label>`;
+    }).join('');
+
+    // Set the value input to the current month's effective total
+    const inp = $('aplicarMesesValor');
+    const cur = getBudgetTotal(_budgetMonth, _budgetYear);
+    if (inp) inp.value = cur > 0 ? cur.toLocaleString('pt-BR') : '';
+
+    // Select all checkboxes by default
+    container.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+
+    $('aplicarMesesAno').textContent = a;
+    $('ovAplicarMeses').classList.add('open');
+}
+
+function confirmarAplicarMeses() {
+    const raw = $('aplicarMesesValor').value.replace(/[^\d,\.]/g, '');
+    const val = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+    if (isNaN(val) || val <= 0) return toast('⚠️ Valor inválido.', '#b45309');
+
+    const checked = Array.from($('aplicarMesesGrid').querySelectorAll('input:checked'))
+        .map(cb => parseInt(cb.value));
+    if (!checked.length) return toast('⚠️ Selecione ao menos um mês.', '#b45309');
+
+    const a = _budgetYear;
+    const isDefault = $('aplicarComoDefault').checked;
+
+    checked.forEach(m => {
+        const key = `${a}-${String(m + 1).padStart(2, '0')}`;
+        budget.monthTotals[key] = val;
+    });
+
+    // If "set as default" is checked, also update the global default and remove overrides for selected months
+    if (isDefault) {
+        budget.total = val;
+        checked.forEach(m => {
+            const key = `${a}-${String(m + 1).padStart(2, '0')}`;
+            delete budget.monthTotals[key];
+        });
+    }
+
+    saveBudget();
+    $('ovAplicarMeses').classList.remove('open');
+    renderBudget();
+    toast(`✓ Orçamento de ${fmt(val)} aplicado a ${checked.length} mese${checked.length !== 1 ? 's' : ''}!`, '#16a34a');
+}
 
 function budgetPrevMonth() {
     _budgetMonth--;
@@ -3328,7 +3474,16 @@ function removerBudgetCat(id) {
 function onBudgetTotalChange() {
     const raw = $('budgetTotal').value.replace(/[^\d,\.]/g, '');
     const val = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
-    budget.total = isNaN(val) ? 0 : val;
+    const v = isNaN(val) ? 0 : val;
+    const key = `${_budgetYear}-${String(_budgetMonth + 1).padStart(2, '0')}`;
+    if (isMonthCustom(_budgetMonth, _budgetYear)) {
+        // Already a custom month — update the override
+        if (v === 0) { delete budget.monthTotals[key]; }
+        else { budget.monthTotals[key] = v; }
+    } else {
+        // Editing the global default
+        budget.total = v;
+    }
     saveBudget();
     renderBudget();
 }
@@ -3341,17 +3496,30 @@ function updateBudgetCatPct(id, val) {
 
 // ── BUDGET RENDERING ─────────────────────────────────────────────────────────
 function renderBudget() {
+    if (currentView === 'dashboard') renderBudgetRemaining();
     const m = _budgetMonth, a = _budgetYear;
     const monthLabel = $('budgetMonthLabel');
     if (monthLabel) monthLabel.textContent = `${MESES[m]} ${a}`;
 
-    // Set total input value
+    const custom = isMonthCustom(m, a);
+    const totalBudget = getBudgetTotal(m, a);
+
+    // Update total input
     const totalInput = $('budgetTotal');
     if (totalInput && document.activeElement !== totalInput) {
-        totalInput.value = budget.total > 0 ? budget.total.toLocaleString('pt-BR') : '';
+        totalInput.value = totalBudget > 0 ? totalBudget.toLocaleString('pt-BR') : '';
     }
 
-    const totalBudget = budget.total || 0;
+    // Update badge
+    const badge = $('budgetTypeBadge');
+    if (badge) {
+        badge.textContent = custom ? '⚡ Personalizado' : '✅ Padrão';
+        badge.style.cssText = `font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;${custom ? 'background:#fff7ed;color:#b45309' : 'background:#f0fdf4;color:#15803d'}`;
+    }
+
+    // Show/hide the reset-to-default button
+    const resetBtn = $('btnResetMonthBudget');
+    if (resetBtn) resetBtn.style.display = custom ? '' : 'none';
     const totalAllocPct = budget.categorias.reduce((s, c) => s + (c.pct || 0), 0);
     const totalAllocVal = totalBudget * (totalAllocPct / 100);
 
@@ -3521,11 +3689,26 @@ function changeMonth(delta) {
     onFiltroChange();
 }
 
+function changeYear(delta) {
+    const selM = $('filtroMes'), selA = $('filtroAno');
+    let a = parseInt(selA.value) + delta;
+    const opts = Array.from(selA.options).map(o => parseInt(o.value));
+    if (!opts.includes(a)) {
+        const o = document.createElement('option');
+        o.value = a; o.text = a;
+        if (delta > 0) selA.add(o); else selA.insertBefore(o, selA.firstChild);
+    }
+    selA.value = a;
+    onFiltroChange();
+}
+
 function updateMonthNavLabel() {
     const m = parseInt($('filtroMes').value);
     const a = parseInt($('filtroAno').value);
     const el = $('monthNavLabel');
     if (el) el.textContent = MESES[m] + ' ' + a;
+    const yr = $('yearNavLabel');
+    if (yr) yr.textContent = a;
 }
 
 // ── ANNUAL YEAR NAV ──────────────────────────────────────────────────────────
