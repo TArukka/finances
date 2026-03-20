@@ -115,14 +115,14 @@
         .fatura-section { padding: 0 16px 12px; }
 
         /* FIXOS TABLE SECTION */
-        .fixos-table-section { border-bottom: 1px solid var(--border); }
-        .fixos-table-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; }
+        .fixos-table-section { border-bottom: 1px solid var(--border); background: var(--surface); position: relative; z-index: 1; }
+        .fixos-table-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; user-select: none; background: var(--surface); }
         .fixos-table-header:hover { background: var(--bg); }
         .fixos-table-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #92400e; flex: 1; display: flex; align-items: center; gap: 6px; }
         .fixos-table-total { font-size: 13px; font-weight: 700; color: var(--danger); }
         .fixos-table-arrow { font-size: 11px; color: var(--text-3); transition: transform .2s; }
         .fixos-table-section.open .fixos-table-arrow { transform: rotate(180deg); }
-        .fixos-table-body { display: none; }
+        .fixos-table-body { display: none; background: var(--surface); }
         .fixos-table-section.open .fixos-table-body { display: block; }
         .fixos-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .fixos-table td { padding: 9px 14px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
@@ -301,7 +301,7 @@
         .search-row input { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-family: inherit; outline: none; }
         .search-row input:focus { border-color: var(--accent); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 0 14px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+        th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; background: var(--surface); }
         th.sortable { cursor: pointer; user-select: none; }
         th.sortable:hover { color: var(--text-2); }
         th .si { margin-left: 3px; opacity: .4; }
@@ -911,6 +911,11 @@
                     <div class="kpi-sub" id="savingsLabel"></div>
                     <div class="savings-track"><div class="savings-fill" id="savingsFill" style="width:0%"></div></div>
                 </div>
+                <div id="kpiAnualWrap" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);display:none">
+                    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);margin-bottom:3px">Acumulado anual</div>
+                    <div style="font-size:13px;font-weight:700" id="kpiAnualSaldo">—</div>
+                    <div style="font-size:11px;color:var(--text-3);margin-top:1px" id="kpiAnualSub"></div>
+                </div>
             </div>
         </div>
         <div class="charts">
@@ -981,11 +986,11 @@
         </div>
         <!-- ★ UPDATED: 4-column grid, 2 rows, with Saldo Anual + Saldo Até Agora -->
         <div class="annual-kpis" style="grid-template-columns:repeat(5,1fr)">
-            <div class="kpi al-green">  <div class="kpi-label">Entradas</div>  <div class="kpi-val green"  id="aKpiEnt">—</div></div>
-            <div class="kpi al-red">    <div class="kpi-label">Despesas</div>  <div class="kpi-val red"    id="aKpiGas">—</div></div>
+            <div class="kpi al-green">  <div class="kpi-label">Entradas</div>  <div class="kpi-val green"  id="aKpiEnt">—</div><div class="kpi-sub" id="aKpiEntSub"></div></div>
+            <div class="kpi al-red">    <div class="kpi-label">Despesas</div>  <div class="kpi-val red"    id="aKpiGas">—</div><div class="kpi-sub" id="aKpiGasSub2"></div></div>
             <div class="kpi al-purple"> <div class="kpi-label">Investido</div> <div class="kpi-val purple" id="aKpiInv">—</div></div>
-            <div class="kpi al-dark">   <div class="kpi-label">Saldo Anual</div><div class="kpi-val" id="aKpiSaldo">—</div><div class="kpi-sub">Jan → Dez (projeção)</div></div>
             <div class="kpi al-amber">  <div class="kpi-label">Saldo Até Agora</div><div class="kpi-val" id="aKpiSaldoNow">—</div><div class="kpi-sub" id="aKpiSaldoNowSub"></div></div>
+            <div class="kpi al-dark">   <div class="kpi-label">Saldo Anual</div><div class="kpi-val" id="aKpiSaldo">—</div><div class="kpi-sub">Jan → Dez (projeção)</div></div>
         </div>
         <div class="annual-charts-row">
             <div class="chart-box">
@@ -2378,7 +2383,8 @@ function renderFixosTable() {
 
     // Desktop: proper table with inline edit
     body.innerHTML = `<table class="fixos-table">${sorted2.map(t => {
-        const day = parseInt(t.data.split('-')[2]);
+        const [ty, tm, td] = t.data.split('-');
+        const dateLabel = `${td}/${tm}`;
         const cor = t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
         const pre = t.tipo === 'entrada' ? '+' : '−';
         const payBadge = t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : (t.tipo === 'saida' ? '<span class="tag-deb">DÉB</span>' : '');
@@ -2392,10 +2398,7 @@ function renderFixosTable() {
             `<option value="${v}" ${(t.pagamento||'debito')===v?'selected':''}>${v==='debito'?'Débito':'Crédito'}</option>`).join('');
 
         return `<tr id="ftr-${t.id}" class="${isEd?'fixo-editing':''}">
-            <td style="width:50px">
-                <input type="number" class="fixo-day-input" min="1" max="28" value="${day}"
-                    onchange="updateFixoDay(${t.id}, this.value)">
-            </td>
+            <td style="width:52px;font-size:12px;color:var(--text-3);font-weight:500;white-space:nowrap">${dateLabel}</td>
             <td><span style="font-weight:500">${t.desc}</span> ${payBadge}
                 <div style="font-size:11px;color:var(--text-3)">${t.cat}</div></td>
             <td style="font-weight:600;color:${cor};white-space:nowrap;text-align:right">${pre} ${fmt(t.valor)}</td>
@@ -2406,7 +2409,8 @@ function renderFixosTable() {
         </tr>
         <tr id="fie-${t.id}" class="fixo-ie ${isEd?'open':''}">
             <td colspan="4">
-                <div class="fixo-ie-inner">
+                <div class="fixo-ie-inner" style="grid-template-columns:60px 1fr 1fr 1fr 1fr auto">
+                    <div class="ie-field"><label>Dia</label><input id="fie-day-${t.id}" value="${parseInt(td)}" type="number" min="1" max="28" style="text-align:center"></div>
                     <div class="ie-field"><label>Descrição</label><input id="fie-desc-${t.id}" value="${t.desc.replace(/"/g,'&quot;')}" type="text"></div>
                     <div class="ie-field"><label>Valor (R$)</label><input id="fie-valor-${t.id}" value="${t.valor.toFixed(2).replace('.',',')}" type="text"></div>
                     <div class="ie-field"><label>Tipo</label><select id="fie-tipo-${t.id}" onchange="fieUpdateCats(${t.id})">${tipoOpts}</select></div>
@@ -2460,12 +2464,36 @@ function saveFixoEdit(id) {
     const cat   = document.getElementById('fie-cat-'   + id).value;
     const pag   = tipo === 'saida' ? document.getElementById('fie-pag-' + id).value : null;
     const fixo  = document.getElementById('fie-fixo-'  + id).checked;
+    const dayInput = document.getElementById('fie-day-' + id);
+    const newDay = dayInput ? Math.max(1, Math.min(28, parseInt(dayInput.value))) : null;
 
     if (!desc)              return toast('⚠️ Descrição vazia.', '#b45309');
     if (isNaN(valor) || valor <= 0) return toast('⚠️ Valor inválido.', '#b45309');
 
+    // Get original desc to match fixo group
+    const origT = tx.find(t => t.id == id);
+    const origDesc = origT ? origT.desc : desc;
+
     pushUndo(tx, `Edição do fixo "${desc}"`);
-    tx = tx.map(t => t.id == id ? { ...t, desc, valor, tipo, cat, pagamento: pag, fixo } : t);
+    tx = tx.map(t => {
+        if (t.id == id) {
+            // Update this entry
+            let data = t.data;
+            if (newDay && !isNaN(newDay)) {
+                const [y, m] = t.data.split('-');
+                data = `${y}-${m}-${String(newDay).padStart(2,'0')}`;
+            }
+            return { ...t, desc, valor, tipo, cat, pagamento: pag, fixo, data };
+        }
+        // Propagate day change to all other fixo instances with same original desc
+        if (newDay && !isNaN(newDay) && t.fixo && t.desc === origDesc && t.id != id) {
+            const [xy, xm] = t.data.split('-');
+            const maxDay = new Date(parseInt(xy), parseInt(xm), 0).getDate();
+            const safeDay = Math.min(newDay, maxDay);
+            return { ...t, data: `${xy}-${xm}-${String(safeDay).padStart(2,'0')}` };
+        }
+        return t;
+    });
     closeFixoEdit();
     save(); atualizar();
     toast('✓ Fixo atualizado!');
@@ -2518,6 +2546,24 @@ function atualizar() {
     const kpiSal = $('kpiSal');
     kpiSal.textContent = fmt(saldo); kpiSal.className = 'kpi-val ' + (saldo < 0 ? 'red' : '');
     $('kpiGasSub').textContent = ent > 0 ? `${Math.round((gas / ent) * 100)}% da renda` : '';
+
+    // Annual running saldo
+    const nowD = new Date(), curM = nowD.getMonth(), curY = nowD.getFullYear();
+    let aEnt = 0, aGas = 0, aInv = 0;
+    for (let mi = 0; mi <= (a === curY ? curM : 11); mi++) {
+        txMes(mi, a).forEach(t => {
+            if (t.tipo === 'entrada') aEnt += t.valor;
+            else if (t.tipo === 'investimento') aInv += t.valor;
+            else aGas += t.valor;
+        });
+    }
+    const aSaldo = aEnt - aGas - aInv;
+    const anualWrap = $('kpiAnualWrap');
+    anualWrap.style.display = 'block';
+    const kpiAnualSaldo = $('kpiAnualSaldo');
+    kpiAnualSaldo.textContent = fmt(aSaldo);
+    kpiAnualSaldo.style.color = aSaldo < 0 ? 'var(--danger)' : 'var(--success)';
+    $('kpiAnualSub').textContent = a === curY ? `Jan → ${MESES[curM].slice(0,3)}` : `${a} completo`;
 
     const sw = $('savingsWrap');
     if (ent > 0) {
@@ -2606,8 +2652,13 @@ function renderAnual() {
     const aSaldo = aEnt - aGas - aInv;
     const saldoNow = sNowEnt - sNowGas - sNowInv;
 
-    $('aKpiEnt').textContent = fmt(aEnt);
-    $('aKpiGas').textContent = fmt(aGas);
+    const nowPeriodLabel = a === curYear
+        ? `Jan → ${MESES[curMonth].slice(0, 3)}`
+        : (a < curYear ? 'Ano completo' : 'Ainda não começou');
+    $('aKpiEnt').textContent = fmt(sNowEnt);
+    $('aKpiEntSub').textContent = nowPeriodLabel;
+    $('aKpiGas').textContent = fmt(sNowGas);
+    $('aKpiGasSub2').textContent = nowPeriodLabel;
     $('aKpiInv').textContent = fmt(aInv);
     const aKpiSaldo = $('aKpiSaldo');
     aKpiSaldo.textContent = fmt(aSaldo); aKpiSaldo.className = 'kpi-val ' + (aSaldo < 0 ? 'red' : '');
