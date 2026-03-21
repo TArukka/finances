@@ -1990,9 +1990,18 @@ const save = () => { _invalidateTxCache(); localStorage.setItem('fin5_data', JSO
 const saveGoals = () => localStorage.setItem('fin5_goals', JSON.stringify(goals));
 const saveCats  = () => localStorage.setItem('fin5_cats', JSON.stringify(cats));
 const saveCards = () => localStorage.setItem('fin5_cards', JSON.stringify(cards));
-const commit      = () => { save(); atualizar(); };
-const commitGoals = () => { saveGoals(); renderGoals(); };
-const commitCats  = () => { saveCats(); onTipoChange(); };
+
+// Push to Firebase in the background after any local change — silently, no spinner
+function _fbPush() {
+    try {
+        if (!_currentUser) return;
+        _dbPut(_buildPayload()).catch(e => console.warn('Firebase push failed:', e));
+    } catch(e) { /* _currentUser not yet defined at boot time — safe to ignore */ }
+}
+
+const commit      = () => { save(); atualizar(); _fbPush(); };
+const commitGoals = () => { saveGoals(); renderGoals(); _fbPush(); };
+const commitCats  = () => { saveCats(); onTipoChange(); _fbPush(); };
 
 // Payment badge HTML — shared across table, fixos, mobile list
 const txPayBadge = t => t.tipo !== 'saida' ? '' :
@@ -3294,7 +3303,7 @@ if (budget.categorias && budget.categorias.length) {
     localStorage.setItem('fin5_budget', JSON.stringify(budget));
 }
 
-const saveBudget = () => localStorage.setItem('fin5_budget', JSON.stringify(budget));
+const saveBudget = () => { localStorage.setItem('fin5_budget', JSON.stringify(budget)); _fbPush(); };
 
 // ── Unified category helpers ───────────────────────────────────────────────────
 function _allBudgetCats() {
@@ -3797,7 +3806,7 @@ function _applyPayload(payload) {
     if (payload.c) cats  = payload.c;
     if (payload.g) goals = payload.g;
     if (payload.k) cards = payload.k;
-    if (payload.b) { budget = payload.b; saveBudget(); }
+    if (payload.b) { budget = payload.b; localStorage.setItem('fin5_budget', JSON.stringify(budget)); }
     save(); saveCats(); saveGoals(); saveCards();
     atualizar(); onTipoChange(); renderGoals(); renderCartoesMini();
 }
