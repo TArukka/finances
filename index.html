@@ -364,6 +364,18 @@
         .ie-field label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); }
         .ie-field input, .ie-field select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; }
         .ie-field input:focus, .ie-field select:focus { border-color: var(--accent); }
+
+        /* ── Searchable category combobox ── */
+        .cat-combo { position: relative; }
+        .cat-combo input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; cursor: pointer; }
+        .cat-combo input:focus { border-color: var(--accent); }
+        .cat-combo-drop { position: absolute; top: calc(100% + 3px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.1); z-index: 500; max-height: 200px; overflow-y: auto; display: none; }
+        .cat-combo-drop.open { display: block; }
+        .cat-combo-item { padding: 7px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-combo-item:hover, .cat-combo-item.active { background: var(--bg); }
+        .cat-combo-empty { padding: 10px; font-size: 11px; color: var(--text-3); text-align: center; }
+        .cat-combo-add { padding: 7px 10px; font-size: 12px; cursor: pointer; color: var(--accent); font-weight: 600; border-top: 1px solid var(--border-light); }
+        .cat-combo-add:hover { background: var(--bg); }
         .ie-actions { display: flex; gap: 4px; padding-bottom: 1px; }
         .ie-save { padding: 6px 14px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
         .ie-cancel { padding: 6px 10px; background: var(--surface); color: var(--text-2); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -967,7 +979,7 @@
                 </div>
                 <div class="field">
                     <label>Categoria</label>
-                    <select id="categoria"></select>
+                    <div class="cat-combo" id="categoria-wrap"><select id="categoria" style="width:100%"></select></div>
                 </div>
             </div>
             <div class="field" id="pagamentoField">
@@ -1303,6 +1315,41 @@
                 <button class="btn-save" style="width:auto;padding:7px 16px;margin:0;font-size:12px" onclick="abrirNovaGoal()">+ Nova Meta</button>
             </div>
             <div class="goals-grid" id="goalsGrid"></div>
+        </div>
+
+        <!-- ── CATEGORY HUB ── -->
+        <div style="margin-top:36px;padding-top:28px;border-top:2px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+                <div>
+                    <div style="font-size:18px;font-weight:700">🏷️ Categorias</div>
+                    <div style="font-size:12px;color:var(--text-3);margin-top:3px">Crie e organize as categorias usadas em todos os lançamentos</div>
+                </div>
+            </div>
+
+            <!-- Type tabs -->
+            <div class="tabs" style="margin-bottom:16px">
+                <button class="tab active t-saida"   id="catHub-tab-saida"        onclick="setCatHub('saida',this)">📉 Gastos</button>
+                <button class="tab t-entrada"         id="catHub-tab-entrada"       onclick="setCatHub('entrada',this)">📈 Entradas</button>
+                <button class="tab t-invest"          id="catHub-tab-investimento"  onclick="setCatHub('investimento',this)">🟣 Investimentos</button>
+            </div>
+
+            <div class="data-table-box">
+                <!-- Category list -->
+                <div id="catHubList" style="min-height:48px"></div>
+
+                <!-- Add row -->
+                <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;background:var(--bg)">
+                    <input type="text" id="catHubInput"
+                        placeholder="Nova categoria… ex: 🏋️ Academia"
+                        style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text)"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+                        onkeydown="if(event.key==='Enter')addCatHub()">
+                    <button onclick="addCatHub()" class="btn-save"
+                        style="width:auto;margin:0;padding:9px 20px;font-size:13px;flex-shrink:0">
+                        ＋ Adicionar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1702,9 +1749,142 @@ function _chartColors() {
         credBg: '#e0f2fe', credBd: '#0284c7',
     };
 }
+// ── SEARCHABLE CATEGORY COMBOBOX ─────────────────────────────────────────────
+function buildCatCombo(id, tipo, currentVal) {
+    const list = cats[tipo] || [];
+    const safe = encodeURIComponent(id);
+    return `
+    <input type="text" id="${id}" value="${escHtml(currentVal || '')}" autocomplete="off"
+        placeholder="Buscar categoria…"
+        oninput="catComboFilter('${safe}')"
+        onfocus="catComboOpen('${safe}')"
+        onkeydown="catComboKey(event,'${safe}')">
+    <div class="cat-combo-drop" id="drop-${safe}">
+        ${_catComboItems(list, currentVal, safe)}
+    </div>`;
+}
+
+function _catComboItems(list, query, safe) {
+    const q = (query || '').toLowerCase();
+    const filtered = q ? list.filter(c => c.toLowerCase().includes(q)) : list;
+    if (!filtered.length && !q) return '<div class="cat-combo-empty">Nenhuma categoria</div>';
+    const items = filtered.map((c, i) => `
+        <div class="cat-combo-item" data-val="${escHtml(c)}" onclick="catComboSelect('${safe}','${escHtml(c)}')"
+            onmouseenter="catComboHover('${safe}',${i})">
+            <span>${c.match(/^\p{Emoji}/u)?.[0] || ''}</span>
+            <span>${escHtml(c)}</span>
+        </div>`).join('');
+    const addBtn = q && !list.some(c => c.toLowerCase() === q)
+        ? `<div class="cat-combo-add" onclick="catComboAddNew('${safe}')">＋ Adicionar "${escHtml(query)}"</div>`
+        : '';
+    return items + addBtn;
+}
+
+let _catComboActiveIdx = -1;
+
+function catComboOpen(safe) {
+    const drop = $('drop-' + safe);
+    if (!drop) return;
+    const inp  = $(decodeURIComponent(safe));
+    const tipo = _getCatComboTipo(safe);
+    drop.innerHTML = _catComboItems(cats[tipo] || [], '', safe);
+    drop.classList.add('open');
+    _catComboActiveIdx = -1;
+    // Close on outside click
+    setTimeout(() => {
+        const close = e => { if (!drop.contains(e.target) && e.target !== inp) { drop.classList.remove('open'); document.removeEventListener('mousedown', close); } };
+        document.addEventListener('mousedown', close);
+    }, 0);
+}
+
+function catComboFilter(safe) {
+    const inp  = $(decodeURIComponent(safe));
+    const drop = $('drop-' + safe);
+    if (!drop || !inp) return;
+    const tipo = _getCatComboTipo(safe);
+    drop.innerHTML = _catComboItems(cats[tipo] || [], inp.value, safe);
+    drop.classList.add('open');
+    _catComboActiveIdx = -1;
+}
+
+function catComboSelect(safe, val) {
+    const inp  = $(decodeURIComponent(safe));
+    const drop = $('drop-' + safe);
+    if (inp) inp.value = val;
+    if (drop) drop.classList.remove('open');
+}
+
+function catComboHover(safe, idx) { _catComboActiveIdx = idx; }
+
+function catComboKey(e, safe) {
+    const drop  = $('drop-' + safe);
+    if (!drop || !drop.classList.contains('open')) return;
+    const items = drop.querySelectorAll('.cat-combo-item');
+    if (e.key === 'ArrowDown') { e.preventDefault(); _catComboActiveIdx = Math.min(_catComboActiveIdx + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('active', i === _catComboActiveIdx)); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); _catComboActiveIdx = Math.max(_catComboActiveIdx - 1, 0); items.forEach((el, i) => el.classList.toggle('active', i === _catComboActiveIdx)); }
+    if (e.key === 'Enter')     { e.preventDefault(); if (_catComboActiveIdx >= 0 && items[_catComboActiveIdx]) { catComboSelect(safe, items[_catComboActiveIdx].dataset.val); } }
+    if (e.key === 'Escape')    { drop.classList.remove('open'); }
+}
+
+function catComboAddNew(safe) {
+    const inp   = $(decodeURIComponent(safe));
+    const nome  = inp ? inp.value.trim() : '';
+    if (!nome) return;
+    const tipo  = _getCatComboTipo(safe);
+    if (!cats[tipo]) cats[tipo] = [];
+    if (!cats[tipo].includes(nome)) {
+        cats[tipo].push(nome);
+        commitCats();
+    }
+    catComboSelect(safe, nome);
+    toast(`✓ Categoria "${nome}" adicionada!`);
+}
+
+function _getCatComboTipo(safe) {
+    // Infer tipo from context: inline edit uses ie-cat-ID, sidebar uses 'categoria'
+    const id = decodeURIComponent(safe);
+    if (id === 'categoria') return $('tipo') ? $('tipo').value : 'saida';
+    if (id === 'mob-categoria') return $('mob-tipo') ? $('mob-tipo').value : 'saida';
+    if (id === 'mob-edit-cat')  return $('mob-edit-tipo') ? $('mob-edit-tipo').value : 'saida';
+    // ie-cat-{txId} — look up the tipo select
+    const match = id.match(/^ie-cat-(\d+)$/);
+    if (match) { const s = $('ie-tipo-' + match[1]); return s ? s.value : 'saida'; }
+    const match2 = id.match(/^fie-cat-(\d+)$/);
+    if (match2) { const s = $('fie-tipo-' + match2[1]); return s ? s.value : 'saida'; }
+    return 'saida';
+}
+
+// Refresh all open comboboxes after cats changes
+function refreshAllCatCombos() {
+    document.querySelectorAll('.cat-combo-drop.open').forEach(drop => {
+        const safe = drop.id.replace('drop-', '');
+        const inp  = $(decodeURIComponent(safe));
+        if (!inp) return;
+        const tipo = _getCatComboTipo(safe);
+        drop.innerHTML = _catComboItems(cats[tipo] || [], inp.value, safe);
+    });
+}
+
+function ieUpdateCats(id) {
+    const tipo = $('ie-tipo-' + id).value;
+    // Rebuild the combobox for the new tipo
+    const wrap = $('ie-cat-wrap-' + id);
+    if (wrap) wrap.innerHTML = buildCatCombo('ie-cat-' + id, tipo, '');
+    $('ie-pag-wrap-' + id).style.display = tipo === 'saida' ? '' : 'none';
+    if (tipo !== 'saida') $('ie-cartao-wrap-' + id).style.display = 'none';
+    else ieUpdateCartao(id);
+}
+
 function populateCatSelect(el, tipo, selected) {
-    el.innerHTML = '';
-    (cats[tipo] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; if (c === selected) o.selected = true; el.add(o); });
+    if (!el) return;
+    // If el is a <select>, keep legacy behaviour (sidebar still uses <select> for now)
+    if (el.tagName === 'SELECT') {
+        el.innerHTML = '';
+        (cats[tipo] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; if (c === selected) o.selected = true; el.add(o); });
+        return;
+    }
+    // For combobox inputs, just update value
+    if (selected) el.value = selected;
 }
 function closeOverlay(id, e) { if (!e || e.target === $(id)) $(id).classList.remove('open'); }
 
@@ -1892,7 +2072,10 @@ function renderMobList() {
         }).join('');
     }
 
-    if (!lista.length && !faturaHtml) { container.innerHTML = ''; return; }
+    if (!lista.length && !faturaHtml) {
+        container.innerHTML = '<div class="empty-state" style="padding:30px;text-align:center;color:var(--text-3);font-size:13px">Nenhum lançamento encontrado.</div>';
+        return;
+    }
     container.innerHTML = faturaHtml + lista.map(t => {
         const [y, mo, d] = t.data.split('-');
         const cor = txCor(t);
@@ -2001,7 +2184,7 @@ function _fbPush() {
 
 const commit      = () => { save(); atualizar(); _fbPush(); };
 const commitGoals = () => { saveGoals(); renderGoals(); _fbPush(); };
-const commitCats  = () => { saveCats(); onTipoChange(); _fbPush(); };
+const commitCats  = () => { saveCats(); onTipoChange(); _fbPush(); if (currentView === 'metas') renderCatHub(); refreshAllCatCombos(); };
 
 // Payment badge HTML — shared across table, fixos, mobile list
 const txPayBadge = t => t.tipo !== 'saida' ? '' :
@@ -2082,20 +2265,34 @@ function navTo(view, btn) {
     if (view === 'dashboard' && _dashDirty) { _dashDirty = false; atualizar(); }
     if (view === 'anual')  renderAnual();
     if (view === 'mensal') renderMensal();
-    if (view === 'metas')  { renderBudget(); renderGoals(); }
+    if (view === 'metas')  { renderBudget(); renderGoals(); renderCatHub(); }
 }
 
 function onFiltroChange() {
     atualizar();
     if (currentView === 'mensal') renderMensal();
     if (currentView === 'anual')  renderAnual();
-    if (currentView === 'metas')  { renderBudget(); renderGoals(); }
+    if (currentView === 'metas')  { renderBudget(); renderGoals(); renderCatHub(); }
 }
 
 function goToMensal(m, a) {
     $('mensalMes').value = m;
     $('mensalAno').value = a;
-    navTo('mensal', document.querySelectorAll('.nav-pill')[2]);
+    // Sync desktop nav pill
+    const pills = document.querySelectorAll('.nav-pill');
+    pills.forEach(p => p.classList.remove('active'));
+    if (pills[2]) pills[2].classList.add('active');
+    // Sync mobile bottom nav
+    if (IS_MOBILE) {
+        document.querySelectorAll('.mob-nav-tab:not(.mob-add-tab)').forEach(t => t.classList.remove('active'));
+        const mensalTab = $('mob-tab-mensal');
+        if (mensalTab) mensalTab.classList.add('active');
+        const label = $('mobViewLabel');
+        if (label) label.textContent = MOB_VIEW_LABELS['mensal'] || '';
+        const bar = $('mobMonthBar');
+        if (bar) bar.style.display = 'flex';
+    }
+    navTo('mensal');
 }
 
 // ── UNDO ──────────────────────────────────────────────────────────────────────
@@ -2134,7 +2331,7 @@ function sorted(list) {
         let va, vb;
         if (sortCol === 'data')  { va = a.data;            vb = b.data; }
         if (sortCol === 'desc')  { va = a.desc.toLowerCase(); vb = b.desc.toLowerCase(); }
-        if (sortCol === 'cat')   { va = a.cat.toLowerCase();  vb = b.cat.toLowerCase(); }
+        if (sortCol === 'cat')   { va = (a.cat||'').toLowerCase();  vb = (b.cat||'').toLowerCase(); }
         if (sortCol === 'valor') { va = a.valor;           vb = b.valor; }
         return va < vb ? -dir : va > vb ? dir : 0;
     });
@@ -2293,7 +2490,7 @@ function closeEditFixo(e) { closeOverlay('ovEditFixo', e); }
 
 function confirmarEdicaoFixo() {
     const rawVal = $('editFixoVal').value;
-    const novoV  = rawVal ? parseFloat(rawVal.replace(',', '.')) : null;
+    const novoV  = rawVal ? parseValor(rawVal) : null;
     const novaCat = $('editFixoCat').value;
     const futuro  = $('editFixoFuturo').checked;
     const { m: mesA, a: anoA } = filtro();
@@ -2362,6 +2559,67 @@ function renderCatList() {
     }).join('') || '<span style="font-size:12px;color:var(--text-3)">Nenhuma.</span>';
 }
 
+// ── CATEGORY HUB ─────────────────────────────────────────────────────────────
+let _catHubType = 'saida';
+
+function setCatHub(tipo, btn) {
+    _catHubType = tipo;
+    document.querySelectorAll('[id^="catHub-tab-"]').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const inp = $('catHubInput');
+    if (inp) inp.placeholder = tipo === 'saida' ? 'Nova categoria… ex: 🏋️ Academia'
+        : tipo === 'entrada' ? 'Nova categoria… ex: 💼 Freelance'
+        : 'Nova categoria… ex: 📈 Ações';
+    renderCatHub();
+}
+
+function renderCatHub() {
+    const el = $('catHubList');
+    if (!el) return;
+    const list = cats[_catHubType] || [];
+    if (!list.length) {
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Nenhuma categoria. Adicione uma abaixo.</div>';
+        return;
+    }
+    el.innerHTML = list.map((c, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border-light)">
+            <span style="font-size:18px;width:28px;text-align:center;flex-shrink:0">${c.match(/^\p{Emoji}/u)?.[0] || '📦'}</span>
+            <span style="flex:1;font-size:13px;font-weight:500">${escHtml(c)}</span>
+            <button class="icon-btn" style="opacity:.35;font-size:14px"
+                onmouseover="this.style.opacity=1" onmouseout="this.style.opacity='.35'"
+                onclick="deleteCatHub(${i})" title="Remover">🗑️</button>
+        </div>`).join('');
+}
+
+function addCatHub() {
+    const inp  = $('catHubInput');
+    const nome = inp ? inp.value.trim() : '';
+    if (!nome) return toast('⚠️ Digite um nome para a categoria.', '#b45309');
+    if (!cats[_catHubType]) cats[_catHubType] = [];
+    if (cats[_catHubType].some(c => c.toLowerCase() === nome.toLowerCase()))
+        return toast('⚠️ Categoria já existe.', '#b45309');
+    cats[_catHubType].push(nome);
+    commitCats();
+    if (inp) inp.value = '';
+    renderCatHub();
+    toast('✓ Categoria adicionada!');
+}
+
+function deleteCatHub(idx) {
+    const list = cats[_catHubType];
+    if (!list || idx < 0 || idx >= list.length) return;
+    const nome = list[idx];
+    if (!confirm(`Remover "${nome}"?\n\nLançamentos com essa categoria ficarão como "(sem categoria)".`)) return;
+    list.splice(idx, 1);
+    commitCats();
+    // also clear from budget allocs
+    delete budget.allocs[nome];
+    saveBudget();
+    renderCatHub();
+    renderBudget();
+    toast(`Categoria "${nome}" removida.`, '#52525b');
+}
+
 // ── BACKUP ────────────────────────────────────────────────────────────────────
 function exportar() {
     const b = new Blob([JSON.stringify({ t: tx, c: cats, g: goals, k: cards, b: budget })], { type: 'application/json' });
@@ -2394,7 +2652,7 @@ function renderTabela() {
     );
     lista = sorted(lista);
     const tbody = $('tbody'), empty = $('emptyState');
-    if (!lista.length) { tbody.innerHTML = ''; empty.style.display = 'block'; _openInlineId = null; if (IS_MOBILE) renderMobList(); return; }
+    if (!lista.length) { tbody.innerHTML = ''; _openInlineId = null; if (IS_MOBILE) { empty.style.display = 'none'; renderMobList(); } else { empty.style.display = 'block'; } return; }
     empty.style.display = 'none';
     if (IS_MOBILE) { renderMobList(); return; }
 
@@ -2430,7 +2688,7 @@ function renderTabela() {
                     <div class="ie-field"><label>Valor (R$)</label><input id="ie-valor-${t.id}" value="${t.valor.toFixed(2).replace('.',',')}" type="text"></div>
                     <div class="ie-field"><label>Data</label><input id="ie-data-${t.id}" value="${t.data}" type="date" oninput="ieUpdateCartao(${t.id})"></div>
                     <div class="ie-field"><label>Tipo</label><select id="ie-tipo-${t.id}" onchange="ieUpdateCats(${t.id})">${tipoOpts}</select></div>
-                    <div class="ie-field"><label>Categoria</label><select id="ie-cat-${t.id}">${catOpts}</select></div>
+                    <div class="ie-field"><label>Categoria</label><div class="cat-combo" id="ie-cat-wrap-${t.id}">${buildCatCombo('ie-cat-' + t.id, t.tipo, t.cat)}</div></div>
                     <div class="ie-actions">
                         <button class="ie-save" onclick="saveInlineEdit(${t.id})">\u2713 Salvar</button>
                         <button class="ie-cancel" onclick="closeInlineEdit()">\u2715</button>
@@ -2457,8 +2715,9 @@ function renderTabela() {
         // Group by category, sorted by total desc
         const groupMap = {};
         lista.forEach(t => {
-            if (!groupMap[catLabel(t)]) groupMap[catLabel(t)] = { cat: catLabel(t), tipo: t.tipo, items: [] };
-            groupMap[t.cat].items.push(t);
+            const key = catLabel(t);
+            if (!groupMap[key]) groupMap[key] = { cat: key, tipo: t.tipo, items: [] };
+            groupMap[key].items.push(t);
         });
         const groups = Object.values(groupMap).sort((a, b) => {
             const ta = a.items.reduce((s, t) => s + t.valor, 0);
@@ -2513,13 +2772,7 @@ function closeInlineEdit() {
     _openInlineId = null;
 }
 
-function ieUpdateCats(id) {
-    const tipo = $('ie-tipo-' + id).value;
-    populateCatSelect($('ie-cat-' + id), tipo);
-    $('ie-pag-wrap-' + id).style.display = tipo === 'saida' ? '' : 'none';
-    if (tipo !== 'saida') $('ie-cartao-wrap-' + id).style.display = 'none';
-    else ieUpdateCartao(id);
-}
+// ieUpdateCats is defined earlier (with buildCatCombo support) — do not redefine here
 
 function ieUpdateCartao(id) {
     const pagEl = $('ie-pag-' + id);
@@ -2829,8 +3082,7 @@ function updateFixoDay(id, newDay) {
         }
         return x;
     });
-    save();
-    atualizar();
+    commit();
     toast(`📌 "${t.desc}" → dia ${day} de cada mês`);
 }
 
@@ -3116,6 +3368,12 @@ function renderMensal() {
 
     const cvdChart = charts['cvd'];
     if (gas > 0) {
+        // Ensure canvas is visible and placeholder hidden
+        const cvdCanvas = $('graficoCvD');
+        if (cvdCanvas) cvdCanvas.style.display = '';
+        const cvdPlaceholder = $('graficoCvD-empty');
+        if (cvdPlaceholder) cvdPlaceholder.style.display = 'none';
+
         if (cvdChart) {
             cvdChart.data.datasets[0].data = [deb, cred];
             cvdChart.data.datasets[0].backgroundColor = [mcc.debBg, mcc.credBg];
@@ -3131,7 +3389,18 @@ function renderMensal() {
         }
     } else {
         destroyChart('cvd');
-        $('graficoCvD').parentElement.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px">Sem despesas</div>';
+        // Hide canvas and show placeholder without destroying the element
+        const cvdCanvas = $('graficoCvD');
+        if (cvdCanvas) cvdCanvas.style.display = 'none';
+        let placeholder = $('graficoCvD-empty');
+        if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.id = 'graficoCvD-empty';
+            placeholder.style.cssText = 'height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px';
+            placeholder.textContent = 'Sem despesas';
+            cvdCanvas.parentElement.appendChild(placeholder);
+        }
+        placeholder.style.display = 'flex';
     }
 
     const catMap = {};
@@ -3579,7 +3848,7 @@ function toggleBudgetCatRow(safeKey) {
     const chevron = document.getElementById(`bcat-chev-${safeKey}`);
     if (detail) {
         const collapsed = _budgetCatCollapsed.has(catName);
-        detail.style.display = collapsed ? 'none' : '';
+        detail.style.display = collapsed ? 'none' : 'flex';
         if (chevron) chevron.textContent = collapsed ? '›' : '⌄';
     }
 }
@@ -3628,7 +3897,7 @@ function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
                 <div class="budget-cat-status" style="color:${statusColor};width:38px;text-align:right">${pctUsed}%</div>
                 <span id="bcat-chev-${safeKey}" style="font-size:16px;color:var(--text-3);width:18px;text-align:center;flex-shrink:0;line-height:1;user-select:none">${collapsed ? '›' : '⌄'}</span>
             </div>
-            <div id="bcat-detail-${safeKey}" style="${collapsed ? 'display:none;' : ''}background:var(--bg);padding:10px 16px 14px 16px;display:flex;flex-direction:column;gap:10px" onclick="event.stopPropagation()">
+            <div id="bcat-detail-${safeKey}" style="background:var(--bg);padding:10px 16px 14px 16px;display:${collapsed ? 'none' : 'flex'};flex-direction:column;gap:10px" onclick="event.stopPropagation()">
                 <!-- Row 1: % allocation -->
                 <div style="display:flex;align-items:center;gap:10px;padding-left:42px">
                     <span style="font-size:11px;font-weight:600;color:var(--text-3);white-space:nowrap">% Orçamento</span>
@@ -3899,7 +4168,7 @@ async function _dbGet() {
 async function _dbPut(payload) {
     await _userRef().set(payload);
     localStorage.setItem('fb_localTs',   String(payload.ts));
-    localStorage.setItem('fb_lastKnown', JSON.stringify({ t: payload.t, c: payload.c, g: payload.g, b: payload.b }));
+    localStorage.setItem('fb_lastKnown', JSON.stringify({ t: payload.t, c: payload.c, g: payload.g, k: payload.k, b: payload.b }));
 }
 
 // ── CORE SYNC ─────────────────────────────────────────────────────────────────
@@ -3921,11 +4190,11 @@ async function syncNow() {
             if (remoteTs > localTs) {
                 // Remote is newer — check if local has unsaved changes
                 const lastKnown  = localStorage.getItem('fb_lastKnown');
-                const localClean = lastKnown && JSON.stringify({ t: tx, c: cats, g: goals, b: budget }) === lastKnown;
+                const localClean = lastKnown && JSON.stringify({ t: tx, c: cats, g: goals, k: cards, b: budget }) === lastKnown;
                 if (localClean) {
                     _applyPayload(remote);
                     localStorage.setItem('fb_localTs',   String(remoteTs));
-                    localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, b: remote.b }));
+                    localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, k: remote.k, b: remote.b }));
                     toast('🔥 Dados atualizados do Firebase!', '#f97316');
                 } else {
                     _showConflict(local, remote);
@@ -3967,7 +4236,7 @@ async function resolveConflict(choice) {
         if (choice === 'remote') {
             _applyPayload(remote);
             localStorage.setItem('fb_localTs',   String(remote.ts));
-            localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, b: remote.b }));
+            localStorage.setItem('fb_lastKnown', JSON.stringify({ t: remote.t, c: remote.c, g: remote.g, k: remote.k, b: remote.b }));
             toast('🔥 Dados do Firebase aplicados.', '#f97316');
         } else {
             await _dbPut(local);
@@ -5171,6 +5440,7 @@ function extConfirmImport() {
     });
 
     save();
+    _fbPush();
     atualizar();
     if (typeof renderGoals === 'function') renderGoals();
     closeExtrato();
