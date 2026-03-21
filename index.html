@@ -1013,15 +1013,6 @@
         </div>
         <hr style="border:none;border-top:1px solid var(--border)">
         <div>
-            <div class="section-label">Categorias</div>
-            <div class="cat-list" id="catList"></div>
-            <div class="add-cat">
-                <input type="text" id="novaCat" placeholder="Nova categoria..." class="field" style="margin:0">
-                <button onclick="adicionarCategoria()">＋</button>
-            </div>
-        </div>
-        <hr style="border:none;border-top:1px solid var(--border)">
-        <div>
             <div class="section-label">Importar Extrato</div>
             <button class="btn-save" style="background:#1d4ed8" onclick="abrirExtrato()">📄 Importar Extrato Bancário</button>
             <div style="font-size:10px;color:var(--text-3);margin-top:4px;line-height:1.4">CSV (Nubank, Inter, Bradesco…) ou OFX — detecta transferências e duplicatas</div>
@@ -1285,9 +1276,15 @@
 
         <!-- Category budget list -->
         <div class="data-table-box" style="margin-bottom:20px">
-            <div class="data-table-title" style="display:flex;justify-content:space-between;align-items:center">
+            <div class="data-table-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
                 <span>Categorias do Orçamento</span>
-                <button class="link-btn" onclick="abrirNovaBudgetCat()">+ Adicionar Categoria</button>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <button id="btnBudgetSort" onclick="toggleBudgetCatSort()"
+                        style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;gap:4px;white-space:nowrap">
+                        <span id="budgetSortIcon">↕</span> % Usada
+                    </button>
+                    <button class="link-btn" onclick="abrirNovaBudgetCat()">+ Adicionar</button>
+                </div>
             </div>
             <div id="budgetCatList" style="padding:4px 0"></div>
         </div>
@@ -1311,6 +1308,35 @@
                 <button class="btn-save" style="width:auto;padding:7px 16px;margin:0;font-size:12px" onclick="abrirNovaGoal()">+ Nova Meta</button>
             </div>
             <div class="goals-grid" id="goalsGrid"></div>
+        </div>
+
+        <!-- ── CATEGORY MANAGER ── -->
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <div>
+                    <div style="font-size:16px;font-weight:700">🏷️ Categorias</div>
+                    <div style="font-size:12px;color:var(--text-3);margin-top:2px">Usadas em todos os lançamentos do app</div>
+                </div>
+            </div>
+            <div class="tabs" style="margin-bottom:14px">
+                <button class="tab active" id="catMgr-tab-saida"        onclick="setCatMgrType('saida',this)">📉 Gastos</button>
+                <button class="tab"        id="catMgr-tab-entrada"       onclick="setCatMgrType('entrada',this)">📈 Entradas</button>
+                <button class="tab"        id="catMgr-tab-investimento"  onclick="setCatMgrType('investimento',this)">🟣 Investimentos</button>
+            </div>
+            <div class="data-table-box">
+                <div id="catMgrList" style="padding:6px 0;min-height:40px"></div>
+                <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center">
+                    <input type="text" id="catMgrInput"
+                        placeholder="Nome da nova categoria…"
+                        style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text)"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+                        onkeydown="if(event.key==='Enter')adicionarCatMgr()">
+                    <button onclick="adicionarCatMgr()" class="btn-save"
+                        style="width:auto;margin:0;padding:8px 18px;font-size:13px;flex-shrink:0">
+                        ＋ Adicionar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -2104,14 +2130,14 @@ function navTo(view, btn) {
     if (view === 'dashboard' && _dashDirty) { _dashDirty = false; atualizar(); }
     if (view === 'anual')  renderAnual();
     if (view === 'mensal') renderMensal();
-    if (view === 'metas')  { renderBudget(); renderGoals(); }
+    if (view === 'metas')  { renderBudget(); renderGoals(); renderCatMgr(); }
 }
 
 function onFiltroChange() {
     atualizar();
     if (currentView === 'mensal') renderMensal();
     if (currentView === 'anual')  renderAnual();
-    if (currentView === 'metas')  { renderBudget(); renderGoals(); }
+    if (currentView === 'metas')  { renderBudget(); renderGoals(); renderCatMgr(); }
 }
 
 function goToMensal(m, a) {
@@ -2182,7 +2208,6 @@ function onTipoChange() {
         onPagChange();
     }
     populateCatSelect($('categoria'), tipo);
-    renderCatList();
 }
 
 // ── FORM ──────────────────────────────────────────────────────────────────────
@@ -2375,14 +2400,76 @@ function removerCategoria(tipo, idx) {
 }
 
 function renderCatList() {
-    const tipo = $('tipo') ? $('tipo').value : 'saida';
     const el = $('catList');
     if (!el) return;
+    const tipo = $('tipo') ? $('tipo').value : 'saida';
     const list = cats[tipo] || [];
     el.innerHTML = list.map((c, i) => {
         const safeT = tipo.replace(/'/g, "\\'");
         return `<div class="cat-item"><span>${c}</span><button class="icon-btn" onclick="removerCategoria('${safeT}',${i})">✕</button></div>`;
     }).join('') || '<span style="font-size:12px;color:var(--text-3)">Nenhuma.</span>';
+}
+
+// ── CATEGORY MANAGER (Budget view) ───────────────────────────────────────────
+let catMgrType = 'saida';
+
+function setCatMgrType(tipo, btn) {
+    catMgrType = tipo;
+    document.querySelectorAll('[id^="catMgr-tab-"]').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const inp = $('catMgrInput');
+    if (inp) {
+        const labels = { saida: 'gasto', entrada: 'entrada', investimento: 'investimento' };
+        inp.placeholder = `Nome da nova categoria de ${labels[tipo] || tipo}…`;
+    }
+    renderCatMgr();
+}
+
+function renderCatMgr() {
+    const el = $('catMgrList');
+    if (!el) return;
+    const list = cats[catMgrType] || [];
+    if (!list.length) {
+        el.innerHTML = '<div style="padding:20px 16px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Adicione uma abaixo.</div>';
+        return;
+    }
+    el.innerHTML = list.map((c, i) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border-light)">
+            <span style="font-size:13px;font-weight:500">${c}</span>
+            <button class="icon-btn" title="Remover" style="opacity:.4;font-size:13px"
+                onclick="removerCatMgr(${i})" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity='.4'">🗑️</button>
+        </div>`).join('');
+}
+
+function adicionarCatMgr() {
+    const inp  = $('catMgrInput');
+    const nome = inp ? inp.value.trim() : '';
+    if (!nome) return toast('⚠️ Digite um nome para a categoria.', '#b45309');
+    if (!cats[catMgrType]) cats[catMgrType] = [];
+    if (cats[catMgrType].some(c => c.toLowerCase() === nome.toLowerCase()))
+        return toast('⚠️ Categoria já existe.', '#b45309');
+    cats[catMgrType].push(nome);
+    commitCats();
+    if (inp) inp.value = '';
+    renderCatMgr();
+    // Refresh form dropdowns so new category is available immediately
+    const sel = $('categoria');
+    if (sel && $('tipo') && $('tipo').value === catMgrType) populateCatSelect(sel, catMgrType);
+    const mobSel = $('mob-categoria');
+    if (mobSel && $('mob-tipo') && $('mob-tipo').value === catMgrType) {
+        mobSel.innerHTML = '';
+        (cats[catMgrType] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; mobSel.add(o); });
+    }
+    toast('✓ Categoria adicionada!');
+}
+
+function removerCatMgr(idx) {
+    if (!cats[catMgrType] || idx < 0 || idx >= cats[catMgrType].length) return;
+    const nome = cats[catMgrType][idx];
+    cats[catMgrType].splice(idx, 1);
+    commitCats();
+    renderCatMgr();
+    toast(`Categoria "${nome}" removida.`, '#52525b');
 }
 
 // ── BACKUP ────────────────────────────────────────────────────────────────────
@@ -2927,53 +3014,100 @@ function renderBudgetRemaining() {
     if (!wrap) return;
     const { m, a } = filtro();
     const totalBudget = getBudgetTotal(m, a);
-    const saidas = txMes(m, a).filter(t => t.tipo === 'saida');
-    const totalSpent = saidas.reduce((s, t) => s + t.valor, 0);
+    const saidas      = txMes(m, a).filter(t => t.tipo === 'saida');
+    const investLista = txMes(m, a).filter(t => t.tipo === 'investimento');
+    const totalSpent  = saidas.reduce((s, t) => s + t.valor, 0);
 
     if (!totalBudget) {
         wrap.innerHTML = `<div class="chart-empty"><span style="font-size:24px;opacity:.3">💰</span>Defina um orçamento<br><small style="font-size:10px;color:var(--text-3)">em Orçamento → Total</small></div>`;
         return;
     }
 
-    const remaining = totalBudget - totalSpent;
-    const pctUsed = Math.min(100, Math.round((totalSpent / totalBudget) * 100));
-    const overBudget = totalSpent > totalBudget;
-    const barColor = overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--success)';
+    // Carve out investment allocations — they're not money to spend
+    const investAllocPct = budget.categorias.filter(_isBudgetCatInvest).reduce((s, c) => s + (c.pct || 0), 0);
+    const spendBudget    = totalBudget * ((100 - investAllocPct) / 100);
 
-    // Per-category bars (top 4 by allocated %)
-    const cats2 = [...budget.categorias]
-        .filter(c => c.pct > 0)
-        .sort((a, b) => b.pct - a.pct)
-        .slice(0, 5);
+    const remaining  = spendBudget - totalSpent;
+    const pctRaw     = spendBudget > 0 ? (totalSpent / spendBudget) * 100 : 0;
+    const pctUsed    = Math.min(100, pctRaw);
+    const overBudget = totalSpent > spendBudget;
+    const gaugeColor  = overBudget ? '#dc2626' : pctUsed > 80 ? '#f59e0b' : '#16a34a';
+    const remainColor = overBudget ? '#dc2626' : '#16a34a';
 
-    const catBars = cats2.map(c => {
-        const allocated = totalBudget * (c.pct / 100);
-        const spent = _getSpentForBudgetCat(c, saidas);
-        const p = allocated > 0 ? Math.min(100, Math.round((spent / allocated) * 100)) : 0;
-        const col = p > 100 ? 'var(--danger)' : p > 80 ? '#f59e0b' : 'var(--success)';
-        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
-            <span style="font-size:13px;width:18px;text-align:center;flex-shrink:0">${c.icon || '📦'}</span>
-            <div style="flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
-                <div style="height:5px;border-radius:3px;background:${col};width:${p}%;transition:width .4s"></div>
+    // ── SVG arc gauge ────────────────────────────────────────────────────────
+    // Semi-circle: center (100,108), radius 82, stroke 15
+    // Sweep counterclockwise (top half) — left=0%, right=100%
+    const cx = 100, cy = 108, r = 82, sw = 15;
+    const pctSvg = Math.max(0.5, Math.min(99.9, pctUsed)); // avoid degenerate 0/100
+    const ang = Math.PI - (pctSvg / 100) * Math.PI;
+    const ex  = (cx + r * Math.cos(ang)).toFixed(2);
+    const ey  = (cy - r * Math.sin(ang)).toFixed(2);
+    const trackD = `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${cx + r} ${cy}`;
+    const fillD  = `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${ex} ${ey}`;
+
+    // ── Category rows (top 4 spending cats only — invest cats tracked separately) ─
+    const budgCats = [...budget.categorias]
+        .filter(c => c.pct > 0 && !_isBudgetCatInvest(c))
+        .sort((x, y) => y.pct - x.pct)
+        .slice(0, 4);
+    const catRows = budgCats.map(c => {
+        const alloc   = spendBudget * (c.pct / (100 - investAllocPct || 100));
+        const spent   = _getSpentForBudgetCat(c, saidas, investLista);
+        const pct     = alloc > 0 ? Math.min(100, (spent / alloc) * 100) : 0;
+        const left    = alloc - spent;
+        const col     = pct > 100 ? '#dc2626' : pct > 80 ? '#f59e0b' : '#16a34a';
+        const status  = pct > 100 ? '🔴' : pct > 80 ? '🟡' : '🟢';
+        const leftTxt = left >= 0
+            ? `<span style="color:#16a34a;font-weight:700">${fmt(left)}</span>`
+            : `<span style="color:#dc2626;font-weight:700">−${fmt(-left)}</span>`;
+        return `
+        <div style="display:grid;grid-template-columns:18px 1fr 52px auto;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border-light)">
+            <span style="font-size:13px;text-align:center">${c.icon || '📦'}</span>
+            <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(c.nome)}</div>
+                <div style="height:4px;background:var(--border);border-radius:2px;margin-top:3px;overflow:hidden">
+                    <div style="height:4px;border-radius:2px;background:${col};width:${pct.toFixed(1)}%;transition:width .4s"></div>
+                </div>
             </div>
-            <span style="font-size:10px;color:var(--text-3);width:28px;text-align:right;flex-shrink:0">${p}%</span>
+            <div style="text-align:right;font-size:10px;line-height:1.3">
+                ${leftTxt}
+                <div style="color:var(--text-3)">${Math.round(pct)}%</div>
+            </div>
+            <span style="font-size:11px">${status}</span>
         </div>`;
     }).join('');
 
     wrap.innerHTML = `
-        <div style="padding:2px 0 10px">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
-                <span style="font-size:11px;color:var(--text-3)">${overBudget ? '⚠️ Acima do orçamento' : 'Restante'}</span>
-                <span style="font-size:18px;font-weight:700;color:${overBudget ? 'var(--danger)' : 'var(--success)'}">${fmt(Math.abs(remaining))}</span>
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 0 6px">
+
+            <!-- Arc gauge -->
+            <div style="position:relative;width:200px;height:112px;flex-shrink:0">
+                <svg viewBox="0 0 200 118" width="200" height="112">
+                    <path d="${trackD}" fill="none" stroke="var(--border)" stroke-width="${sw}" stroke-linecap="round"/>
+                    <path d="${fillD}"  fill="none" stroke="${gaugeColor}"  stroke-width="${sw}" stroke-linecap="round"/>
+                </svg>
+                <!-- Center text -->
+                <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;line-height:1.1">
+                    <div style="font-size:17px;font-weight:800;color:${remainColor};letter-spacing:-.5px">
+                        ${overBudget ? '−' : ''}${fmt(Math.abs(remaining))}
+                    </div>
+                    <div style="font-size:10px;color:var(--text-3);margin-top:2px">
+                        ${overBudget ? '⚠️ acima' : 'restante'} &nbsp;·&nbsp; ${Math.round(pctUsed)}% gasto
+                    </div>
+                </div>
+                <!-- Scale labels -->
+                <div style="position:absolute;bottom:0;left:6px;font-size:9px;color:var(--text-3)">R$0</div>
+                <div style="position:absolute;bottom:0;right:6px;font-size:9px;color:var(--text-3);text-align:right">${fmt(totalBudget)}</div>
             </div>
-            <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:5px">
-                <div style="height:8px;border-radius:4px;background:${barColor};width:${pctUsed}%;transition:width .5s"></div>
+
+            <!-- Spent summary line -->
+            <div style="width:100%;display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);padding:0 2px;margin-bottom:${catRows ? '10px' : '0'}">
+                <span>💸 ${fmt(totalSpent)} gasto</span>
+                <span>de ${fmt(spendBudget)}${investAllocPct > 0 ? ` <span title="${investAllocPct}% reservado para invest.">💜</span>` : ''}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-bottom:12px">
-                <span>${fmt(totalSpent)} gasto</span>
-                <span>${pctUsed}% de ${fmt(totalBudget)}</span>
-            </div>
-            ${catBars ? `<div style="border-top:1px solid var(--border-light);padding-top:8px">${catBars}</div>` : ''}
+
+            <!-- Category rows -->
+            ${catRows ? `<div style="width:100%">${catRows}</div>` : ''}
         </div>`;
 }
 
@@ -3524,8 +3658,13 @@ function renderBudget() {
     const totalAllocVal = totalBudget * (totalAllocPct / 100);
 
     // Get actual spending by matching category names
-    const lista = txMes(m, a).filter(t => t.tipo === 'saida');
-    const totalSpent = lista.reduce((s, t) => s + t.valor, 0);
+    const lista       = txMes(m, a).filter(t => t.tipo === 'saida');
+    const investLista = txMes(m, a).filter(t => t.tipo === 'investimento');
+    const totalSpent  = lista.reduce((s, t) => s + t.valor, 0);
+
+    // Separate investment-type allocations so they don't shrink the spending budget
+    const investAllocPct  = budget.categorias.filter(_isBudgetCatInvest).reduce((s, c) => s + (c.pct || 0), 0);
+    const spendBudget     = totalBudget * ((100 - investAllocPct) / 100);
 
     // KPIs
     const elAlloc = $('budgetAllocated');
@@ -3534,21 +3673,21 @@ function renderBudget() {
     if (elAlloc) { elAlloc.textContent = fmt(totalAllocVal); }
     if ($('budgetAllocatedPct')) $('budgetAllocatedPct').textContent = `${totalAllocPct}% do total`;
     if (elSpent) { elSpent.textContent = fmt(totalSpent); }
-    if ($('budgetSpentPct')) $('budgetSpentPct').textContent = totalBudget > 0 ? `${Math.round((totalSpent / totalBudget) * 100)}% do orçamento` : '';
+    if ($('budgetSpentPct')) $('budgetSpentPct').textContent = spendBudget > 0 ? `${Math.round((totalSpent / spendBudget) * 100)}% do orçamento de gastos` : '';
     if (elRemain) {
-        const rem = totalBudget - totalSpent;
+        const rem = spendBudget - totalSpent;
         elRemain.textContent = fmt(rem);
         elRemain.className = 'kpi-val ' + (rem < 0 ? 'red' : 'green');
     }
 
     // Category list
-    renderBudgetCatList(m, a, lista, totalBudget);
+    renderBudgetCatList(m, a, lista, investLista, totalBudget);
 
     // Pie chart
     renderBudgetPie(totalBudget);
 
     // Bar chart
-    renderBudgetBars(m, a, lista, totalBudget);
+    renderBudgetBars(m, a, lista, investLista, totalBudget);
 
     // Fixos
     renderBudgetFixos(m, a);
@@ -3558,43 +3697,125 @@ function _matchBudgetCat(txCat, budgetCat) {
     // Match by icon prefix or name substring
     const txLow = txCat.toLowerCase();
     const bLow = budgetCat.nome.toLowerCase();
-    if (txCat.startsWith(budgetCat.icon)) return true;
+    if (budgetCat.icon && txCat.startsWith(budgetCat.icon)) return true;
     if (txLow.includes(bLow) || bLow.includes(txLow)) return true;
     return false;
 }
 
-function _getSpentForBudgetCat(bCat, saidasList) {
-    return saidasList.filter(t => _matchBudgetCat(t.cat, bCat)).reduce((s, t) => s + t.valor, 0);
+// Returns true if this budget category corresponds to investments (not spending)
+function _isBudgetCatInvest(bCat) {
+    const investCatNames = (cats.investimento || []);
+    // Match against known investment transaction categories
+    return investCatNames.some(c => {
+        const cLow = c.toLowerCase();
+        const bLow = bCat.nome.toLowerCase();
+        if (bCat.icon && c.startsWith(bCat.icon)) return true;
+        return cLow.includes(bLow) || bLow.includes(cLow);
+    });
 }
 
-function renderBudgetCatList(m, a, saidas, totalBudget) {
+// Returns spent amount for a budget category — uses invest tx list for invest cats
+function _getSpentForBudgetCat(bCat, saidasList, investList) {
+    const isInvest = _isBudgetCatInvest(bCat);
+    const txList   = isInvest ? (investList || []) : saidasList;
+    return txList.filter(t => _matchBudgetCat(t.cat, bCat)).reduce((s, t) => s + t.valor, 0);
+}
+
+let _budgetCatSort = 'pct_desc';         // 'pct_desc' | 'pct_asc' | 'manual'
+let _budgetCatCollapsed = new Set();     // set of category ids that are collapsed
+
+function toggleBudgetCatSort() {
+    _budgetCatSort = _budgetCatSort === 'pct_desc' ? 'pct_asc' : 'pct_desc';
+    const icon = $('budgetSortIcon');
+    if (icon) icon.textContent = _budgetCatSort === 'pct_desc' ? '↓' : '↑';
+    // Re-render using last known data — trigger a full budget refresh
+    const { m, a } = filtro();
+    const saidas      = txMes(m, a).filter(t => t.tipo === 'saida');
+    const investLista = txMes(m, a).filter(t => t.tipo === 'investimento');
+    const totalBudget = getBudgetTotal(m, a);
+    renderBudgetCatList(m, a, saidas, investLista, totalBudget);
+}
+
+function toggleBudgetCatRow(id) {
+    if (_budgetCatCollapsed.has(id)) _budgetCatCollapsed.delete(id);
+    else _budgetCatCollapsed.add(id);
+    // Re-render detail row only — toggle class on existing DOM
+    const detail = document.getElementById(`bcat-detail-${id}`);
+    const chevron = document.getElementById(`bcat-chev-${id}`);
+    if (detail) {
+        const collapsed = _budgetCatCollapsed.has(id);
+        detail.style.display = collapsed ? 'none' : '';
+        if (chevron) chevron.textContent = collapsed ? '›' : '⌄';
+    }
+}
+
+function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
     const el = $('budgetCatList');
     if (!el) return;
     if (!budget.categorias.length) {
-        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Clique em "+ Adicionar Categoria" acima.</div>';
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Clique em "+ Adicionar" acima.</div>';
         return;
     }
-    el.innerHTML = budget.categorias.map(c => {
+
+    // Build enriched list with computed stats
+    const enriched = budget.categorias.map(c => {
+        const isInvest  = _isBudgetCatInvest(c);
         const allocated = totalBudget * ((c.pct || 0) / 100);
-        const spent = _getSpentForBudgetCat(c, saidas);
-        const pctUsed = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
-        const overBudget = pctUsed > 100;
-        const barColor = overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--success)';
-        const statusColor = overBudget ? 'var(--danger)' : pctUsed > 80 ? '#b45309' : 'var(--success)';
-        return `<div class="budget-cat-row">
-            <div class="budget-cat-icon">${c.icon || '📦'}</div>
-            <div class="budget-cat-info">
-                <div class="budget-cat-name">${escHtml(c.nome)}</div>
-                <div class="budget-cat-vals">${fmt(spent)} de ${fmt(allocated)}</div>
+        const spent     = _getSpentForBudgetCat(c, saidas, investList);
+        const pctUsed   = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
+        return { c, isInvest, allocated, spent, pctUsed };
+    });
+
+    // Sort
+    if (_budgetCatSort === 'pct_desc') enriched.sort((a, b) => b.pctUsed - a.pctUsed);
+    if (_budgetCatSort === 'pct_asc')  enriched.sort((a, b) => a.pctUsed - b.pctUsed);
+    // Update sort button icon to reflect current state
+    const icon = $('budgetSortIcon');
+    if (icon) icon.textContent = _budgetCatSort === 'pct_desc' ? '↓' : '↑';
+
+    el.innerHTML = enriched.map(({ c, isInvest, allocated, spent, pctUsed }) => {
+        const overBudget  = pctUsed > 100;
+        const barColor    = isInvest
+            ? (overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--invest)')
+            : (overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--success)');
+        const statusColor = overBudget ? 'var(--danger)' : pctUsed > 80 ? '#b45309' : barColor;
+        const investBadge = isInvest
+            ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#ede9fe;color:#6d28d9;margin-left:5px">INVEST</span>`
+            : '';
+        const collapsed   = _budgetCatCollapsed.has(c.id);
+        const chevron     = collapsed ? '›' : '⌄';
+
+        return `
+        <div style="border-bottom:1px solid var(--border-light)">
+
+            <!-- Header row — always visible, click to collapse -->
+            <div class="budget-cat-row" style="cursor:pointer;padding-right:8px" onclick="toggleBudgetCatRow(${c.id})">
+                <div class="budget-cat-icon">${c.icon || '📦'}</div>
+                <div class="budget-cat-info">
+                    <div class="budget-cat-name">${escHtml(c.nome)}${investBadge}</div>
+                    <div class="budget-cat-vals">${fmt(spent)} de ${fmt(allocated)}</div>
+                </div>
+                <!-- Mini inline bar always visible -->
+                <div style="flex:0 0 80px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:0 4px">
+                    <div style="height:4px;border-radius:2px;background:${barColor};width:${Math.min(pctUsed, 100)}%;transition:width .5s"></div>
+                </div>
+                <div class="budget-cat-status" style="color:${statusColor};width:38px;text-align:right">${pctUsed}%</div>
+                <span id="bcat-chev-${c.id}"
+                    style="font-size:16px;color:var(--text-3);width:18px;text-align:center;flex-shrink:0;line-height:1;user-select:none">${chevron}</span>
             </div>
-            <input type="number" class="budget-cat-pct-input" value="${c.pct || 0}" min="0" max="100"
-                onchange="updateBudgetCatPct(${c.id}, this.value)" title="% do orçamento">
-            <span style="font-size:11px;color:var(--text-3)">%</span>
-            <div class="budget-cat-bar"><div class="budget-cat-fill" style="width:${Math.min(pctUsed, 100)}%;background:${barColor}"></div></div>
-            <div class="budget-cat-status" style="color:${statusColor}">${pctUsed}%</div>
-            <div class="btn-row" style="flex-shrink:0">
-                <button class="icon-btn" onclick="editarBudgetCat(${c.id})">✏️</button>
-                <button class="icon-btn" onclick="removerBudgetCat(${c.id})">🗑️</button>
+
+            <!-- Detail row — collapsible -->
+            <div id="bcat-detail-${c.id}" style="${collapsed ? 'display:none' : ''}background:var(--bg);padding:10px 16px 12px 58px;display:flex;align-items:center;gap:10px">
+                <input type="number" class="budget-cat-pct-input" value="${c.pct || 0}" min="0" max="100"
+                    onclick="event.stopPropagation()"
+                    onchange="updateBudgetCatPct(${c.id}, this.value)" title="% do orçamento">
+                <span style="font-size:11px;color:var(--text-3)">%</span>
+                <div class="budget-cat-bar" style="flex:1"><div class="budget-cat-fill" style="width:${Math.min(pctUsed, 100)}%;background:${barColor}"></div></div>
+                <div style="font-size:11px;color:var(--text-3);white-space:nowrap">${fmt(spent)} / ${fmt(allocated)}</div>
+                <div class="btn-row" style="flex-shrink:0" onclick="event.stopPropagation()">
+                    <button class="icon-btn" onclick="editarBudgetCat(${c.id})">✏️</button>
+                    <button class="icon-btn" onclick="removerBudgetCat(${c.id})">🗑️</button>
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -3625,7 +3846,7 @@ function renderBudgetPie(totalBudget) {
     });
 }
 
-function renderBudgetBars(m, a, saidas, totalBudget) {
+function renderBudgetBars(m, a, saidas, investList, totalBudget) {
     const container = $('budgetBarsContainer');
     if (!container) return;
     if (!budget.categorias.length || !totalBudget) {
@@ -3634,12 +3855,14 @@ function renderBudgetBars(m, a, saidas, totalBudget) {
     }
     container.innerHTML = budget.categorias.map((c, i) => {
         const allocated = totalBudget * ((c.pct || 0) / 100);
-        const spent = _getSpentForBudgetCat(c, saidas);
+        const spent = _getSpentForBudgetCat(c, saidas, investList);
         const pct = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
         const over = pct > 100;
-        const color = over ? 'var(--danger)' : pct > 80 ? '#f59e0b' : CAT_COLORS[i % CAT_COLORS.length];
+        const isInvest = _isBudgetCatInvest(c);
+        const baseColor = isInvest ? 'var(--invest)' : CAT_COLORS[i % CAT_COLORS.length];
+        const color = over ? 'var(--danger)' : pct > 80 ? '#f59e0b' : baseColor;
         return `<div class="budget-bar-item">
-            <div class="budget-bar-label">${c.icon} ${escHtml(c.nome)}</div>
+            <div class="budget-bar-label">${c.icon} ${escHtml(c.nome)}${isInvest ? ' <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#ede9fe;color:#6d28d9">INVEST</span>' : ''}</div>
             <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${Math.min(pct, 100)}%;background:${color}"></div></div>
             <div class="budget-bar-pct" style="color:${over ? 'var(--danger)' : 'var(--text)'}">${pct}%</div>
             <div class="budget-bar-vals">${fmt(spent)} / ${fmt(allocated)}</div>
