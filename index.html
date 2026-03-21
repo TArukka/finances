@@ -1278,7 +1278,7 @@
                         style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;gap:4px;white-space:nowrap">
                         <span id="budgetSortIcon">↓</span> % Usada
                     </button>
-                    <span style="font-size:11px;color:var(--text-3)">Gerencie as categorias em ↓ Categorias</span>
+                    <span style="font-size:11px;color:var(--text-3)">Clique em ⌄ para editar</span>
                 </div>
             </div>
             <div id="budgetCatList" style="padding:4px 0"></div>
@@ -3440,6 +3440,61 @@ function updateBudgetCatPct(safeKey, val) {
     renderBudget();
 }
 
+function renameBudgetCat(safeKey) {
+    const oldName = decodeURIComponent(safeKey);
+    const inp     = document.getElementById(`bcat-rename-${safeKey}`);
+    if (!inp) return;
+    const newName = inp.value.trim();
+    if (!newName || newName === oldName) return;
+
+    // Rename in cats arrays (all types)
+    ['saida','entrada','investimento'].forEach(tipo => {
+        if (!cats[tipo]) return;
+        const idx = cats[tipo].indexOf(oldName);
+        if (idx !== -1) cats[tipo][idx] = newName;
+    });
+    saveCats();
+
+    // Move alloc to new key
+    if (budget.allocs[oldName] !== undefined) {
+        budget.allocs[newName] = budget.allocs[oldName];
+        delete budget.allocs[oldName];
+    }
+
+    // Update existing transactions that used the old category name
+    tx = tx.map(t => t.cat === oldName ? { ...t, cat: newName } : t);
+    save();
+
+    // Close collapsed state for old key, open for new
+    _budgetCatCollapsed.delete(oldName);
+
+    saveBudget();
+    atualizar();
+    renderBudget();
+    toast(`✓ Renomeado para "${newName}"`, '#16a34a');
+}
+
+function deleteBudgetCat(safeKey) {
+    const catName = decodeURIComponent(safeKey);
+    if (!confirm(`Remover a categoria "${catName}"?\n\nLançamentos com essa categoria ficarão como "(sem categoria)".`)) return;
+
+    // Remove from cats arrays
+    ['saida','entrada','investimento'].forEach(tipo => {
+        if (!cats[tipo]) return;
+        cats[tipo] = cats[tipo].filter(c => c !== catName);
+    });
+    saveCats();
+
+    // Remove alloc
+    delete budget.allocs[catName];
+    saveBudget();
+
+    _budgetCatCollapsed.delete(catName);
+    atualizar();
+    renderBudget();
+    toast(`Categoria "${catName}" removida.`, '#52525b');
+}
+
 // ── BUDGET RENDERING ─────────────────────────────────────────────────────────
 function renderBudget() {
     if (currentView === 'dashboard') renderBudgetRemaining();
@@ -3573,13 +3628,32 @@ function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
                 <div class="budget-cat-status" style="color:${statusColor};width:38px;text-align:right">${pctUsed}%</div>
                 <span id="bcat-chev-${safeKey}" style="font-size:16px;color:var(--text-3);width:18px;text-align:center;flex-shrink:0;line-height:1;user-select:none">${collapsed ? '›' : '⌄'}</span>
             </div>
-            <div id="bcat-detail-${safeKey}" style="${collapsed ? 'display:none;' : ''}background:var(--bg);padding:10px 16px 12px 58px;display:flex;align-items:center;gap:10px">
-                <input type="number" class="budget-cat-pct-input" value="${pct}" min="0" max="100"
-                    onclick="event.stopPropagation()"
-                    onchange="updateBudgetCatPct('${safeKey}', this.value)" title="% do orçamento">
-                <span style="font-size:11px;color:var(--text-3)">%</span>
-                <div class="budget-cat-bar" style="flex:1"><div class="budget-cat-fill" style="width:${Math.min(pctUsed,100)}%;background:${barColor}"></div></div>
-                <div style="font-size:11px;color:var(--text-3);white-space:nowrap">${fmt(spent)} / ${fmt(allocated)}</div>
+            <div id="bcat-detail-${safeKey}" style="${collapsed ? 'display:none;' : ''}background:var(--bg);padding:10px 16px 14px 16px;display:flex;flex-direction:column;gap:10px" onclick="event.stopPropagation()">
+                <!-- Row 1: % allocation -->
+                <div style="display:flex;align-items:center;gap:10px;padding-left:42px">
+                    <span style="font-size:11px;font-weight:600;color:var(--text-3);white-space:nowrap">% Orçamento</span>
+                    <input type="number" class="budget-cat-pct-input" value="${pct}" min="0" max="100"
+                        onchange="updateBudgetCatPct('${safeKey}', this.value)" title="% do orçamento">
+                    <span style="font-size:11px;color:var(--text-3)">%</span>
+                    <div class="budget-cat-bar" style="flex:1"><div class="budget-cat-fill" style="width:${Math.min(pctUsed,100)}%;background:${barColor}"></div></div>
+                    <div style="font-size:11px;color:var(--text-3);white-space:nowrap">${fmt(spent)} / ${fmt(allocated)}</div>
+                </div>
+                <!-- Row 2: rename + delete -->
+                <div style="display:flex;align-items:center;gap:8px;padding-left:42px">
+                    <span style="font-size:11px;font-weight:600;color:var(--text-3);white-space:nowrap">Nome</span>
+                    <input type="text" id="bcat-rename-${safeKey}" value="${escHtml(catName)}"
+                        style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none;color:var(--text);background:var(--surface)"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+                        onkeydown="if(event.key==='Enter')renameBudgetCat('${safeKey}')">
+                    <button onclick="renameBudgetCat('${safeKey}')"
+                        style="padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+                        ✓ Renomear
+                    </button>
+                    <button onclick="deleteBudgetCat('${safeKey}')"
+                        style="padding:6px 10px;background:#fee2e2;color:var(--danger);border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+                        🗑️
+                    </button>
+                </div>
             </div>
         </div>`;
     }).join('');
