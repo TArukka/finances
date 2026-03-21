@@ -438,7 +438,7 @@
         /* MONTHLY ANALYSIS VIEW */
         .mensal-controls { display: flex; gap: 8px; }
         .mensal-controls select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-family: inherit; outline: none; color: var(--text); }
-        .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+        .split-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
         .split-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
         .split-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .split-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
@@ -487,6 +487,10 @@
         .goal-history.open { display: block; }
         .aporte-item { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px solid var(--border-light); color: var(--text-2); }
         .aporte-item:last-child { border-bottom: none; }
+        .aporte-item { position: relative; }
+        .aporte-acts { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; margin-left: 6px; }
+        .aporte-item:hover .aporte-acts { opacity: 1; }
+        body.mobile .aporte-acts { opacity: 1; }
         .goal-add-card { background: var(--bg); border: 2px dashed var(--border); border-radius: 12px; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: border-color .15s; color: var(--text-3); }
         .goal-add-card:hover { border-color: var(--accent2); color: var(--text-2); }
 
@@ -1227,6 +1231,13 @@
         <div class="split-grid">
             <div class="split-box">
                 <div class="split-head">
+                    <span class="split-title" style="color:var(--success)">📈 Entradas</span>
+                    <span class="split-total" style="color:var(--success)" id="mEntTotal">R$ 0</span>
+                </div>
+                <div class="split-list" id="mEntList"></div>
+            </div>
+            <div class="split-box">
+                <div class="split-head">
                     <span class="split-title debit">🟢 Compras no Débito</span>
                     <span class="split-total debit" id="mDebTotal">R$ 0</span>
                 </div>
@@ -1494,9 +1505,10 @@
 <!-- MODAL APORTE -->
 <div class="overlay" id="ovAporte" onclick="closeAporte(event)">
     <div class="modal">
-        <div class="modal-title">Adicionar Aporte</div>
+        <div class="modal-title" id="aporteModalTitle">Adicionar Aporte</div>
         <div class="modal-sub" id="aporteGoalNome"></div>
         <input type="hidden" id="aporteGoalId">
+        <input type="hidden" id="aporteEditIdx" value="-1">
         <div class="g2">
             <div class="field">
                 <label>Valor (R$)</label>
@@ -1513,7 +1525,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn-mcancel" onclick="closeAporte()">Cancelar</button>
-            <button class="btn-confirm" onclick="confirmarAporte()">Adicionar</button>
+            <button class="btn-confirm" id="aporteConfirmBtn" onclick="confirmarAporte()">Adicionar</button>
         </div>
     </div>
 </div>
@@ -3497,9 +3509,9 @@ function renderMensal() {
     const lista  = txMes(m, a);
     // Single pass: partition saidas into debit/credit while aggregating
     let ent = 0, gas = 0, cred = 0, deb = 0;
-    const saidasDeb = [], saidasCred = [];
+    const saidasDeb = [], saidasCred = [], entradas = [];
     lista.forEach(t => {
-        if (t.tipo === 'entrada') ent += t.valor;
+        if (t.tipo === 'entrada') { ent += t.valor; entradas.push(t); }
         else if (t.tipo !== 'investimento') {
             gas += t.valor;
             if (t.pagamento === 'credito') { cred += t.valor; saidasCred.push(t); }
@@ -3513,24 +3525,28 @@ function renderMensal() {
     $('mKpiCred').textContent = fmt(cred);
     $('mKpiDeb').textContent  = fmt(deb);
     $('mKpiGasSub').textContent = ent > 0 ? `${Math.round((gas / ent) * 100)}% da renda` : '';
+    $('mEntTotal').textContent  = fmt(ent);
     $('mDebTotal').textContent  = fmt(deb);
     $('mCredTotal').textContent = fmt(cred);
 
-    function renderSplitList(items, containerId) {
+    function renderSplitList(items, containerId, isEntrada) {
         const el = $(containerId);
         if (!items.length) { el.innerHTML = '<div class="split-empty">Nenhum lançamento.</div>'; return; }
         el.innerHTML = [...items].sort((a, b) => b.valor - a.valor).map(t => {
             const [y, mo, d] = t.data.split('-');
+            const pre = isEntrada ? '+' : '−';
+            const valColor = isEntrada ? 'color:var(--success)' : '';
             return `<div class="split-item">
                 <div><div class="split-item-desc">${escHtml(t.desc)}${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}</div>
                 <div class="split-item-meta">${d}/${mo} · ${escHtml(catLabel(t))}</div></div>
-                <div class="split-item-val">− ${fmt(t.valor)}</div>
+                <div class="split-item-val" style="${valColor}">${pre} ${fmt(t.valor)}</div>
             </div>`;
         }).join('');
     }
 
-    renderSplitList(saidasDeb, 'mDebList');
-    renderSplitList(saidasCred, 'mCredList');
+    renderSplitList(entradas, 'mEntList', true);
+    renderSplitList(saidasDeb, 'mDebList', false);
+    renderSplitList(saidasCred, 'mCredList', false);
 
     const daysInMonth = new Date(a, m + 1, 0).getDate();
     const dayData = Array(daysInMonth).fill(0);
@@ -3607,11 +3623,18 @@ function renderGoals() {
         const atual    = g.aportes.reduce((s, a) => s + a.valor, 0);
         const pct      = Math.min(100, Math.round((atual / g.meta) * 100));
         const prazoStr = g.prazo ? new Date(g.prazo + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : 'Sem prazo';
-        const aportesList = g.aportes.slice().reverse().map(a => `
+        const aportesList = g.aportes.slice().reverse().map((a, ri) => {
+            const realIdx = g.aportes.length - 1 - ri; // reverse index → real index
+            return `
             <div class="aporte-item">
-                <span>${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}${a.nota ? ' · ' + a.nota : ''}</span>
+                <span>${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}${a.nota ? ' · ' + escHtml(a.nota) : ''}</span>
                 <span style="font-weight:600;color:var(--success)">+${fmt(a.valor)}</span>
-            </div>`).join('');
+                <span class="aporte-acts">
+                    <button class="icon-btn" onclick="event.stopPropagation();editAporte(${g.id},${realIdx})" title="Editar" style="font-size:11px;opacity:.5">✏️</button>
+                    <button class="icon-btn" onclick="event.stopPropagation();deleteAporte(${g.id},${realIdx})" title="Remover" style="font-size:11px;opacity:.5">🗑️</button>
+                </span>
+            </div>`;
+        }).join('');
         return `
         <div class="goal-card">
             <div class="goal-accent" style="background:${g.cor}"></div>
@@ -3712,17 +3735,46 @@ function removerGoal(id) {
 function abrirAporte(id) {
     const g = goals.find(x => x.id === id);
     $('aporteGoalId').value   = id;
+    $('aporteEditIdx').value  = -1;
     $('aporteGoalNome').textContent = g.nome;
+    $('aporteModalTitle').textContent = 'Adicionar Aporte';
+    $('aporteConfirmBtn').textContent = 'Adicionar';
     $('aporteValor').value    = '';
     $('aporteNota').value     = '';
     $('aporteData').valueAsDate = new Date();
     $('ovAporte').classList.add('open');
 }
 
+function editAporte(goalId, aporteIdx) {
+    const g = goals.find(x => x.id === goalId);
+    if (!g || !g.aportes[aporteIdx]) return;
+    const a = g.aportes[aporteIdx];
+    $('aporteGoalId').value   = goalId;
+    $('aporteEditIdx').value  = aporteIdx;
+    $('aporteGoalNome').textContent = g.nome;
+    $('aporteModalTitle').textContent = 'Editar Aporte';
+    $('aporteConfirmBtn').textContent = 'Salvar';
+    $('aporteValor').value    = a.valor;
+    $('aporteNota').value     = a.nota || '';
+    $('aporteData').value     = a.data;
+    $('ovAporte').classList.add('open');
+}
+
+function deleteAporte(goalId, aporteIdx) {
+    const g = goals.find(x => x.id === goalId);
+    if (!g || !g.aportes[aporteIdx]) return;
+    const a = g.aportes[aporteIdx];
+    if (!confirm(`Remover aporte de ${fmt(a.valor)}?`)) return;
+    g.aportes.splice(aporteIdx, 1);
+    commitGoals();
+    toast('Aporte removido.', '#52525b');
+}
+
 function closeAporte(e) { closeOverlay('ovAporte', e); }
 
 function confirmarAporte() {
     const id    = parseInt($('aporteGoalId').value);
+    const editIdx = parseInt($('aporteEditIdx').value);
     const valor = parseFloat($('aporteValor').value);
     const data  = $('aporteData').value;
     const nota  = $('aporteNota').value.trim();
@@ -3731,9 +3783,18 @@ function confirmarAporte() {
     const goal = goals.find(g => g.id === id);
     if (!goal) return;
     if (!Array.isArray(goal.aportes)) goal.aportes = [];
-    goal.aportes.push({ valor, data, nota });
-    commitGoals(); closeAporte();
-    toast(`✓ Aporte de ${fmt(valor)} adicionado!`, '#16a34a');
+
+    if (editIdx >= 0 && goal.aportes[editIdx]) {
+        // Edit existing aporte
+        goal.aportes[editIdx] = { valor, data, nota };
+        commitGoals(); closeAporte();
+        toast('✓ Aporte atualizado!', '#16a34a');
+    } else {
+        // Add new aporte
+        goal.aportes.push({ valor, data, nota });
+        commitGoals(); closeAporte();
+        toast(`✓ Aporte de ${fmt(valor)} adicionado!`, '#16a34a');
+    }
 }
 
 // ── ICON LIBRARY ─────────────────────────────────────────────────────────────
