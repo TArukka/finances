@@ -489,6 +489,35 @@
         .aporte-item:last-child { border-bottom: none; }
         .goal-add-card { background: var(--bg); border: 2px dashed var(--border); border-radius: 12px; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: border-color .15s; color: var(--text-3); }
         .goal-add-card:hover { border-color: var(--accent2); color: var(--text-2); }
+
+        /* CATEGORY HUB */
+        .ch-item { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border-light); transition: background .1s; }
+        .ch-item:last-child { border-bottom: none; }
+        .ch-item:hover { background: var(--bg); }
+        .ch-icon { font-size: 18px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border-light); transition: border-color .15s; }
+        .ch-icon:hover { border-color: var(--accent); }
+        .ch-name { flex: 1; font-size: 13px; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ch-acts { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+        .ch-item:hover .ch-acts { opacity: 1; }
+        body.mobile .ch-acts { opacity: 1; }
+        .ch-edit-row { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+        .ch-edit-input { flex: 1; padding: 5px 8px; border: 1px solid var(--accent); border-radius: 6px; font-size: 12px; font-family: inherit; outline: none; color: var(--text); background: var(--surface); min-width: 0; }
+        .ch-edit-save { padding: 4px 10px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .ch-edit-cancel { padding: 4px 8px; background: var(--bg); color: var(--text-3); border: 1px solid var(--border); border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .ch-add-row { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 6px; align-items: center; background: var(--bg); border-radius: 0 0 var(--radius) var(--radius); }
+        .ch-add-icon { font-size: 16px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); transition: border-color .15s; }
+        .ch-add-icon:hover { border-color: var(--accent); }
+
+        /* ICON PICKER */
+        .icon-picker-wrap { position: relative; }
+        .icon-picker { position: absolute; bottom: calc(100% + 6px); left: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); padding: 10px; z-index: 150; display: none; width: 240px; }
+        .icon-picker.open { display: block; }
+        .icon-picker.drop-down { bottom: auto; top: calc(100% + 6px); }
+        .icon-picker-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); margin-bottom: 8px; }
+        .icon-picker-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 160px; overflow-y: auto; }
+        .icon-pick { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 16px; border-radius: 6px; cursor: pointer; border: none; background: none; transition: background .1s; }
+        .icon-pick:hover { background: var(--bg); }
+        .icon-pick.sel { background: #e0f2fe; }
         .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
         .color-opt { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .15s, transform .1s; }
         .color-opt.selected { border-color: var(--text); transform: scale(1.15); }
@@ -548,9 +577,11 @@
         canvas { contain: strict; }
 
         /* RESPONSIVE */
+        .budget-chart-hub-row { grid-template-columns: 1fr 1fr; }
+
         @media (max-width: 1100px) {
             .app { grid-template-columns: 1fr; }
-            .charts, .annual-charts-row, .mensal-charts-row { grid-template-columns: 1fr; }
+            .charts, .annual-charts-row, .mensal-charts-row, .budget-chart-hub-row { grid-template-columns: 1fr; }
             .kpis, .annual-kpis { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 768px) {
@@ -587,7 +618,8 @@
         body.mobile .kpi-val { font-size: 17px; }
         body.mobile .charts,
         body.mobile .annual-charts-row,
-        body.mobile .mensal-charts-row { grid-template-columns: 1fr; gap: 10px; }
+        body.mobile .mensal-charts-row,
+        body.mobile .budget-chart-hub-row { grid-template-columns: 1fr; gap: 10px; }
         body.mobile .annual-kpis { grid-template-columns: 1fr 1fr !important; gap: 10px; }
         body.mobile .split-grid { grid-template-columns: 1fr; gap: 10px; }
         body.mobile .view-inner { padding: 14px 14px 90px; }
@@ -1228,7 +1260,7 @@
 <!-- ORÇAMENTO + METAS -->
 <div id="view-metas" class="view">
     <div class="view-inner">
-        <!-- BUDGET SECTION -->
+        <!-- HEADER -->
         <div class="view-header">
             <div>
                 <div class="view-title">Orçamento</div>
@@ -1240,6 +1272,20 @@
                 <button class="nav-pill" onclick="budgetNextMonth()" style="padding:4px 10px">▶</button>
             </div>
         </div>
+
+        <!-- ═══ GOALS SECTION (top) ═══ -->
+        <div style="margin-bottom:28px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div>
+                    <div style="font-size:16px;font-weight:700">🎯 Metas de Poupança</div>
+                    <div style="font-size:12px;color:var(--text-3)">Objetivos de longo prazo</div>
+                </div>
+                <button class="btn-save" style="width:auto;padding:7px 16px;margin:0;font-size:12px" onclick="abrirNovaGoal()">+ Nova Meta</button>
+            </div>
+            <div class="goals-grid" id="goalsGrid"></div>
+        </div>
+
+        <!-- ═══ BUDGET SECTION ═══ -->
 
         <!-- Budget Total -->
         <div style="display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
@@ -1273,15 +1319,48 @@
             </div>
         </div>
 
-        <!-- Charts row -->
-        <div style="margin-bottom:20px">
+        <!-- Charts + Category Hub side by side -->
+        <div class="budget-chart-hub-row" style="display:grid;gap:14px;margin-bottom:20px">
             <div class="chart-box">
                 <div class="chart-box-label">Alocação do Orçamento</div>
                 <div id="wrapBudgetPie"><div class="chart-empty" style="height:200px"><span style="font-size:24px;opacity:.3">📊</span>Defina o orçamento</div></div>
             </div>
+
+            <!-- Category Hub -->
+            <div class="data-table-box" style="display:flex;flex-direction:column">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-2)">🏷️ Categorias</span>
+                </div>
+                <!-- Type tabs -->
+                <div style="padding:10px 16px 0">
+                    <div class="tabs" style="margin-bottom:0">
+                        <button class="tab active t-saida"   id="catHub-tab-saida"        onclick="setCatHub('saida',this)">📉 Gastos</button>
+                        <button class="tab t-entrada"         id="catHub-tab-entrada"       onclick="setCatHub('entrada',this)">📈 Entradas</button>
+                        <button class="tab t-invest"          id="catHub-tab-investimento"  onclick="setCatHub('investimento',this)">🟣 Invest.</button>
+                    </div>
+                </div>
+                <!-- Category list -->
+                <div id="catHubList" style="min-height:48px;flex:1;overflow-y:auto;max-height:220px"></div>
+                <!-- Add row -->
+                <div class="ch-add-row">
+                    <div class="icon-picker-wrap">
+                        <div class="ch-add-icon" id="catHubIconBtn" onclick="toggleIconPicker('catHubPicker',null)" title="Escolher ícone">📦</div>
+                        <div class="icon-picker" id="catHubPicker"></div>
+                    </div>
+                    <input type="text" id="catHubInput"
+                        placeholder="Nome da categoria…"
+                        style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:var(--surface);color:var(--text)"
+                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+                        onkeydown="if(event.key==='Enter')addCatHub()">
+                    <button onclick="addCatHub()" class="btn-save"
+                        style="width:auto;margin:0;padding:8px 14px;font-size:12px;flex-shrink:0">
+                        ＋
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Category budget list -->
+        <!-- Category budget list (stays in place) -->
         <div class="data-table-box" style="margin-bottom:20px">
             <div class="data-table-title" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
                 <span>Categorias do Orçamento</span>
@@ -1303,53 +1382,6 @@
                 <span id="budgetFixosTotal" style="font-weight:700;color:var(--danger)"></span>
             </div>
             <div id="budgetFixosList"><div style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Nenhum fixo.</div></div>
-        </div>
-
-        <!-- Goals Section -->
-        <div style="margin-top:8px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                <div>
-                    <div style="font-size:16px;font-weight:700">🎯 Metas de Poupança</div>
-                    <div style="font-size:12px;color:var(--text-3)">Objetivos de longo prazo</div>
-                </div>
-                <button class="btn-save" style="width:auto;padding:7px 16px;margin:0;font-size:12px" onclick="abrirNovaGoal()">+ Nova Meta</button>
-            </div>
-            <div class="goals-grid" id="goalsGrid"></div>
-        </div>
-
-        <!-- ── CATEGORY HUB ── -->
-        <div style="margin-top:36px;padding-top:28px;border-top:2px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
-                <div>
-                    <div style="font-size:18px;font-weight:700">🏷️ Categorias</div>
-                    <div style="font-size:12px;color:var(--text-3);margin-top:3px">Crie e organize as categorias usadas em todos os lançamentos</div>
-                </div>
-            </div>
-
-            <!-- Type tabs -->
-            <div class="tabs" style="margin-bottom:16px">
-                <button class="tab active t-saida"   id="catHub-tab-saida"        onclick="setCatHub('saida',this)">📉 Gastos</button>
-                <button class="tab t-entrada"         id="catHub-tab-entrada"       onclick="setCatHub('entrada',this)">📈 Entradas</button>
-                <button class="tab t-invest"          id="catHub-tab-investimento"  onclick="setCatHub('investimento',this)">🟣 Investimentos</button>
-            </div>
-
-            <div class="data-table-box">
-                <!-- Category list -->
-                <div id="catHubList" style="min-height:48px"></div>
-
-                <!-- Add row -->
-                <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;background:var(--bg)">
-                    <input type="text" id="catHubInput"
-                        placeholder="Nova categoria… ex: 🏋️ Academia"
-                        style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text)"
-                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-                        onkeydown="if(event.key==='Enter')addCatHub()">
-                    <button onclick="addCatHub()" class="btn-save"
-                        style="width:auto;margin:0;padding:9px 20px;font-size:13px;flex-shrink:0">
-                        ＋ Adicionar
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -2561,16 +2593,24 @@ function renderCatList() {
 
 // ── CATEGORY HUB ─────────────────────────────────────────────────────────────
 let _catHubType = 'saida';
+let _catHubEditing = -1; // index being edited, -1 = none
+let _catHubNewIcon = '📦'; // selected icon for new category
 
 function setCatHub(tipo, btn) {
     _catHubType = tipo;
+    _catHubEditing = -1;
     document.querySelectorAll('[id^="catHub-tab-"]').forEach(t => t.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    const inp = $('catHubInput');
-    if (inp) inp.placeholder = tipo === 'saida' ? 'Nova categoria… ex: 🏋️ Academia'
-        : tipo === 'entrada' ? 'Nova categoria… ex: 💼 Freelance'
-        : 'Nova categoria… ex: 📈 Ações';
     renderCatHub();
+}
+
+function _extractIcon(name) {
+    const m = name.match(/^\p{Emoji_Presentation}|\p{Emoji}\uFE0F?/u);
+    return m ? m[0] : null;
+}
+
+function _stripIcon(name) {
+    return name.replace(/^\p{Emoji_Presentation}\s*|\p{Emoji}\uFE0F?\s*/u, '').trim();
 }
 
 function renderCatHub() {
@@ -2578,17 +2618,89 @@ function renderCatHub() {
     if (!el) return;
     const list = cats[_catHubType] || [];
     if (!list.length) {
-        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px">Nenhuma categoria. Adicione uma abaixo.</div>';
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Adicione abaixo.</div>';
         return;
     }
-    el.innerHTML = list.map((c, i) => `
-        <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border-light)">
-            <span style="font-size:18px;width:28px;text-align:center;flex-shrink:0">${c.match(/^\p{Emoji}/u)?.[0] || '📦'}</span>
-            <span style="flex:1;font-size:13px;font-weight:500">${escHtml(c)}</span>
-            <button class="icon-btn" style="opacity:.35;font-size:14px"
-                onmouseover="this.style.opacity=1" onmouseout="this.style.opacity='.35'"
-                onclick="deleteCatHub(${i})" title="Remover">🗑️</button>
-        </div>`).join('');
+    el.innerHTML = list.map((c, i) => {
+        const icon = _extractIcon(c) || '📦';
+        const label = _stripIcon(c) || c;
+        const isEd = _catHubEditing === i;
+
+        if (isEd) {
+            return `<div class="ch-item" style="background:var(--bg)">
+                <div class="icon-picker-wrap">
+                    <div class="ch-icon" onclick="toggleIconPicker('chEditPicker-${i}',${i})" title="Mudar ícone" id="chEditIcon-${i}">${icon}</div>
+                    <div class="icon-picker drop-down" id="chEditPicker-${i}"></div>
+                </div>
+                <div class="ch-edit-row">
+                    <input class="ch-edit-input" id="chEditInput-${i}" value="${escHtml(label)}"
+                        onkeydown="if(event.key==='Enter')saveCatHub(${i});if(event.key==='Escape'){_catHubEditing=-1;renderCatHub()}">
+                    <button class="ch-edit-save" onclick="saveCatHub(${i})">✓</button>
+                    <button class="ch-edit-cancel" onclick="_catHubEditing=-1;renderCatHub()">✕</button>
+                </div>
+            </div>`;
+        }
+
+        return `<div class="ch-item">
+            <div class="ch-icon" onclick="editCatHub(${i})" title="Editar">${icon}</div>
+            <div class="ch-name">${escHtml(label)}</div>
+            <div class="ch-acts">
+                <button class="icon-btn" onclick="editCatHub(${i})" title="Editar" style="opacity:.5">✏️</button>
+                <button class="icon-btn" onclick="deleteCatHub(${i})" title="Remover" style="opacity:.5">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Auto-focus edit input
+    if (_catHubEditing >= 0) {
+        const inp = $('chEditInput-' + _catHubEditing);
+        if (inp) { inp.focus(); inp.select(); }
+    }
+}
+
+function editCatHub(idx) {
+    _catHubEditing = idx;
+    renderCatHub();
+}
+
+function saveCatHub(idx) {
+    const list = cats[_catHubType];
+    if (!list || idx < 0 || idx >= list.length) return;
+    const oldName = list[idx];
+    const inp = $('chEditInput-' + idx);
+    const iconEl = $('chEditIcon-' + idx);
+    if (!inp) return;
+
+    const newLabel = inp.value.trim();
+    if (!newLabel) return toast('⚠️ Nome não pode ser vazio.', '#b45309');
+
+    const icon = iconEl ? iconEl.textContent.trim() : (_extractIcon(oldName) || '📦');
+    const newName = icon + ' ' + newLabel;
+
+    // Check duplicate (skip self)
+    if (list.some((c, i) => i !== idx && c.toLowerCase() === newName.toLowerCase()))
+        return toast('⚠️ Categoria já existe.', '#b45309');
+
+    // Update category name in cats array
+    list[idx] = newName;
+    saveCats();
+
+    // Update budget allocs if renamed
+    if (oldName !== newName && budget.allocs[oldName] !== undefined) {
+        budget.allocs[newName] = budget.allocs[oldName];
+        delete budget.allocs[oldName];
+        saveBudget();
+    }
+
+    // Update existing transactions
+    tx = tx.map(t => t.cat === oldName ? { ...t, cat: newName } : t);
+    save();
+
+    _catHubEditing = -1;
+    commitCats();
+    atualizar();
+    if (currentView === 'metas') renderBudget();
+    toast('✓ Categoria atualizada!');
 }
 
 function addCatHub() {
@@ -2596,11 +2708,19 @@ function addCatHub() {
     const nome = inp ? inp.value.trim() : '';
     if (!nome) return toast('⚠️ Digite um nome para a categoria.', '#b45309');
     if (!cats[_catHubType]) cats[_catHubType] = [];
-    if (cats[_catHubType].some(c => c.toLowerCase() === nome.toLowerCase()))
+
+    const icon = _catHubNewIcon || '📦';
+    const fullName = icon + ' ' + nome;
+
+    if (cats[_catHubType].some(c => c.toLowerCase() === fullName.toLowerCase()))
         return toast('⚠️ Categoria já existe.', '#b45309');
-    cats[_catHubType].push(nome);
+    cats[_catHubType].push(fullName);
     commitCats();
     if (inp) inp.value = '';
+    // Reset icon
+    _catHubNewIcon = '📦';
+    const btn = $('catHubIconBtn');
+    if (btn) btn.textContent = '📦';
     renderCatHub();
     toast('✓ Categoria adicionada!');
 }
@@ -2612,12 +2732,73 @@ function deleteCatHub(idx) {
     if (!confirm(`Remover "${nome}"?\n\nLançamentos com essa categoria ficarão como "(sem categoria)".`)) return;
     list.splice(idx, 1);
     commitCats();
-    // also clear from budget allocs
     delete budget.allocs[nome];
     saveBudget();
+    _catHubEditing = -1;
     renderCatHub();
     renderBudget();
-    toast(`Categoria "${nome}" removida.`, '#52525b');
+    toast(`Categoria removida.`, '#52525b');
+}
+
+// ── ICON PICKER ─────────────────────────────────────────────────────────────
+let _openPickerId = null;
+
+function toggleIconPicker(pickerId, editIdx) {
+    // Close any open picker first
+    if (_openPickerId && _openPickerId !== pickerId) {
+        const prev = $(pickerId === _openPickerId ? null : _openPickerId);
+        if (prev) prev.classList.remove('open');
+    }
+    const el = $(pickerId);
+    if (!el) return;
+    const isOpen = el.classList.contains('open');
+    if (isOpen) { el.classList.remove('open'); _openPickerId = null; return; }
+
+    // Get current icon
+    let currentIcon = '📦';
+    if (editIdx !== null && editIdx >= 0) {
+        const iconEl = $('chEditIcon-' + editIdx);
+        if (iconEl) currentIcon = iconEl.textContent.trim();
+    } else {
+        currentIcon = _catHubNewIcon || '📦';
+    }
+
+    el.innerHTML = `
+        <div class="icon-picker-title">Escolher Ícone</div>
+        <div class="icon-picker-grid">
+            ${ICON_LIB.map(ic => `<button class="icon-pick ${ic === currentIcon ? 'sel' : ''}"
+                onclick="pickIcon('${pickerId}',${editIdx},'${ic}')">${ic}</button>`).join('')}
+        </div>`;
+    el.classList.add('open');
+    _openPickerId = pickerId;
+
+    // Close on outside click
+    setTimeout(() => {
+        const close = e => {
+            if (!el.contains(e.target) && !e.target.closest('.ch-icon,.ch-add-icon')) {
+                el.classList.remove('open');
+                _openPickerId = null;
+                document.removeEventListener('mousedown', close);
+            }
+        };
+        document.addEventListener('mousedown', close);
+    }, 0);
+}
+
+function pickIcon(pickerId, editIdx, icon) {
+    if (editIdx !== null && editIdx >= 0) {
+        // Edit mode: update the icon display
+        const iconEl = $('chEditIcon-' + editIdx);
+        if (iconEl) iconEl.textContent = icon;
+    } else {
+        // Add mode: update the add button icon
+        _catHubNewIcon = icon;
+        const btn = $('catHubIconBtn');
+        if (btn) btn.textContent = icon;
+    }
+    const el = $(pickerId);
+    if (el) el.classList.remove('open');
+    _openPickerId = null;
 }
 
 // ── BACKUP ────────────────────────────────────────────────────────────────────
@@ -3552,10 +3733,26 @@ function confirmarAporte() {
 
 // ── ICON LIBRARY ─────────────────────────────────────────────────────────────
 const ICON_LIB = [
-    '🏠','🍔','🚗','🎉','💊','🛒','💳','👨‍👩‍👧','📡','📱','🍽️','🎮','👗',
-    '✈️','🎓','🐶','🏋️','💇','🧹','🔧','📦','☕','🍺','🎬','📚','🎵',
-    '⛽','🚌','🏥','🦷','💰','💸','📈','🛡️','₿','🏦','💼','⚙️',
-    '🎯','🏖️','🎁','🧸','🍕','🥗','🧃','🏡','💡','📝','🔔','🌟',
+    // Home & Bills
+    '🏠','🏡','💡','🔑','🧹','🔧','📦',
+    // Food & Drink
+    '🍔','🍕','🍽️','☕','🍺','🥗','🧃','🛒',
+    // Transport
+    '🚗','⛽','🚌','✈️','🚲','🏍️',
+    // Health & Care
+    '💊','🏥','🦷','💇','🏋️',
+    // Entertainment
+    '🎉','🎬','🎮','🎵','📚','🎯','🏖️',
+    // Tech & Subscriptions
+    '📱','📡','💻','🖥️','🎧',
+    // Shopping & Clothes
+    '👗','👟','🛍️','🎁','🧸',
+    // Family & Education
+    '👨‍👩‍👧','🎓','🐶','🐱',
+    // Finance
+    '💰','💸','💳','📈','🛡️','₿','🏦','💼',
+    // Work & Misc
+    '⚙️','📝','🔔','🌟','🏢','📊','🔒',
 ];
 // ── BUDGET STATE ─────────────────────────────────────────────────────────────
 let budget = JSON.parse(localStorage.getItem('fin5_budget') || '{"total":0,"allocs":{}}');
