@@ -140,7 +140,6 @@
         body.mobile .budget-bar-vals { display: none; }
 
         /* ICON PICKER */
-        #ovBudgetCat .modal { width: 400px; }
         .icon-grid { display: flex; flex-wrap: wrap; gap: 4px; max-height: 150px; overflow-y: auto; padding: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; }
         .icon-opt { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 18px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all .1s; }
         .icon-opt:hover { background: var(--surface); }
@@ -1281,9 +1280,9 @@
                 <div style="display:flex;align-items:center;gap:8px">
                     <button id="btnBudgetSort" onclick="toggleBudgetCatSort()"
                         style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;gap:4px;white-space:nowrap">
-                        <span id="budgetSortIcon">↕</span> % Usada
+                        <span id="budgetSortIcon">↓</span> % Usada
                     </button>
-                    <button class="link-btn" onclick="abrirNovaBudgetCat()">+ Adicionar</button>
+                    <span style="font-size:11px;color:var(--text-3)">Gerencie as categorias em ↓ Categorias</span>
                 </div>
             </div>
             <div id="budgetCatList" style="padding:4px 0"></div>
@@ -1474,30 +1473,6 @@
 </div>
 
 <!-- MODAL BUDGET CATEGORY -->
-<div class="overlay" id="ovBudgetCat" onclick="if(event.target===this)closeBudgetCat()">
-    <div class="modal">
-        <div class="modal-title" id="budgetCatModalTitle">Nova Categoria</div>
-        <div class="modal-sub">Defina um nome, ícone e porcentagem do orçamento</div>
-        <input type="hidden" id="budgetCatEditId">
-        <div class="field">
-            <label>Nome</label>
-            <input type="text" id="budgetCatNome" placeholder="Ex: Alimentação">
-        </div>
-        <div class="field">
-            <label>Ícone</label>
-            <div class="icon-grid" id="iconGrid"></div>
-        </div>
-        <div class="field">
-            <label>% do Orçamento</label>
-            <input type="number" id="budgetCatPct" placeholder="20" min="1" max="100" step="1">
-        </div>
-        <div class="modal-footer">
-            <button class="btn-mcancel" onclick="closeBudgetCat()">Cancelar</button>
-            <button class="btn-confirm" onclick="salvarBudgetCat()">Salvar</button>
-        </div>
-    </div>
-</div>
-
 <!-- MODAL FIXO REPLICAR -->
 <div class="overlay" id="ovFixoRep" onclick="if(event.target===this) closeFixoRep('nao')">
     <div class="modal" style="max-width:360px;width:360px">
@@ -2050,7 +2025,7 @@ const saveCats  = () => localStorage.setItem('fin5_cats', JSON.stringify(cats));
 const saveCards = () => localStorage.setItem('fin5_cards', JSON.stringify(cards));
 const commit      = () => { save(); atualizar(); };
 const commitGoals = () => { saveGoals(); renderGoals(); };
-const commitCats  = () => { saveCats(); onTipoChange(); };
+const commitCats  = () => { saveCats(); onTipoChange(); if (currentView === 'metas') renderBudget(); };
 
 // Payment badge HTML — shared across table, fixos, mobile list
 const txPayBadge = t => t.tipo !== 'saida' ? '' :
@@ -3024,7 +2999,7 @@ function renderBudgetRemaining() {
     }
 
     // Carve out investment allocations — they're not money to spend
-    const investAllocPct = budget.categorias.filter(_isBudgetCatInvest).reduce((s, c) => s + (c.pct || 0), 0);
+    const investAllocPct = (cats.investimento || []).reduce((s, c) => s + (budget.allocs[c] || 0), 0);
     const spendBudget    = totalBudget * ((100 - investAllocPct) / 100);
 
     const remaining  = spendBudget - totalSpent;
@@ -3045,40 +3020,8 @@ function renderBudgetRemaining() {
     const trackD = `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${cx + r} ${cy}`;
     const fillD  = `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${ex} ${ey}`;
 
-    // ── Category rows (top 4 spending cats only — invest cats tracked separately) ─
-    const budgCats = [...budget.categorias]
-        .filter(c => c.pct > 0 && !_isBudgetCatInvest(c))
-        .sort((x, y) => y.pct - x.pct)
-        .slice(0, 4);
-    const catRows = budgCats.map(c => {
-        const alloc   = spendBudget * (c.pct / (100 - investAllocPct || 100));
-        const spent   = _getSpentForBudgetCat(c, saidas, investLista);
-        const pct     = alloc > 0 ? Math.min(100, (spent / alloc) * 100) : 0;
-        const left    = alloc - spent;
-        const col     = pct > 100 ? '#dc2626' : pct > 80 ? '#f59e0b' : '#16a34a';
-        const status  = pct > 100 ? '🔴' : pct > 80 ? '🟡' : '🟢';
-        const leftTxt = left >= 0
-            ? `<span style="color:#16a34a;font-weight:700">${fmt(left)}</span>`
-            : `<span style="color:#dc2626;font-weight:700">−${fmt(-left)}</span>`;
-        return `
-        <div style="display:grid;grid-template-columns:18px 1fr 52px auto;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border-light)">
-            <span style="font-size:13px;text-align:center">${c.icon || '📦'}</span>
-            <div>
-                <div style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(c.nome)}</div>
-                <div style="height:4px;background:var(--border);border-radius:2px;margin-top:3px;overflow:hidden">
-                    <div style="height:4px;border-radius:2px;background:${col};width:${pct.toFixed(1)}%;transition:width .4s"></div>
-                </div>
-            </div>
-            <div style="text-align:right;font-size:10px;line-height:1.3">
-                ${leftTxt}
-                <div style="color:var(--text-3)">${Math.round(pct)}%</div>
-            </div>
-            <span style="font-size:11px">${status}</span>
-        </div>`;
-    }).join('');
-
     wrap.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 0 6px">
+        <div style="display:flex;flex-direction:column;align-items:center;padding:4px 0 8px">
 
             <!-- Arc gauge -->
             <div style="position:relative;width:200px;height:112px;flex-shrink:0">
@@ -3086,28 +3029,21 @@ function renderBudgetRemaining() {
                     <path d="${trackD}" fill="none" stroke="var(--border)" stroke-width="${sw}" stroke-linecap="round"/>
                     <path d="${fillD}"  fill="none" stroke="${gaugeColor}"  stroke-width="${sw}" stroke-linecap="round"/>
                 </svg>
-                <!-- Center text -->
-                <div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;line-height:1.1">
-                    <div style="font-size:17px;font-weight:800;color:${remainColor};letter-spacing:-.5px">
+                <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;line-height:1.15">
+                    <div style="font-size:18px;font-weight:800;color:${remainColor};letter-spacing:-.5px">
                         ${overBudget ? '−' : ''}${fmt(Math.abs(remaining))}
                     </div>
                     <div style="font-size:10px;color:var(--text-3);margin-top:2px">
-                        ${overBudget ? '⚠️ acima' : 'restante'} &nbsp;·&nbsp; ${Math.round(pctUsed)}% gasto
+                        ${overBudget ? '⚠️ acima do limite' : 'restante'} · ${Math.round(pctUsed)}% gasto
                     </div>
                 </div>
-                <!-- Scale labels -->
-                <div style="position:absolute;bottom:0;left:6px;font-size:9px;color:var(--text-3)">R$0</div>
-                <div style="position:absolute;bottom:0;right:6px;font-size:9px;color:var(--text-3);text-align:right">${fmt(totalBudget)}</div>
             </div>
 
-            <!-- Spent summary line -->
-            <div style="width:100%;display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);padding:0 2px;margin-bottom:${catRows ? '10px' : '0'}">
+            <!-- Spent summary -->
+            <div style="width:100%;display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);padding:0 4px;margin-top:2px">
                 <span>💸 ${fmt(totalSpent)} gasto</span>
-                <span>de ${fmt(spendBudget)}${investAllocPct > 0 ? ` <span title="${investAllocPct}% reservado para invest.">💜</span>` : ''}</span>
+                <span>de ${fmt(spendBudget)}</span>
             </div>
-
-            <!-- Category rows -->
-            ${catRows ? `<div style="width:100%">${catRows}</div>` : ''}
         </div>`;
 }
 
@@ -3438,27 +3374,40 @@ const ICON_LIB = [
     '⛽','🚌','🏥','🦷','💰','💸','📈','🛡️','₿','🏦','💼','⚙️',
     '🎯','🏖️','🎁','🧸','🍕','🥗','🧃','🏡','💡','📝','🔔','🌟',
 ];
-let _selectedBudgetIcon = '🛒';
-
-function renderIconGrid() {
-    const el = $('iconGrid');
-    if (!el) return;
-    el.innerHTML = ICON_LIB.map(icon =>
-        `<div class="icon-opt ${icon === _selectedBudgetIcon ? 'selected' : ''}" onclick="selectBudgetIcon('${icon}')">${icon}</div>`
-    ).join('');
-}
-
-function selectBudgetIcon(icon) {
-    _selectedBudgetIcon = icon;
-    renderIconGrid();
-}
-
 // ── BUDGET STATE ─────────────────────────────────────────────────────────────
-let budget = JSON.parse(localStorage.getItem('fin5_budget') || '{"total":0,"categorias":[]}');
-if (!budget.categorias) budget.categorias = [];
-if (!budget.total) budget.total = 0;
-if (!budget.monthTotals) budget.monthTotals = {};   // "YYYY-MM" → number overrides
+let budget = JSON.parse(localStorage.getItem('fin5_budget') || '{"total":0,"allocs":{}}');
+if (!budget.allocs)      budget.allocs = {};
+if (!budget.total)       budget.total  = 0;
+if (!budget.monthTotals) budget.monthTotals = {};
+
+// ── One-time migration from old budget.categorias → budget.allocs ─────────────
+if (budget.categorias && budget.categorias.length) {
+    budget.categorias.forEach(c => {
+        if (c.nome && c.pct) budget.allocs[c.nome] = c.pct;
+    });
+    delete budget.categorias;
+    localStorage.setItem('fin5_budget', JSON.stringify(budget));
+}
+
 const saveBudget = () => localStorage.setItem('fin5_budget', JSON.stringify(budget));
+
+// ── Unified category helpers ───────────────────────────────────────────────────
+function _allBudgetCats() {
+    return [...(cats.saida || []), ...(cats.investimento || [])];
+}
+
+function _isBudgetCatInvest(catName) {
+    // accepts both old {nome} object and plain string
+    const name = typeof catName === 'string' ? catName : catName.nome;
+    return (cats.investimento || []).includes(name);
+}
+
+function _getSpentForBudgetCat(catName, saidasList, investList) {
+    const name     = typeof catName === 'string' ? catName : catName.nome;
+    const isInvest = _isBudgetCatInvest(name);
+    const txList   = isInvest ? (investList || []) : saidasList;
+    return txList.filter(t => t.cat === name).reduce((s, t) => s + t.valor, 0);
+}
 
 // Returns the effective total for a given month — custom override or global default
 function getBudgetTotal(m, a) {
@@ -3552,59 +3501,6 @@ function budgetNextMonth() {
 }
 
 // ── BUDGET CATEGORY CRUD ─────────────────────────────────────────────────────
-function abrirNovaBudgetCat() {
-    $('budgetCatModalTitle').textContent = 'Nova Categoria';
-    $('budgetCatEditId').value = '';
-    $('budgetCatNome').value = '';
-    $('budgetCatPct').value = '';
-    _selectedBudgetIcon = '🛒';
-    renderIconGrid();
-    $('ovBudgetCat').classList.add('open');
-}
-
-function editarBudgetCat(id) {
-    const cat = budget.categorias.find(c => c.id === id);
-    if (!cat) return;
-    $('budgetCatModalTitle').textContent = 'Editar Categoria';
-    $('budgetCatEditId').value = id;
-    $('budgetCatNome').value = cat.nome;
-    $('budgetCatPct').value = cat.pct;
-    _selectedBudgetIcon = cat.icon || '🛒';
-    renderIconGrid();
-    $('ovBudgetCat').classList.add('open');
-}
-
-function closeBudgetCat() { $('ovBudgetCat').classList.remove('open'); }
-
-function salvarBudgetCat() {
-    const nome = $('budgetCatNome').value.trim();
-    const pct  = parseInt($('budgetCatPct').value);
-    const editId = $('budgetCatEditId').value;
-    if (!nome) return toast('⚠️ Digite um nome.', '#b45309');
-    if (!pct || pct < 1 || pct > 100) return toast('⚠️ Porcentagem inválida (1-100).', '#b45309');
-
-    if (editId) {
-        const idx = budget.categorias.findIndex(c => c.id == editId);
-        if (idx >= 0) budget.categorias[idx] = { ...budget.categorias[idx], nome, icon: _selectedBudgetIcon, pct };
-        toast('✓ Categoria atualizada!');
-    } else {
-        budget.categorias.push({ id: Date.now(), nome, icon: _selectedBudgetIcon, pct });
-        toast('✓ Categoria adicionada!');
-    }
-    saveBudget();
-    closeBudgetCat();
-    renderBudget();
-}
-
-function removerBudgetCat(id) {
-    const cat = budget.categorias.find(c => c.id === id);
-    if (!cat || !confirm(`Remover "${cat.nome}"?`)) return;
-    budget.categorias = budget.categorias.filter(c => c.id !== id);
-    saveBudget();
-    renderBudget();
-    toast('Categoria removida.', '#52525b');
-}
-
 function onBudgetTotalChange() {
     const raw = $('budgetTotal').value.replace(/[^\d,\.]/g, '');
     const val = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
@@ -3622,10 +3518,12 @@ function onBudgetTotalChange() {
     renderBudget();
 }
 
-function updateBudgetCatPct(id, val) {
+function updateBudgetCatPct(safeKey, val) {
+    const catName = decodeURIComponent(safeKey);
     const pct = Math.max(0, Math.min(100, parseInt(val) || 0));
-    const cat = budget.categorias.find(c => c.id === id);
-    if (cat) { cat.pct = pct; saveBudget(); renderBudget(); }
+    budget.allocs[catName] = pct;
+    saveBudget();
+    renderBudget();
 }
 
 // ── BUDGET RENDERING ─────────────────────────────────────────────────────────
@@ -3654,16 +3552,17 @@ function renderBudget() {
     // Show/hide the reset-to-default button
     const resetBtn = $('btnResetMonthBudget');
     if (resetBtn) resetBtn.style.display = custom ? '' : 'none';
-    const totalAllocPct = budget.categorias.reduce((s, c) => s + (c.pct || 0), 0);
+    const allCats       = _allBudgetCats();
+    const totalAllocPct = allCats.reduce((s, c) => s + (budget.allocs[c] || 0), 0);
     const totalAllocVal = totalBudget * (totalAllocPct / 100);
 
-    // Get actual spending by matching category names
+    // Get actual spending
     const lista       = txMes(m, a).filter(t => t.tipo === 'saida');
     const investLista = txMes(m, a).filter(t => t.tipo === 'investimento');
     const totalSpent  = lista.reduce((s, t) => s + t.valor, 0);
 
-    // Separate investment-type allocations so they don't shrink the spending budget
-    const investAllocPct  = budget.categorias.filter(_isBudgetCatInvest).reduce((s, c) => s + (c.pct || 0), 0);
+    // Separate investment allocations so they don't shrink the spending budget
+    const investAllocPct  = (cats.investimento || []).reduce((s, c) => s + (budget.allocs[c] || 0), 0);
     const spendBudget     = totalBudget * ((100 - investAllocPct) / 100);
 
     // KPIs
@@ -3693,57 +3592,27 @@ function renderBudget() {
     renderBudgetFixos(m, a);
 }
 
-function _matchBudgetCat(txCat, budgetCat) {
-    // Match by icon prefix or name substring
-    const txLow = txCat.toLowerCase();
-    const bLow = budgetCat.nome.toLowerCase();
-    if (budgetCat.icon && txCat.startsWith(budgetCat.icon)) return true;
-    if (txLow.includes(bLow) || bLow.includes(txLow)) return true;
-    return false;
-}
 
-// Returns true if this budget category corresponds to investments (not spending)
-function _isBudgetCatInvest(bCat) {
-    const investCatNames = (cats.investimento || []);
-    // Match against known investment transaction categories
-    return investCatNames.some(c => {
-        const cLow = c.toLowerCase();
-        const bLow = bCat.nome.toLowerCase();
-        if (bCat.icon && c.startsWith(bCat.icon)) return true;
-        return cLow.includes(bLow) || bLow.includes(cLow);
-    });
-}
+let _budgetCatSort = 'pct_desc';
+let _budgetCatCollapsed = new Set();
 
-// Returns spent amount for a budget category — uses invest tx list for invest cats
-function _getSpentForBudgetCat(bCat, saidasList, investList) {
-    const isInvest = _isBudgetCatInvest(bCat);
-    const txList   = isInvest ? (investList || []) : saidasList;
-    return txList.filter(t => _matchBudgetCat(t.cat, bCat)).reduce((s, t) => s + t.valor, 0);
-}
-
-let _budgetCatSort = 'pct_desc';         // 'pct_desc' | 'pct_asc' | 'manual'
-let _budgetCatCollapsed = new Set();     // set of category ids that are collapsed
 
 function toggleBudgetCatSort() {
     _budgetCatSort = _budgetCatSort === 'pct_desc' ? 'pct_asc' : 'pct_desc';
-    const icon = $('budgetSortIcon');
-    if (icon) icon.textContent = _budgetCatSort === 'pct_desc' ? '↓' : '↑';
-    // Re-render using last known data — trigger a full budget refresh
     const { m, a } = filtro();
     const saidas      = txMes(m, a).filter(t => t.tipo === 'saida');
     const investLista = txMes(m, a).filter(t => t.tipo === 'investimento');
-    const totalBudget = getBudgetTotal(m, a);
-    renderBudgetCatList(m, a, saidas, investLista, totalBudget);
+    renderBudgetCatList(m, a, saidas, investLista, getBudgetTotal(m, a));
 }
 
-function toggleBudgetCatRow(id) {
-    if (_budgetCatCollapsed.has(id)) _budgetCatCollapsed.delete(id);
-    else _budgetCatCollapsed.add(id);
-    // Re-render detail row only — toggle class on existing DOM
-    const detail = document.getElementById(`bcat-detail-${id}`);
-    const chevron = document.getElementById(`bcat-chev-${id}`);
+function toggleBudgetCatRow(safeKey) {
+    const catName = decodeURIComponent(safeKey);
+    if (_budgetCatCollapsed.has(catName)) _budgetCatCollapsed.delete(catName);
+    else _budgetCatCollapsed.add(catName);
+    const detail  = document.getElementById(`bcat-detail-${safeKey}`);
+    const chevron = document.getElementById(`bcat-chev-${safeKey}`);
     if (detail) {
-        const collapsed = _budgetCatCollapsed.has(id);
+        const collapsed = _budgetCatCollapsed.has(catName);
         detail.style.display = collapsed ? 'none' : '';
         if (chevron) chevron.textContent = collapsed ? '›' : '⌄';
     }
@@ -3752,70 +3621,54 @@ function toggleBudgetCatRow(id) {
 function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
     const el = $('budgetCatList');
     if (!el) return;
-    if (!budget.categorias.length) {
-        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Clique em "+ Adicionar" acima.</div>';
+    const allCats = _allBudgetCats();
+    if (!allCats.length) {
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Adicione em Orçamento → Categorias.</div>';
         return;
     }
-
-    // Build enriched list with computed stats
-    const enriched = budget.categorias.map(c => {
-        const isInvest  = _isBudgetCatInvest(c);
-        const allocated = totalBudget * ((c.pct || 0) / 100);
-        const spent     = _getSpentForBudgetCat(c, saidas, investList);
+    const enriched = allCats.map(catName => {
+        const pct       = budget.allocs[catName] || 0;
+        const isInvest  = _isBudgetCatInvest(catName);
+        const allocated = totalBudget * (pct / 100);
+        const spent     = _getSpentForBudgetCat(catName, saidas, investList);
         const pctUsed   = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
-        return { c, isInvest, allocated, spent, pctUsed };
+        return { catName, pct, isInvest, allocated, spent, pctUsed };
     });
-
-    // Sort
     if (_budgetCatSort === 'pct_desc') enriched.sort((a, b) => b.pctUsed - a.pctUsed);
     if (_budgetCatSort === 'pct_asc')  enriched.sort((a, b) => a.pctUsed - b.pctUsed);
-    // Update sort button icon to reflect current state
     const icon = $('budgetSortIcon');
     if (icon) icon.textContent = _budgetCatSort === 'pct_desc' ? '↓' : '↑';
 
-    el.innerHTML = enriched.map(({ c, isInvest, allocated, spent, pctUsed }) => {
-        const overBudget  = pctUsed > 100;
+    el.innerHTML = enriched.map(({ catName, pct, isInvest, allocated, spent, pctUsed }) => {
+        const over        = pctUsed > 100;
         const barColor    = isInvest
-            ? (overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--invest)')
-            : (overBudget ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--success)');
-        const statusColor = overBudget ? 'var(--danger)' : pctUsed > 80 ? '#b45309' : barColor;
-        const investBadge = isInvest
-            ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#ede9fe;color:#6d28d9;margin-left:5px">INVEST</span>`
-            : '';
-        const collapsed   = _budgetCatCollapsed.has(c.id);
-        const chevron     = collapsed ? '›' : '⌄';
-
+            ? (over ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--invest)')
+            : (over ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : 'var(--success)');
+        const statusColor = over ? 'var(--danger)' : pctUsed > 80 ? '#b45309' : barColor;
+        const investBadge = isInvest ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#ede9fe;color:#6d28d9;margin-left:5px">INVEST</span>` : '';
+        const safeKey     = encodeURIComponent(catName);
+        const collapsed   = _budgetCatCollapsed.has(catName);
         return `
         <div style="border-bottom:1px solid var(--border-light)">
-
-            <!-- Header row — always visible, click to collapse -->
-            <div class="budget-cat-row" style="cursor:pointer;padding-right:8px" onclick="toggleBudgetCatRow(${c.id})">
-                <div class="budget-cat-icon">${c.icon || '📦'}</div>
+            <div class="budget-cat-row" style="cursor:pointer;padding-right:8px" onclick="toggleBudgetCatRow('${safeKey}')">
+                <div class="budget-cat-icon">${catName.match(/^\p{Emoji}/u)?.[0] || '📦'}</div>
                 <div class="budget-cat-info">
-                    <div class="budget-cat-name">${escHtml(c.nome)}${investBadge}</div>
+                    <div class="budget-cat-name">${escHtml(catName)}${investBadge}</div>
                     <div class="budget-cat-vals">${fmt(spent)} de ${fmt(allocated)}</div>
                 </div>
-                <!-- Mini inline bar always visible -->
                 <div style="flex:0 0 80px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:0 4px">
-                    <div style="height:4px;border-radius:2px;background:${barColor};width:${Math.min(pctUsed, 100)}%;transition:width .5s"></div>
+                    <div style="height:4px;border-radius:2px;background:${barColor};width:${Math.min(pctUsed,100)}%;transition:width .5s"></div>
                 </div>
                 <div class="budget-cat-status" style="color:${statusColor};width:38px;text-align:right">${pctUsed}%</div>
-                <span id="bcat-chev-${c.id}"
-                    style="font-size:16px;color:var(--text-3);width:18px;text-align:center;flex-shrink:0;line-height:1;user-select:none">${chevron}</span>
+                <span id="bcat-chev-${safeKey}" style="font-size:16px;color:var(--text-3);width:18px;text-align:center;flex-shrink:0;line-height:1;user-select:none">${collapsed ? '›' : '⌄'}</span>
             </div>
-
-            <!-- Detail row — collapsible -->
-            <div id="bcat-detail-${c.id}" style="${collapsed ? 'display:none' : ''}background:var(--bg);padding:10px 16px 12px 58px;display:flex;align-items:center;gap:10px">
-                <input type="number" class="budget-cat-pct-input" value="${c.pct || 0}" min="0" max="100"
+            <div id="bcat-detail-${safeKey}" style="${collapsed ? 'display:none;' : ''}background:var(--bg);padding:10px 16px 12px 58px;display:flex;align-items:center;gap:10px">
+                <input type="number" class="budget-cat-pct-input" value="${pct}" min="0" max="100"
                     onclick="event.stopPropagation()"
-                    onchange="updateBudgetCatPct(${c.id}, this.value)" title="% do orçamento">
+                    onchange="updateBudgetCatPct('${safeKey}', this.value)" title="% do orçamento">
                 <span style="font-size:11px;color:var(--text-3)">%</span>
-                <div class="budget-cat-bar" style="flex:1"><div class="budget-cat-fill" style="width:${Math.min(pctUsed, 100)}%;background:${barColor}"></div></div>
+                <div class="budget-cat-bar" style="flex:1"><div class="budget-cat-fill" style="width:${Math.min(pctUsed,100)}%;background:${barColor}"></div></div>
                 <div style="font-size:11px;color:var(--text-3);white-space:nowrap">${fmt(spent)} / ${fmt(allocated)}</div>
-                <div class="btn-row" style="flex-shrink:0" onclick="event.stopPropagation()">
-                    <button class="icon-btn" onclick="editarBudgetCat(${c.id})">✏️</button>
-                    <button class="icon-btn" onclick="removerBudgetCat(${c.id})">🗑️</button>
-                </div>
             </div>
         </div>`;
     }).join('');
@@ -3824,19 +3677,17 @@ function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
 function renderBudgetPie(totalBudget) {
     const wrap = $('wrapBudgetPie');
     if (!wrap) return;
-    if (!budget.categorias.length || !totalBudget) {
+    const allCats = _allBudgetCats().filter(c => (budget.allocs[c] || 0) > 0);
+    if (!allCats.length || !totalBudget) {
         wrap.innerHTML = '<div class="chart-empty" style="height:200px"><span style="font-size:24px;opacity:.3">📊</span>Defina o orçamento</div>';
-        destroyChart('budgetPie');
-        return;
+        destroyChart('budgetPie'); return;
     }
-    const labels = budget.categorias.map(c => `${c.icon} ${c.nome}`);
-    const data   = budget.categorias.map(c => c.pct || 0);
+    const labels  = allCats.map(c => c);
+    const data    = allCats.map(c => budget.allocs[c] || 0);
     const totalPct = data.reduce((s, v) => s + v, 0);
     if (totalPct < 100) { labels.push('Não alocado'); data.push(100 - totalPct); }
-
-    const colors = [...CAT_COLORS.slice(0, budget.categorias.length)];
+    const colors = [...CAT_COLORS.slice(0, allCats.length)];
     if (totalPct < 100) colors.push('#e4e4e7');
-
     wrap.innerHTML = '<div style="height:200px;position:relative"><canvas id="budgetPieCanvas"></canvas></div>';
     destroyChart('budgetPie');
     charts['budgetPie'] = new Chart($('budgetPieCanvas').getContext('2d'), {
@@ -3849,22 +3700,24 @@ function renderBudgetPie(totalBudget) {
 function renderBudgetBars(m, a, saidas, investList, totalBudget) {
     const container = $('budgetBarsContainer');
     if (!container) return;
-    if (!budget.categorias.length || !totalBudget) {
+    const allCats = _allBudgetCats();
+    if (!allCats.length || !totalBudget) {
         container.innerHTML = '<div class="chart-empty" style="height:200px"><span style="font-size:24px;opacity:.3">📊</span>Defina categorias</div>';
         return;
     }
-    container.innerHTML = budget.categorias.map((c, i) => {
-        const allocated = totalBudget * ((c.pct || 0) / 100);
-        const spent = _getSpentForBudgetCat(c, saidas, investList);
-        const pct = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
-        const over = pct > 100;
-        const isInvest = _isBudgetCatInvest(c);
+    container.innerHTML = allCats.map((catName, i) => {
+        const pct       = budget.allocs[catName] || 0;
+        const allocated = totalBudget * (pct / 100);
+        const spent     = _getSpentForBudgetCat(catName, saidas, investList);
+        const pctUsed   = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
+        const over      = pctUsed > 100;
+        const isInvest  = _isBudgetCatInvest(catName);
         const baseColor = isInvest ? 'var(--invest)' : CAT_COLORS[i % CAT_COLORS.length];
-        const color = over ? 'var(--danger)' : pct > 80 ? '#f59e0b' : baseColor;
+        const color     = over ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : baseColor;
         return `<div class="budget-bar-item">
-            <div class="budget-bar-label">${c.icon} ${escHtml(c.nome)}${isInvest ? ' <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#ede9fe;color:#6d28d9">INVEST</span>' : ''}</div>
-            <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${Math.min(pct, 100)}%;background:${color}"></div></div>
-            <div class="budget-bar-pct" style="color:${over ? 'var(--danger)' : 'var(--text)'}">${pct}%</div>
+            <div class="budget-bar-label">${escHtml(catName)}${isInvest ? ' <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#ede9fe;color:#6d28d9">INVEST</span>' : ''}</div>
+            <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${Math.min(pctUsed,100)}%;background:${color}"></div></div>
+            <div class="budget-bar-pct" style="color:${over ? 'var(--danger)' : 'var(--text)'}">${pctUsed}%</div>
             <div class="budget-bar-vals">${fmt(spent)} / ${fmt(allocated)}</div>
         </div>`;
     }).join('');
