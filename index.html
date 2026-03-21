@@ -1366,8 +1366,8 @@
                 <span>Categorias do Orçamento</span>
                 <div style="display:flex;align-items:center;gap:8px">
                     <button id="btnBudgetSort" onclick="toggleBudgetCatSort()"
-                        style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--text-2);display:flex;align-items:center;gap:4px;white-space:nowrap">
-                        <span id="budgetSortIcon">↓</span> % Usada
+                        style="font-size:11px;font-weight:600;padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;color:var(--text-2);white-space:nowrap">
+                        ↓ % Alocado
                     </button>
                     <span style="font-size:11px;color:var(--text-3)">Clique em ⌄ para editar</span>
                 </div>
@@ -2166,7 +2166,7 @@ let cats  = JSON.parse(localStorage.getItem('fin5_cats')) || {
     entrada:      ["💰 Salário","💸 Dividendos","👨‍👩‍👧 Família","🔄 Transferência","⚙️ Outros"],
     investimento: ["🛡️ Renda Fixa","📈 Ações","₿ Cripto","🏦 Fundo"]
 };
-let goals = JSON.parse(localStorage.getItem('fin5_goals')) || [];
+let goals = (JSON.parse(localStorage.getItem('fin5_goals')) || []).map(g => ({ ...g, aportes: Array.isArray(g.aportes) ? g.aportes : [] }));
 
 let undoStack = [];
 let sortCol   = 'data', sortDir = 'desc';
@@ -2813,7 +2813,8 @@ function importar(input) {
     r.onload = () => {
         const d = JSON.parse(r.result);
         pushUndo(tx, 'Importação');
-        if (d.t) tx = d.t; if (d.c) cats = d.c; if (d.g) goals = d.g;
+        if (d.t) tx = d.t; if (d.c) cats = d.c;
+        if (d.g) goals = d.g.map(g => ({ ...g, aportes: Array.isArray(g.aportes) ? g.aportes : [] }));
         if (d.k) cards = d.k; if (d.b) budget = d.b;
         save(); saveCats(); saveGoals(); saveCards(); saveBudget();
         atualizar(); onTipoChange(); renderGoals();
@@ -3602,6 +3603,7 @@ function renderMensal() {
 // ── GOALS ─────────────────────────────────────────────────────────────────────
 function renderGoals() {
     $('goalsGrid').innerHTML = goals.map(g => {
+        if (!Array.isArray(g.aportes)) g.aportes = []; // defensive: Firebase strips empty arrays
         const atual    = g.aportes.reduce((s, a) => s + a.valor, 0);
         const pct      = Math.min(100, Math.round((atual / g.meta) * 100));
         const prazoStr = g.prazo ? new Date(g.prazo + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : 'Sem prazo';
@@ -3726,7 +3728,10 @@ function confirmarAporte() {
     const nota  = $('aporteNota').value.trim();
     if (!valor || valor <= 0) return toast('⚠️ Valor inválido.', '#b45309');
     if (!data) return toast('⚠️ Selecione uma data.', '#b45309');
-    goals.find(g => g.id === id).aportes.push({ valor, data, nota });
+    const goal = goals.find(g => g.id === id);
+    if (!goal) return;
+    if (!Array.isArray(goal.aportes)) goal.aportes = [];
+    goal.aportes.push({ valor, data, nota });
     commitGoals(); closeAporte();
     toast(`✓ Aporte de ${fmt(valor)} adicionado!`, '#16a34a');
 }
@@ -4025,12 +4030,21 @@ function renderBudget() {
 }
 
 
-let _budgetCatSort = 'pct_desc';
+let _budgetCatSort = 'alloc_desc'; // 'alloc_desc' | 'alloc_asc' | 'used_desc' | 'used_asc' | 'name_asc' | 'name_desc'
 let _budgetCatCollapsed = new Set();
 
+const _BUDGET_SORT_CYCLE = ['alloc_desc','alloc_asc','used_desc','used_asc','name_asc','name_desc'];
+const _BUDGET_SORT_LABELS = {
+    alloc_desc: '↓ % Alocado', alloc_asc: '↑ % Alocado',
+    used_desc:  '↓ % Gasto',   used_asc:  '↑ % Gasto',
+    name_asc:   '↑ Nome',      name_desc: '↓ Nome',
+};
 
 function toggleBudgetCatSort() {
-    _budgetCatSort = _budgetCatSort === 'pct_desc' ? 'pct_asc' : 'pct_desc';
+    const idx = _BUDGET_SORT_CYCLE.indexOf(_budgetCatSort);
+    _budgetCatSort = _BUDGET_SORT_CYCLE[(idx + 1) % _BUDGET_SORT_CYCLE.length];
+    const btn = $('btnBudgetSort');
+    if (btn) btn.textContent = _BUDGET_SORT_LABELS[_budgetCatSort];
     const { m, a } = filtro();
     const saidas      = txMes(m, a).filter(t => t.tipo === 'saida');
     const investLista = txMes(m, a).filter(t => t.tipo === 'investimento');
@@ -4066,10 +4080,14 @@ function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
         const pctUsed   = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
         return { catName, pct, isInvest, allocated, spent, pctUsed };
     });
-    if (_budgetCatSort === 'pct_desc') enriched.sort((a, b) => b.pctUsed - a.pctUsed);
-    if (_budgetCatSort === 'pct_asc')  enriched.sort((a, b) => a.pctUsed - b.pctUsed);
-    const icon = $('budgetSortIcon');
-    if (icon) icon.textContent = _budgetCatSort === 'pct_desc' ? '↓' : '↑';
+    if (_budgetCatSort === 'alloc_desc') enriched.sort((a, b) => b.pct - a.pct);
+    if (_budgetCatSort === 'alloc_asc')  enriched.sort((a, b) => a.pct - b.pct);
+    if (_budgetCatSort === 'used_desc')  enriched.sort((a, b) => b.pctUsed - a.pctUsed);
+    if (_budgetCatSort === 'used_asc')   enriched.sort((a, b) => a.pctUsed - b.pctUsed);
+    if (_budgetCatSort === 'name_asc')   enriched.sort((a, b) => a.catName.localeCompare(b.catName));
+    if (_budgetCatSort === 'name_desc')  enriched.sort((a, b) => b.catName.localeCompare(a.catName));
+    const sortBtn = $('btnBudgetSort');
+    if (sortBtn) sortBtn.textContent = _BUDGET_SORT_LABELS[_budgetCatSort] || _budgetCatSort;
 
     el.innerHTML = enriched.map(({ catName, pct, isInvest, allocated, spent, pctUsed }) => {
         const over        = pctUsed > 100;
@@ -4086,7 +4104,7 @@ function renderBudgetCatList(m, a, saidas, investList, totalBudget) {
                 <div class="budget-cat-icon">${catName.match(/^\p{Emoji}/u)?.[0] || '📦'}</div>
                 <div class="budget-cat-info">
                     <div class="budget-cat-name">${escHtml(catName)}${investBadge}</div>
-                    <div class="budget-cat-vals">${fmt(spent)} de ${fmt(allocated)}</div>
+                    <div class="budget-cat-vals">${fmt(spent)} de ${fmt(allocated)}${pct > 0 ? ` <span style="color:var(--text-3)">(${pct}%)</span>` : ''}</div>
                 </div>
                 <div style="flex:0 0 80px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:0 4px">
                     <div style="height:4px;border-radius:2px;background:${barColor};width:${Math.min(pctUsed,100)}%;transition:width .5s"></div>
@@ -4344,7 +4362,10 @@ function _buildPayload() {
 function _applyPayload(payload) {
     if (payload.t) tx    = payload.t;
     if (payload.c) cats  = payload.c;
-    if (payload.g) goals = payload.g;
+    if (payload.g) {
+        // Firebase drops empty arrays — ensure every goal has an aportes array
+        goals = payload.g.map(g => ({ ...g, aportes: Array.isArray(g.aportes) ? g.aportes : [] }));
+    }
     if (payload.k) cards = payload.k;
     if (payload.b) { budget = payload.b; localStorage.setItem('fin5_budget', JSON.stringify(budget)); }
     save(); saveCats(); saveGoals(); saveCards();
