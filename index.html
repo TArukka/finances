@@ -1262,14 +1262,10 @@
         </div>
 
         <!-- Charts row -->
-        <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:14px;margin-bottom:20px" class="budget-charts-row">
+        <div style="margin-bottom:20px">
             <div class="chart-box">
                 <div class="chart-box-label">Alocação do Orçamento</div>
                 <div id="wrapBudgetPie"><div class="chart-empty" style="height:200px"><span style="font-size:24px;opacity:.3">📊</span>Defina o orçamento</div></div>
-            </div>
-            <div class="chart-box">
-                <div class="chart-box-label">% Gasto por Categoria</div>
-                <div id="budgetBarsContainer"><div class="chart-empty" style="height:200px"><span style="font-size:24px;opacity:.3">📊</span>Defina categorias</div></div>
             </div>
         </div>
 
@@ -1307,35 +1303,6 @@
                 <button class="btn-save" style="width:auto;padding:7px 16px;margin:0;font-size:12px" onclick="abrirNovaGoal()">+ Nova Meta</button>
             </div>
             <div class="goals-grid" id="goalsGrid"></div>
-        </div>
-
-        <!-- ── CATEGORY MANAGER ── -->
-        <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-                <div>
-                    <div style="font-size:16px;font-weight:700">🏷️ Categorias</div>
-                    <div style="font-size:12px;color:var(--text-3);margin-top:2px">Usadas em todos os lançamentos do app</div>
-                </div>
-            </div>
-            <div class="tabs" style="margin-bottom:14px">
-                <button class="tab active" id="catMgr-tab-saida"        onclick="setCatMgrType('saida',this)">📉 Gastos</button>
-                <button class="tab"        id="catMgr-tab-entrada"       onclick="setCatMgrType('entrada',this)">📈 Entradas</button>
-                <button class="tab"        id="catMgr-tab-investimento"  onclick="setCatMgrType('investimento',this)">🟣 Investimentos</button>
-            </div>
-            <div class="data-table-box">
-                <div id="catMgrList" style="padding:6px 0;min-height:40px"></div>
-                <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center">
-                    <input type="text" id="catMgrInput"
-                        placeholder="Nome da nova categoria…"
-                        style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text)"
-                        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-                        onkeydown="if(event.key==='Enter')adicionarCatMgr()">
-                    <button onclick="adicionarCatMgr()" class="btn-save"
-                        style="width:auto;margin:0;padding:8px 18px;font-size:13px;flex-shrink:0">
-                        ＋ Adicionar
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -1883,7 +1850,7 @@ function renderMobList() {
     let lista = txMes(m, a).filter(t =>
         !t.fixo &&
         (activeTab === 'all' || t.tipo === activeTab) &&
-        (t.desc.toLowerCase().includes(busca) || t.cat.toLowerCase().includes(busca))
+        (t.desc.toLowerCase().includes(busca) || catLabel(t).toLowerCase().includes(busca))
     );
     lista = sorted(lista);
     const container = $('mobTxList');
@@ -1913,7 +1880,7 @@ function renderMobList() {
                         return `<div class="mob-tx-card" onclick="openMobEdit(${t.id})" style="background:transparent">
                             <div class="mob-tx-info" style="padding-left:14px">
                                 <div class="mob-tx-desc" style="font-size:12px">${escHtml(t.desc)}</div>
-                                <div class="mob-tx-meta">${d2}/${m2} · ${escHtml(t.cat)}</div>
+                                <div class="mob-tx-meta">${d2}/${m2} · ${escHtml(catLabel(t))}</div>
                             </div>
                             <div class="mob-tx-right">
                                 <div class="mob-tx-val" style="color:var(--danger);font-size:12px">− ${fmt(t.valor)}</div>
@@ -1939,7 +1906,7 @@ function renderMobList() {
             <div class="mob-tx-dot ${dotClass}">${icon}</div>
             <div class="mob-tx-info">
                 <div class="mob-tx-desc">${escHtml(t.desc)}</div>
-                <div class="mob-tx-meta">${escHtml(t.cat)}${payBadge}${fixoBadge}${cardBadge}</div>
+                <div class="mob-tx-meta">${escHtml(catLabel(t))}${payBadge}${fixoBadge}${cardBadge}</div>
             </div>
             <div class="mob-tx-right">
                 <div class="mob-tx-val" style="color:${cor}">${pre} ${fmt(t.valor)}</div>
@@ -2025,13 +1992,14 @@ const saveCats  = () => localStorage.setItem('fin5_cats', JSON.stringify(cats));
 const saveCards = () => localStorage.setItem('fin5_cards', JSON.stringify(cards));
 const commit      = () => { save(); atualizar(); };
 const commitGoals = () => { saveGoals(); renderGoals(); };
-const commitCats  = () => { saveCats(); onTipoChange(); if (currentView === 'metas') renderBudget(); };
+const commitCats  = () => { saveCats(); onTipoChange(); };
 
 // Payment badge HTML — shared across table, fixos, mobile list
 const txPayBadge = t => t.tipo !== 'saida' ? '' :
     t.pagamento === 'credito' ? '<span class="tag-cred">CRÉD</span>' : '<span class="tag-deb">DÉB</span>';
 // Type colour + sign — shared across renders
 const txCor  = t => t.tipo === 'entrada' ? 'var(--success)' : t.tipo === 'investimento' ? 'var(--invest)' : 'var(--danger)';
+const catLabel = t => t.cat && t.cat.trim() ? t.cat : '(sem categoria)';
 const txPre  = t => t.tipo === 'entrada' ? '+' : '−';
 
 function toast(msg, bg = '#18181b') {
@@ -2105,14 +2073,14 @@ function navTo(view, btn) {
     if (view === 'dashboard' && _dashDirty) { _dashDirty = false; atualizar(); }
     if (view === 'anual')  renderAnual();
     if (view === 'mensal') renderMensal();
-    if (view === 'metas')  { renderBudget(); renderGoals(); renderCatMgr(); }
+    if (view === 'metas')  { renderBudget(); renderGoals(); }
 }
 
 function onFiltroChange() {
     atualizar();
     if (currentView === 'mensal') renderMensal();
     if (currentView === 'anual')  renderAnual();
-    if (currentView === 'metas')  { renderBudget(); renderGoals(); renderCatMgr(); }
+    if (currentView === 'metas')  { renderBudget(); renderGoals(); }
 }
 
 function goToMensal(m, a) {
@@ -2385,68 +2353,6 @@ function renderCatList() {
     }).join('') || '<span style="font-size:12px;color:var(--text-3)">Nenhuma.</span>';
 }
 
-// ── CATEGORY MANAGER (Budget view) ───────────────────────────────────────────
-let catMgrType = 'saida';
-
-function setCatMgrType(tipo, btn) {
-    catMgrType = tipo;
-    document.querySelectorAll('[id^="catMgr-tab-"]').forEach(t => t.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    const inp = $('catMgrInput');
-    if (inp) {
-        const labels = { saida: 'gasto', entrada: 'entrada', investimento: 'investimento' };
-        inp.placeholder = `Nome da nova categoria de ${labels[tipo] || tipo}…`;
-    }
-    renderCatMgr();
-}
-
-function renderCatMgr() {
-    const el = $('catMgrList');
-    if (!el) return;
-    const list = cats[catMgrType] || [];
-    if (!list.length) {
-        el.innerHTML = '<div style="padding:20px 16px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma categoria. Adicione uma abaixo.</div>';
-        return;
-    }
-    el.innerHTML = list.map((c, i) => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border-light)">
-            <span style="font-size:13px;font-weight:500">${c}</span>
-            <button class="icon-btn" title="Remover" style="opacity:.4;font-size:13px"
-                onclick="removerCatMgr(${i})" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity='.4'">🗑️</button>
-        </div>`).join('');
-}
-
-function adicionarCatMgr() {
-    const inp  = $('catMgrInput');
-    const nome = inp ? inp.value.trim() : '';
-    if (!nome) return toast('⚠️ Digite um nome para a categoria.', '#b45309');
-    if (!cats[catMgrType]) cats[catMgrType] = [];
-    if (cats[catMgrType].some(c => c.toLowerCase() === nome.toLowerCase()))
-        return toast('⚠️ Categoria já existe.', '#b45309');
-    cats[catMgrType].push(nome);
-    commitCats();
-    if (inp) inp.value = '';
-    renderCatMgr();
-    // Refresh form dropdowns so new category is available immediately
-    const sel = $('categoria');
-    if (sel && $('tipo') && $('tipo').value === catMgrType) populateCatSelect(sel, catMgrType);
-    const mobSel = $('mob-categoria');
-    if (mobSel && $('mob-tipo') && $('mob-tipo').value === catMgrType) {
-        mobSel.innerHTML = '';
-        (cats[catMgrType] || []).forEach(c => { const o = document.createElement('option'); o.value = c; o.text = c; mobSel.add(o); });
-    }
-    toast('✓ Categoria adicionada!');
-}
-
-function removerCatMgr(idx) {
-    if (!cats[catMgrType] || idx < 0 || idx >= cats[catMgrType].length) return;
-    const nome = cats[catMgrType][idx];
-    cats[catMgrType].splice(idx, 1);
-    commitCats();
-    renderCatMgr();
-    toast(`Categoria "${nome}" removida.`, '#52525b');
-}
-
 // ── BACKUP ────────────────────────────────────────────────────────────────────
 function exportar() {
     const b = new Blob([JSON.stringify({ t: tx, c: cats, g: goals, k: cards, b: budget })], { type: 'application/json' });
@@ -2475,7 +2381,7 @@ function renderTabela() {
     let lista = txMes(m, a).filter(t =>
         !t.fixo &&
         (activeTab === 'all' || t.tipo === activeTab) &&
-        (t.desc.toLowerCase().includes(busca) || t.cat.toLowerCase().includes(busca))
+        (t.desc.toLowerCase().includes(busca) || catLabel(t).toLowerCase().includes(busca))
     );
     lista = sorted(lista);
     const tbody = $('tbody'), empty = $('emptyState');
@@ -2501,7 +2407,7 @@ function renderTabela() {
         return `<tr id="tr-${t.id}" class="${isEditing ? 'editing' : ''}">
             <td style="color:var(--text-3);font-size:12px;white-space:nowrap">${d}/${mo}</td>
             <td><span style="font-weight:500">${escHtml(t.desc)}</span>${payTag}${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}${cardTag}</td>
-            <td style="font-size:12px;color:var(--text-3)">${groupMode === 'cat' ? '' : t.cat}</td>
+            <td style="font-size:12px;color:var(--text-3)">${groupMode === 'cat' ? '' : catLabel(t)}</td>
             <td style="font-weight:600;color:${cor};white-space:nowrap">${pre} ${fmt(t.valor)}</td>
             <td><div class="btn-row">
                 <button class="icon-btn" title="Editar" onclick="openInlineEdit(${t.id})">&#9999;&#65039;</button>
@@ -2542,7 +2448,7 @@ function renderTabela() {
         // Group by category, sorted by total desc
         const groupMap = {};
         lista.forEach(t => {
-            if (!groupMap[t.cat]) groupMap[t.cat] = { cat: t.cat, tipo: t.tipo, items: [] };
+            if (!groupMap[catLabel(t)]) groupMap[catLabel(t)] = { cat: catLabel(t), tipo: t.tipo, items: [] };
             groupMap[t.cat].items.push(t);
         });
         const groups = Object.values(groupMap).sort((a, b) => {
@@ -2738,7 +2644,7 @@ function renderFaturas() {
                     return `<div class="fatura-item">
                         <div>
                             <div class="fatura-item-desc">${escHtml(t.desc)}</div>
-                            <div class="fatura-item-meta">${d2}/${m2} · ${escHtml(t.cat)}</div>
+                            <div class="fatura-item-meta">${d2}/${m2} · ${escHtml(catLabel(t))}</div>
                         </div>
                         <div class="fatura-item-val">− ${fmt(t.valor)}</div>
                     </div>`;
@@ -2789,7 +2695,7 @@ function renderFixosTable() {
                     onchange="updateFixoDay(${t.id}, this.value)">
                 <div style="flex:1;min-width:0" onclick="openMobEdit(${t.id})">
                     <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(t.desc)} ${payBadge}</div>
-                    <div style="font-size:11px;color:var(--text-3)">${escHtml(t.cat)}</div>
+                    <div style="font-size:11px;color:var(--text-3)">${escHtml(catLabel(t))}</div>
                 </div>
                 <div style="text-align:right">
                     <div style="font-weight:700;color:${cor};font-size:13px;white-space:nowrap">${pre} ${fmt(t.valor)}</div>
@@ -2819,7 +2725,7 @@ function renderFixosTable() {
                 ${String(parseInt(t.data.split('-')[2])).padStart(2,'0')}/${t.data.split('-')[1]}
             </td>
             <td><span style="font-weight:500">${escHtml(t.desc)}</span> ${payBadge}
-                <div style="font-size:11px;color:var(--text-3)">${escHtml(t.cat)}</div></td>
+                <div style="font-size:11px;color:var(--text-3)">${escHtml(catLabel(t))}</div></td>
             <td style="font-weight:600;color:${cor};white-space:nowrap;text-align:right">${pre} ${fmt(t.valor)}</td>
             <td style="width:60px"><div class="btn-row">
                 <button class="icon-btn" title="Editar" onclick="openFixoEdit(${t.id})">✏️</button>
@@ -3010,15 +2916,14 @@ function renderBudgetRemaining() {
     const remainColor = overBudget ? '#dc2626' : '#16a34a';
 
     // ── SVG arc gauge ────────────────────────────────────────────────────────
-    // Semi-circle: center (100,108), radius 82, stroke 15
-    // Sweep counterclockwise (top half) — left=0%, right=100%
+    // Semi-circle: center (100,108), radius 82, sweep=1 = clockwise = goes UP
     const cx = 100, cy = 108, r = 82, sw = 15;
-    const pctSvg = Math.max(0.5, Math.min(99.9, pctUsed)); // avoid degenerate 0/100
-    const ang = Math.PI - (pctSvg / 100) * Math.PI;
+    const pctSvg = Math.max(0.5, Math.min(99.9, pctUsed));
+    const ang = Math.PI - (pctSvg / 100) * Math.PI;  // 180°→0° as pct goes 0→100
     const ex  = (cx + r * Math.cos(ang)).toFixed(2);
     const ey  = (cy - r * Math.sin(ang)).toFixed(2);
-    const trackD = `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${cx + r} ${cy}`;
-    const fillD  = `M ${cx - r} ${cy} A ${r} ${r} 0 0 0 ${ex} ${ey}`;
+    const trackD = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+    const fillD  = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${ex} ${ey}`;
 
     wrap.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;padding:4px 0 8px">
@@ -3175,7 +3080,7 @@ function renderMensal() {
             const [y, mo, d] = t.data.split('-');
             return `<div class="split-item">
                 <div><div class="split-item-desc">${escHtml(t.desc)}${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}</div>
-                <div class="split-item-meta">${d}/${mo} · ${escHtml(t.cat)}</div></div>
+                <div class="split-item-meta">${d}/${mo} · ${escHtml(catLabel(t))}</div></div>
                 <div class="split-item-val">− ${fmt(t.valor)}</div>
             </div>`;
         }).join('');
@@ -3585,9 +3490,6 @@ function renderBudget() {
     // Pie chart
     renderBudgetPie(totalBudget);
 
-    // Bar chart
-    renderBudgetBars(m, a, lista, investLista, totalBudget);
-
     // Fixos
     renderBudgetFixos(m, a);
 }
@@ -3695,32 +3597,6 @@ function renderBudgetPie(totalBudget) {
         data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
         options: { ...CHART_COMMON_OPTS, cutout: '60%' }
     });
-}
-
-function renderBudgetBars(m, a, saidas, investList, totalBudget) {
-    const container = $('budgetBarsContainer');
-    if (!container) return;
-    const allCats = _allBudgetCats();
-    if (!allCats.length || !totalBudget) {
-        container.innerHTML = '<div class="chart-empty" style="height:200px"><span style="font-size:24px;opacity:.3">📊</span>Defina categorias</div>';
-        return;
-    }
-    container.innerHTML = allCats.map((catName, i) => {
-        const pct       = budget.allocs[catName] || 0;
-        const allocated = totalBudget * (pct / 100);
-        const spent     = _getSpentForBudgetCat(catName, saidas, investList);
-        const pctUsed   = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
-        const over      = pctUsed > 100;
-        const isInvest  = _isBudgetCatInvest(catName);
-        const baseColor = isInvest ? 'var(--invest)' : CAT_COLORS[i % CAT_COLORS.length];
-        const color     = over ? 'var(--danger)' : pctUsed > 80 ? '#f59e0b' : baseColor;
-        return `<div class="budget-bar-item">
-            <div class="budget-bar-label">${escHtml(catName)}${isInvest ? ' <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;background:#ede9fe;color:#6d28d9">INVEST</span>' : ''}</div>
-            <div class="budget-bar-track"><div class="budget-bar-fill" style="width:${Math.min(pctUsed,100)}%;background:${color}"></div></div>
-            <div class="budget-bar-pct" style="color:${over ? 'var(--danger)' : 'var(--text)'}">${pctUsed}%</div>
-            <div class="budget-bar-vals">${fmt(spent)} / ${fmt(allocated)}</div>
-        </div>`;
-    }).join('');
 }
 
 function renderBudgetFixos(m, a) {
