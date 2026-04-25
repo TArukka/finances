@@ -1195,7 +1195,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:left">Mês</th>
-                        <th>Entradas</th><th>Débito</th><th>Crédito</th><th>Investido</th><th>Saldo</th>
+                        <th>Entradas</th><th>Saídas</th><th>Investido</th><th>Saldo do Mês</th><th>Saldo do Ano</th>
                     </tr>
                 </thead>
                 <tbody id="anualTbody"></tbody>
@@ -2906,38 +2906,68 @@ function renderTabela() {
     }
 
     if (groupMode === 'cat') {
-        // Group by category, sorted by total desc
-        const groupMap = {};
+        // Group by tipo, then by category within each tipo
+        const tipoOrder = ['entrada', 'saida', 'investimento'];
+        const tipoLabel = { entrada: '📈 Entradas', saida: '📉 Saídas', investimento: '💼 Investimentos' };
+        const tipoClass = { entrada: 'green', saida: 'red', investimento: 'purple' };
+        const tipoPre   = { entrada: '+', saida: '−', investimento: '−' };
+
+        const byTipo = {};
         lista.forEach(t => {
+            if (!byTipo[t.tipo]) byTipo[t.tipo] = {};
             const key = catLabel(t);
-            if (!groupMap[key]) groupMap[key] = { cat: key, tipo: t.tipo, items: [] };
-            groupMap[key].items.push(t);
-        });
-        const groups = Object.values(groupMap).sort((a, b) => {
-            const ta = a.items.reduce((s, t) => s + t.valor, 0);
-            const tb = b.items.reduce((s, t) => s + t.valor, 0);
-            return tb - ta;
+            if (!byTipo[t.tipo][key]) byTipo[t.tipo][key] = [];
+            byTipo[t.tipo][key].push(t);
         });
 
-        tbody.innerHTML = groups.map(g => {
-            const total    = g.items.reduce((s, t) => s + t.valor, 0);
-            const isSaida  = g.items.every(t => t.tipo === 'saida');
-            const isEntrada = g.items.every(t => t.tipo === 'entrada');
-            const isInvest = g.items.every(t => t.tipo === 'investimento');
-            const totClass = isEntrada ? 'green' : isInvest ? 'purple' : 'red';
-            const totPre   = isEntrada ? '+' : '\u2212';
+        let html = '';
+        tipoOrder.forEach(tipo => {
+            if (!byTipo[tipo]) return;
+            const catMap = byTipo[tipo];
+            const cats = Object.entries(catMap).sort((a, b) =>
+                b[1].reduce((s, t) => s + t.valor, 0) - a[1].reduce((s, t) => s + t.valor, 0)
+            );
+            const tipoTotal = cats.reduce((s, [, items]) => s + items.reduce((ss, t) => ss + t.valor, 0), 0);
+            const tipoCount = cats.reduce((s, [, items]) => s + items.length, 0);
 
-            const headerRow = `<tr class="tx-group-header">
+            // Tipo section header
+            html += `<tr class="tx-group-header" style="border-top:2px solid var(--border)">
                 <td colspan="5">
-                    <div class="gh-label">
-                        <span>${g.cat}</span>
-                        <span class="gh-count">${g.items.length} ${g.items.length === 1 ? 'item' : 'itens'}</span>
-                        <span class="gh-total ${totClass}">${totPre} ${fmt(total)}</span>
+                    <div class="gh-label" style="font-size:11px;font-weight:700;color:var(--text-2)">
+                        <span>${tipoLabel[tipo]}</span>
+                        <span class="gh-count">${tipoCount} ${tipoCount === 1 ? 'item' : 'itens'}</span>
+                        <span class="gh-total ${tipoClass[tipo]}" style="font-size:13px">${tipoPre[tipo]} ${fmt(tipoTotal)}</span>
                     </div>
                 </td>
             </tr>`;
-            return headerRow + g.items.map(_rowHtml).join('');
-        }).join('');
+
+            cats.forEach(([cat, items]) => {
+                const total = items.reduce((s, t) => s + t.valor, 0);
+                // Category sub-header
+                html += `<tr class="tx-group-header">
+                    <td colspan="5" style="padding-left:28px">
+                        <div class="gh-label">
+                            <span style="color:var(--text-3);font-size:10px">▸</span>
+                            <span>${cat}</span>
+                            <span class="gh-count">${items.length} ${items.length === 1 ? 'item' : 'itens'}</span>
+                            <span class="gh-total ${tipoClass[tipo]}">${tipoPre[tipo]} ${fmt(total)}</span>
+                        </div>
+                    </td>
+                </tr>`;
+                html += items.map(_rowHtml).join('');
+                // Category subtotal row
+                html += `<tr style="background:var(--border-light)">
+                    <td colspan="4" style="text-align:right;font-size:11px;font-weight:600;color:var(--text-3);padding:5px 14px">
+                        Subtotal — ${cat}
+                    </td>
+                    <td style="font-weight:700;color:var(--${tipo === 'entrada' ? 'success' : 'danger'});font-size:12px;white-space:nowrap;padding:5px 14px">
+                        ${tipoPre[tipo]} ${fmt(total)}
+                    </td>
+                </tr>`;
+            });
+        });
+
+        tbody.innerHTML = html;
     } else {
         tbody.innerHTML = lista.map(_rowHtml).join('');
     }
@@ -3469,16 +3499,19 @@ function renderAnual() {
 
     renderDonut(catAnual, 'grafAnualCat', 'wrapAnualCat', '📉', CAT_COLORS, 240);
 
+    let accumulated = 0;
     $('anualTbody').innerHTML = rows.map(r => {
         const hasData = r.ent || r.gas || r.inv;
         const sc = r.saldo >= 0 ? 'green-val' : 'red-val';
+        if (hasData) accumulated += r.saldo;
+        const ac = accumulated >= 0 ? 'green-val' : 'red-val';
         return `<tr class="${hasData ? 'clickable' : ''}" onclick="${hasData ? `goToMensal(${r.m},${a})` : ''}">
             <td>${MESES[r.m]}</td>
             <td class="green-val">${r.ent ? fmt(r.ent) : '—'}</td>
-            <td class="teal-val">${r.deb ? fmt(r.deb) : '—'}</td>
-            <td class="blue-val">${r.cred ? fmt(r.cred) : '—'}</td>
+            <td class="red-val">${r.gas ? fmt(r.gas) : '—'}</td>
             <td class="purple-val">${r.inv ? fmt(r.inv) : '—'}</td>
             <td class="${hasData ? sc : ''}">${hasData ? fmt(r.saldo) : '—'}</td>
+            <td class="${hasData ? ac : ''}">${hasData ? fmt(accumulated) : '—'}</td>
         </tr>`;
     }).join('');
 }
