@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>Finances / Lucca</title>
+    <!--
+      Revisão Claude (jun/2026)
+      • FIX: replicação de fixos — fixo no dia 31 transbordava pro mês seguinte
+        em meses curtos (31/jan virava 03/mar e fevereiro ficava sem o fixo)
+      • FIX: parseValor — "10.50" era lido como 1050; agora ponto com 1-2 decimais
+        é tratado como decimal, mantendo "1.800" e "1.800,50" como milhar BR
+      • NEW: painel "Próximos Vencimentos · 30 dias" no dashboard (fixos + faturas
+        de cartão, ordenados por data, com contagem regressiva e total do período)
+      • NEW: Δ% vs mês anterior nos KPIs de Entradas, Despesas e Investido
+      • NEW: exportar CSV do mês filtrado (BOM + ';', abre direto no Excel pt-BR)
+    -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase SDK -->
@@ -1071,6 +1082,9 @@
                 <div class="backup-btn" onclick="exportar()">↑ Exportar</div>
                 <label class="backup-btn">↓ Importar<input type="file" hidden onchange="importar(this)"></label>
             </div>
+            <div class="backup-row" style="margin-top:6px">
+                <div class="backup-btn" onclick="exportarCSV()" title="Exporta os lançamentos do mês filtrado em CSV (Excel/Sheets)">⇪ CSV do mês</div>
+            </div>
         </div>
     </aside>
 
@@ -1089,6 +1103,7 @@
             <div class="kpi">
                 <div class="kpi-label">Investido</div>
                 <div class="kpi-val purple" id="kpiInv">—</div>
+                <div class="kpi-sub" id="kpiInvSub"></div>
             </div>
             <div class="kpi" id="kpiSalCard">
                 <div class="kpi-label">Saldo</div>
@@ -1112,6 +1127,13 @@
                 <div class="chart-box-label">Orçamento do Mês</div>
                 <div id="wrapBudgetRemaining"><div class="chart-empty"><span style="font-size:24px;opacity:.3">💰</span>Defina um orçamento</div></div>
             </div>
+        </div>
+        <div class="chart-box" id="vencBox" style="display:none">
+            <div class="chart-box-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <span>⏰ Próximos Vencimentos · 30 dias</span>
+                <span id="vencTotal" style="font-weight:700;color:var(--danger);font-size:12px"></span>
+            </div>
+            <div id="vencList"></div>
         </div>
         <div class="history-box">
             <div class="history-header">
@@ -1768,7 +1790,16 @@ function $(id) { return document.getElementById(id); }
 
 // ── SHARED UTILITIES ──────────────────────────────────────────────────────────
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
-function parseValor(s) { return parseFloat(s.replace(/\./g, '').replace(',', '.')); }
+function parseValor(s) {
+    s = String(s).trim();
+    if (!s) return NaN;
+    // Com vírgula: padrão BR — pontos são milhar ("1.800,50")
+    if (s.includes(',')) return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+    // Só pontos: um único ponto seguido de 1–2 dígitos é decimal ("10.5", "10.50");
+    // qualquer outro caso trata pontos como milhar ("1.800")
+    if (/^\d+\.\d{1,2}$/.test(s)) return parseFloat(s);
+    return parseFloat(s.replace(/\./g, ''));
+}
 function validateTx(desc, valor, data) {
     if (!desc)                      { toast('⚠️ Digite uma descrição.', '#b45309'); return false; }
     if (isNaN(valor) || valor <= 0) { toast('⚠️ Valor inválido.', '#b45309'); return false; }
@@ -2458,9 +2489,14 @@ function closeFixoRep(opcao) {
     if (opcao === 'sim') {
         const d = new Date(data + 'T00:00:00'), base = Date.now();
         let idCounter = 0;
+        const ano = d.getFullYear(), diaBase = d.getDate();
         for (let i = d.getMonth(); i <= 11; i++) {
-            const nd    = new Date(d.getFullYear(), i, d.getDate());
-            const ndStr = nd.toISOString().split('T')[0];
+            // Clampa o dia: fixo do dia 31 em mês de 30/28 dias transbordava pro mês
+            // seguinte (31/jan → 03/mar, pulando fevereiro). Agora vira o último dia
+            // do mês (28/fev). Formatação local também evita depender de toISOString/UTC.
+            const maxDia = new Date(ano, i + 1, 0).getDate();
+            const dia    = Math.min(diaBase, maxDia);
+            const ndStr  = `${ano}-${String(i + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
             const fd    = (pagamento === 'credito' && cartaoId) ? calcFaturaData(cartaoId, ndStr) : null;
             tx.push({ id: base + (++idCounter), desc, valor, data: ndStr, tipo, cat, fixo: true, pagamento, cartaoId, faturaData: fd });
         }
@@ -2820,6 +2856,26 @@ function exportar() {
     toast('Exportado!');
 }
 
+// Exporta o mês filtrado como CSV (BOM + ';' = abre direto no Excel/Sheets pt-BR)
+function exportarCSV() {
+    const { m, a } = filtro();
+    const lista = [...txMes(m, a)].sort((x, y) => x.data.localeCompare(y.data));
+    if (!lista.length) { toast('Nada para exportar neste mês.', '#52525b'); return; }
+    const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+    const cardName = id => { const c = cards.find(c => c.id == id); return c ? c.nome : ''; };
+    const head = 'data;tipo;descricao;categoria;pagamento;cartao;fixo;valor';
+    const rows = lista.map(t => [
+        t.data, t.tipo, q(t.desc), q(t.cat || ''), t.pagamento || '', q(cardName(t.cartaoId)),
+        t.fixo ? 'sim' : '', String(t.valor).replace('.', ',')
+    ].join(';'));
+    const blob = new Blob(['\uFEFF' + [head, ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const el = document.createElement('a');
+    el.href = URL.createObjectURL(blob);
+    el.download = `financas-${a}-${String(m + 1).padStart(2, '0')}.csv`;
+    el.click(); URL.revokeObjectURL(el.href);
+    toast(`CSV de ${MESES[m]} exportado!`);
+}
+
 function importar(input) {
     const r = new FileReader();
     r.onload = () => {
@@ -3103,6 +3159,59 @@ function getFaturasForMonth(m, a) {
     return result;
 }
 
+// ── PRÓXIMOS VENCIMENTOS (30 dias) ───────────────────────────────────────────
+// Junta fixos (saídas) e faturas de cartão que vencem nos próximos 30 dias,
+// independente do mês filtrado — visão de fluxo de caixa real.
+function renderVencimentos() {
+    const box = $('vencBox');
+    if (!box) return;
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const _iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const limite = new Date(hoje); limite.setDate(limite.getDate() + 30);
+    const hojeStr = _iso(hoje), limStr = _iso(limite);
+
+    const items = [];
+    // Fixos (saídas) na janela
+    tx.forEach(t => {
+        if (!t.fixo || t.tipo !== 'saida') return;
+        if (t.pagamento === 'credito' && t.cartaoId) return; // já entra via fatura
+        if (t.data >= hojeStr && t.data <= limStr) items.push({ data: t.data, desc: t.desc, valor: t.valor, badge: 'FIXO', cor: 'var(--debit)' });
+    });
+    // Faturas de cartão — mês atual e próximo
+    for (let off = 0; off <= 1; off++) {
+        const ref = new Date(hoje.getFullYear(), hoje.getMonth() + off, 1);
+        getFaturasForMonth(ref.getMonth(), ref.getFullYear()).forEach(f => {
+            if (f.faturaDate >= hojeStr && f.faturaDate <= limStr)
+                items.push({ data: f.faturaDate, desc: 'Fatura ' + f.card.nome, valor: f.total, badge: 'FATURA', cor: f.card.cor || 'var(--credit)' });
+        });
+    }
+    items.sort((x, y) => x.data.localeCompare(y.data));
+
+    if (!items.length) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    const total = items.reduce((s, i) => s + i.valor, 0);
+    $('vencTotal').textContent = fmt(total) + ' no período';
+    $('vencList').innerHTML = items.map(i => {
+        const dt = new Date(i.data + 'T00:00:00');
+        const dias = Math.round((dt - hoje) / 86400000);
+        const [chipTxt, chipColor, chipBg] =
+            dias === 0 ? ['hoje', '#dc2626', '#fef2f2'] :
+            dias === 1 ? ['amanhã', '#b45309', '#fffbeb'] :
+            dias <= 7  ? ['em ' + dias + 'd', '#b45309', '#fffbeb'] :
+                         ['em ' + dias + 'd', 'var(--text-3)', 'var(--bg)'];
+        return `<div style="display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--border-light);font-size:12px">
+            <span style="font-weight:600;color:var(--text-2);width:42px;flex-shrink:0">${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}</span>
+            <span style="font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 6px;border-radius:4px;color:white;background:${i.cor};flex-shrink:0">${i.badge}</span>
+            <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${escHtml(i.desc)}</span>
+            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;color:${chipColor};background:${chipBg};flex-shrink:0">${chipTxt}</span>
+            <span style="font-weight:700;color:var(--danger);flex-shrink:0">${fmt(i.valor)}</span>
+        </div>`;
+    }).join('') + `<div style="display:flex;justify-content:space-between;padding:8px 2px 0;font-size:11px;color:var(--text-3)">
+        <span>${items.length} vencimento${items.length !== 1 ? 's' : ''} até ${String(limite.getDate()).padStart(2,'0')}/${String(limite.getMonth()+1).padStart(2,'0')}</span>
+        <span>total <strong style="color:var(--danger)">${fmt(total)}</strong></span>
+    </div>`;
+}
+
 function renderFaturas() {
     const { m, a } = filtro();
     const faturas = getFaturasForMonth(m, a);
@@ -3333,7 +3442,27 @@ function atualizar() {
     $('kpiInv').textContent = fmt(inv);
     const kpiSal = $('kpiSal');
     kpiSal.textContent = fmt(saldo); kpiSal.className = 'kpi-val ' + (saldo < 0 ? 'red' : '');
-    $('kpiGasSub').textContent = ent > 0 ? `${Math.round((gas / ent) * 100)}% da renda` : '';
+
+    // Δ vs mês anterior em cada KPI
+    const pm = m === 0 ? 11 : m - 1, pa = m === 0 ? a - 1 : a;
+    let pEnt = 0, pGas = 0, pInv = 0;
+    txMes(pm, pa).forEach(t => {
+        if (t.tipo === 'entrada') pEnt += t.valor;
+        else if (t.tipo === 'investimento') pInv += t.valor;
+        else pGas += t.valor;
+    });
+    const delta = (cur, old) => {
+        if (!old || !cur) return '';
+        const d = Math.round((cur - old) / old * 100);
+        if (!isFinite(d) || d === 0) return '';
+        return (d > 0 ? '▲ +' : '▼ ') + d + '% vs ' + MESES[pm].slice(0, 3).toLowerCase();
+    };
+    $('kpiEntSub').textContent = delta(ent, pEnt);
+    const gasParts = [];
+    if (ent > 0) gasParts.push(`${Math.round((gas / ent) * 100)}% da renda`);
+    const dGas = delta(gas, pGas); if (dGas) gasParts.push(dGas);
+    $('kpiGasSub').textContent = gasParts.join(' · ');
+    const invSub = $('kpiInvSub'); if (invSub) invSub.textContent = delta(inv, pInv);
 
     const sw = $('savingsWrap');
     if (ent > 0) {
@@ -3365,6 +3494,7 @@ function atualizar() {
         renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS);
         renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
         renderBudgetRemaining();
+        renderVencimentos();
         renderFaturas();
         renderFixosTable();
         renderCartoesMini();
