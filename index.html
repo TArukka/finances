@@ -1114,6 +1114,7 @@
                 </div>
             </div>
         </div>
+        <div id="overlapBanner" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;margin-bottom:14px"></div>
         <div class="charts">
             <div class="chart-box">
                 <div class="chart-box-label">Despesas por Categoria</div>
@@ -1127,13 +1128,6 @@
                 <div class="chart-box-label">Orçamento do Mês</div>
                 <div id="wrapBudgetRemaining"><div class="chart-empty"><span style="font-size:24px;opacity:.3">💰</span>Defina um orçamento</div></div>
             </div>
-        </div>
-        <div class="chart-box" id="vencBox" style="display:none">
-            <div class="chart-box-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-                <span>⏰ Próximos Vencimentos · 30 dias</span>
-                <span id="vencTotal" style="font-weight:700;color:var(--danger);font-size:12px"></span>
-            </div>
-            <div id="vencList"></div>
         </div>
         <div class="history-box">
             <div class="history-header">
@@ -1463,6 +1457,35 @@
         <div class="modal-footer">
             <button class="btn-mcancel" onclick="$('ovAplicarMeses').classList.remove('open')">Cancelar</button>
             <button class="btn-confirm" onclick="confirmarAplicarMeses()">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RECALCULAR FATURAS (card dates changed) -->
+<div class="overlay" id="ovRecalcFatura" onclick="if(event.target===this)closeRecalcFatura()">
+    <div class="modal" style="width:420px">
+        <div class="modal-title">💳 Recalcular faturas</div>
+        <div class="modal-sub" id="recalcFaturaSub"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+            <button class="btn-confirm" style="padding:10px" onclick="doRecalcFaturas('all')">Todos os lançamentos deste cartão</button>
+            <button class="btn-confirm" style="padding:10px;background:#0ea5e9" onclick="doRecalcFaturas('future')">Somente deste mês em diante</button>
+            <button class="btn-mcancel" style="padding:10px" onclick="doRecalcFaturas('none')">Não recalcular</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL REMOVER CATEGORIA (reassign transactions) -->
+<div class="overlay" id="ovCatDelete" onclick="if(event.target===this)closeCatDelete()">
+    <div class="modal" style="width:400px">
+        <div class="modal-title">🗑️ Remover categoria</div>
+        <div class="modal-sub" id="catDeleteSub"></div>
+        <div class="field">
+            <label>Mover lançamentos para</label>
+            <select id="catDeleteTarget" style="width:100%"></select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-mcancel" onclick="closeCatDelete()">Cancelar</button>
+            <button class="btn-confirm" onclick="confirmCatDelete()">Remover</button>
         </div>
     </div>
 </div>
@@ -2623,9 +2646,63 @@ function adicionarCategoria() {
 
 function removerCategoria(tipo, idx) {
     if (!cats[tipo] || idx < 0 || idx >= cats[tipo].length) return;
-    cats[tipo].splice(idx, 1);
+    deleteCategoryFlow(cats[tipo][idx]);
+}
+
+// ── SHARED CATEGORY DELETE FLOW (reassign instead of orphaning) ──────────────
+let _catDeletePending = null;
+function _catTipoOf(catName) {
+    for (const tp of ['saida', 'entrada', 'investimento'])
+        if ((cats[tp] || []).includes(catName)) return tp;
+    return null;
+}
+function deleteCategoryFlow(catName) {
+    if (!catName) return;
+    const count = tx.filter(t => t.cat === catName).length;
+    if (count === 0) { _performCatDelete(catName, null); return; }
+    _catDeletePending = catName;
+    const tp   = _catTipoOf(catName);
+    const pool = tp ? (cats[tp] || [])
+                    : [...(cats.saida || []), ...(cats.entrada || []), ...(cats.investimento || [])];
+    const targets = pool.filter(c => c !== catName);
+    const sel = $('catDeleteTarget');
+    if (sel) sel.innerHTML = targets.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('')
+                           + '<option value="__none__">— Deixar sem categoria —</option>';
+    const sub = $('catDeleteSub');
+    if (sub) sub.innerHTML = `<strong>${count}</strong> lançamento(s) usam "${escHtml(catName)}". Para onde movê-los antes de remover?`;
+    const ov = $('ovCatDelete');
+    if (ov) ov.classList.add('open');
+}
+function closeCatDelete() {
+    const ov = $('ovCatDelete'); if (ov) ov.classList.remove('open');
+    _catDeletePending = null;
+}
+function confirmCatDelete() {
+    const catName = _catDeletePending;
+    if (!catName) { closeCatDelete(); return; }
+    const v = $('catDeleteTarget') ? $('catDeleteTarget').value : '__none__';
+    _performCatDelete(catName, v === '__none__' ? null : v);
+    closeCatDelete();
+}
+function _performCatDelete(catName, target) {
+    // Reassign (or clear) every transaction that used this category
+    tx = tx.map(t => t.cat === catName ? { ...t, cat: target || '' } : t);
+    save();
+    // Remove the category from every type list
+    ['saida', 'entrada', 'investimento'].forEach(tp => {
+        if (cats[tp]) cats[tp] = cats[tp].filter(c => c !== catName);
+    });
+    saveCats();
+    if (budget && budget.allocs && budget.allocs[catName] !== undefined) {
+        delete budget.allocs[catName];
+        saveBudget();
+    }
+    try { _budgetCatCollapsed.delete(catName); } catch (e) {}
+    _catHubEditing = -1;
     commitCats();
-    toast('Categoria removida.', '#52525b');
+    atualizar();
+    if (currentView === 'metas') { try { renderCatHub(); } catch (e) {} try { renderBudget(); } catch (e) {} }
+    toast(target ? `Categoria removida. Lançamentos movidos para "${target}".` : 'Categoria removida.', '#52525b');
 }
 
 function renderCatList() {
@@ -2776,16 +2853,7 @@ function addCatHub() {
 function deleteCatHub(idx) {
     const list = cats[_catHubType];
     if (!list || idx < 0 || idx >= list.length) return;
-    const nome = list[idx];
-    if (!confirm(`Remover "${nome}"?\n\nLançamentos com essa categoria ficarão como "(sem categoria)".`)) return;
-    list.splice(idx, 1);
-    commitCats();
-    delete budget.allocs[nome];
-    saveBudget();
-    _catHubEditing = -1;
-    renderCatHub();
-    renderBudget();
-    toast(`Categoria removida.`, '#52525b');
+    deleteCategoryFlow(list[idx]);
 }
 
 // ── ICON PICKER ─────────────────────────────────────────────────────────────
@@ -3419,6 +3487,58 @@ function updateFixoDay(id, newDay) {
     toast(`📌 "${t.desc}" → dia ${day} de cada mês`);
 }
 
+// ── OVERLAP DETECTION: one-off spending that may duplicate a fixed item ──────
+// Flags a non-fixo saída that has the SAME amount AND shares a meaningful word
+// with a fixo saída in the same month (ignores noise words like "pix"/"plano").
+const _OV_STOP = new Set(['pix','pra','the','com','ltda','para','plano','mensal','mensalidade']);
+function _ovNorm(s) {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function _ovTokens(s) {
+    return new Set(_ovNorm(s).split(' ').filter(w => w.length >= 3 && !_OV_STOP.has(w)));
+}
+function findFixoOverlaps(m, a) {
+    const lista  = txMes(m, a).filter(t => t.tipo === 'saida');
+    const fixos  = lista.filter(t => t.fixo);
+    const oneoff = lista.filter(t => !t.fixo);
+    const pairs  = [];
+    oneoff.forEach(o => {
+        const ot = _ovTokens(o.desc);
+        fixos.forEach(fx => {
+            if (Math.abs(o.valor - fx.valor) > 0.005) return;
+            const ft = _ovTokens(fx.desc);
+            let shared = false;
+            ot.forEach(w => { if (ft.has(w)) shared = true; });
+            if (shared) pairs.push({ one: o, fixo: fx });
+        });
+    });
+    return pairs;
+}
+let _overlapDismissed = {};
+function dismissOverlapBanner() {
+    const { m, a } = filtro();
+    _overlapDismissed[a + '-' + m] = true;
+    const b = $('overlapBanner'); if (b) b.style.display = 'none';
+}
+function renderOverlapBanner(m, a) {
+    const box = $('overlapBanner'); if (!box) return;
+    const key = a + '-' + m;
+    if (_overlapDismissed[key]) { box.style.display = 'none'; return; }
+    const pairs = findFixoOverlaps(m, a);
+    if (!pairs.length) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    const rows = pairs.map(p => `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;color:var(--text-2)">
+        <span style="flex:1;min-width:0">
+            <strong>${fmt(p.one.valor)}</strong> · "${escHtml(p.one.desc)}" pode estar duplicando o fixo "${escHtml(p.fixo.desc)}"
+        </span></div>`).join('');
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+            <span style="font-weight:700;font-size:12px;color:#b45309">⚠️ ${pairs.length} possível(is) gasto(s) sobrepondo um fixo</span>
+            <button onclick="dismissOverlapBanner()" style="background:none;border:none;color:#b45309;font-size:11px;font-weight:600;cursor:pointer;padding:2px 4px">Dispensar ✕</button>
+        </div>${rows}
+        <div style="font-size:10px;color:var(--text-3);margin-top:3px">Mesmo valor e descrição parecida de um gasto fixo no mês. Revise e remova se for duplicado.</div>`;
+}
+
 // ── MAIN UPDATE ───────────────────────────────────────────────────────────────
 function atualizar() {
     const { m, a } = filtro(), lista = txMes(m, a);
@@ -3494,6 +3614,7 @@ function atualizar() {
         renderDonut(catD, 'grafGas', 'wrapGastos', '📉', CAT_COLORS);
         renderDonut(catI, 'grafInv', 'wrapInvest', '💼', ['#6d28d9','#7c3aed','#a78bfa','#c4b5fd']);
         renderBudgetRemaining();
+        renderOverlapBanner(m, a);
         renderVencimentos();
         renderFaturas();
         renderFixosTable();
@@ -4170,24 +4291,7 @@ function renameBudgetCat(safeKey) {
 }
 
 function deleteBudgetCat(safeKey) {
-    const catName = decodeURIComponent(safeKey);
-    if (!confirm(`Remover a categoria "${catName}"?\n\nLançamentos com essa categoria ficarão como "(sem categoria)".`)) return;
-
-    // Remove from cats arrays
-    ['saida','entrada','investimento'].forEach(tipo => {
-        if (!cats[tipo]) return;
-        cats[tipo] = cats[tipo].filter(c => c !== catName);
-    });
-    saveCats();
-
-    // Remove alloc
-    delete budget.allocs[catName];
-    saveBudget();
-
-    _budgetCatCollapsed.delete(catName);
-    atualizar();
-    renderBudget();
-    toast(`Categoria "${catName}" removida.`, '#52525b');
+    deleteCategoryFlow(decodeURIComponent(safeKey));
 }
 
 // ── BUDGET RENDERING ─────────────────────────────────────────────────────────
@@ -4901,9 +5005,14 @@ function salvarCartao() {
     if (!fech || fech < 1 || fech > 28) return toast('⚠️ Dia de fechamento inválido (1-28).', '#b45309');
     if (!venc || venc < 1 || venc > 28) return toast('⚠️ Dia de vencimento inválido (1-28).', '#b45309');
 
+    let _recalcCardId = null;
     if (editId) {
         const idx = cards.findIndex(c => c.id == editId);
-        if (idx !== -1) cards[idx] = { ...cards[idx], nome, fechamento: fech, vencimento: venc, cor: _selCardColor };
+        if (idx !== -1) {
+            const prev = cards[idx];
+            if (prev.fechamento !== fech || prev.vencimento !== venc) _recalcCardId = prev.id;
+            cards[idx] = { ...prev, nome, fechamento: fech, vencimento: venc, cor: _selCardColor };
+        }
         toast('✓ Cartão atualizado!');
     } else {
         cards.push({ id: Date.now(), nome, fechamento: fech, vencimento: venc, cor: _selCardColor });
@@ -4915,6 +5024,45 @@ function salvarCartao() {
     // refresh card selects if currently visible
     if ($('cartaoField').style.display !== 'none') onPagChange();
     resetCartaoForm();
+    if (_recalcCardId !== null) promptRecalcFaturas(_recalcCardId);
+}
+
+// ── RECALCULATE FATURAS AFTER A CARD'S DATES CHANGE ──────────────────────────
+let _recalcPendingCardId = null;
+function promptRecalcFaturas(cardId) {
+    const card = cards.find(c => c.id == cardId);
+    if (!card) return;
+    const affected = tx.filter(t => t.cartaoId == cardId && t.pagamento === 'credito' && t.faturaData);
+    if (!affected.length) return; // no credit purchases to move
+    _recalcPendingCardId = cardId;
+    const sub = $('recalcFaturaSub');
+    if (sub) sub.innerHTML = `Você alterou as datas de <strong>${escHtml(card.nome)}</strong>. `
+        + `Em qual fatura as <strong>${affected.length}</strong> compra(s) já lançadas devem aparecer?`;
+    const ov = $('ovRecalcFatura');
+    if (ov) ov.classList.add('open');
+}
+function closeRecalcFatura() {
+    const ov = $('ovRecalcFatura'); if (ov) ov.classList.remove('open');
+    _recalcPendingCardId = null;
+}
+function doRecalcFaturas(scope) {
+    const cardId = _recalcPendingCardId;
+    if (cardId === null || scope === 'none') { closeRecalcFatura(); return; }
+    const now = new Date();
+    const cutoff = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    let n = 0;
+    tx = tx.map(t => {
+        if (t.cartaoId != cardId || t.pagamento !== 'credito') return t;
+        if (scope === 'future' && t.data < cutoff) return t; // keep past invoices intact
+        const fd = calcFaturaData(parseInt(cardId), t.data);
+        if (fd && fd !== t.faturaData) { n++; return { ...t, faturaData: fd }; }
+        return t;
+    });
+    save();
+    atualizar();
+    _fbPush();
+    closeRecalcFatura();
+    toast(`✓ ${n} lançamento(s) recalculado(s).`, '#16a34a');
 }
 
 function editarCartao(id) {
