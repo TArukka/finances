@@ -204,7 +204,7 @@
         .fatura-card-due { font-size: 10px; color: var(--text-3); margin-left: 8px; white-space: nowrap; }
         .fatura-card-arrow { font-size: 11px; color: var(--text-3); transition: transform .2s; }
         .fatura-card.open .fatura-card-arrow { transform: rotate(180deg); }
-        .fatura-card-body { display: none; border-top: 1px solid var(--border-light); max-height: 240px; overflow-y: auto; }
+        .fatura-card-body { display: none; border-top: 1px solid var(--border-light); max-height: 480px; overflow-y: auto; }
         .fatura-card.open .fatura-card-body { display: block; }
         .fatura-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid var(--border-light); font-size: 12px; }
         .fatura-item:last-child { border-bottom: none; }
@@ -1146,13 +1146,13 @@
                 <div class="fatura-section-label">💳 Faturas do Mês</div>
                 <div id="faturaAccordion"></div>
             </div>
-            <div class="fixos-table-section open" id="fixosTableSection" style="display:none">
-                <div class="fixos-table-header" onclick="$('fixosTableSection').classList.toggle('open')">
-                    <div class="fixos-table-title">📌 Gastos Fixos <span class="fixo-count-badge" id="fixoCountBadge"></span></div>
-                    <div class="fixos-table-total" id="fixosTableTotal"></div>
+            <div class="fixos-table-section" id="debitoSection" style="display:none">
+                <div class="fixos-table-header" onclick="$('debitoSection').classList.toggle('open')">
+                    <div class="fixos-table-title" style="color:#0f766e">🟢 Débito <span class="fixo-count-badge" id="debitoCountBadge" style="background:#ccfbf1;color:#0f766e"></span></div>
+                    <div class="fixos-table-total" id="debitoTotal"></div>
                     <div class="fixos-table-arrow">▼</div>
                 </div>
-                <div class="fixos-table-body" id="fixosTableBody"></div>
+                <div class="fixos-table-body" id="debitoBody"></div>
             </div>
             <div id="txSectionDivider" style="display:none;height:12px;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);"></div>
             <table>
@@ -1227,15 +1227,6 @@
             <div>
                 <div class="view-title">Análise Mensal</div>
                 <div class="view-subtitle">Detalhamento crédito, débito e categorias</div>
-            </div>
-            <div class="mensal-controls">
-                <div class="year-nav">
-                    <button class="year-nav-btn" onclick="mensalChangeMonth(-1)">◀</button>
-                    <span id="mensalMonthLabel" style="font-size:14px;font-weight:700;min-width:130px;text-align:center"></span>
-                    <button class="year-nav-btn" onclick="mensalChangeMonth(1)">▶</button>
-                </div>
-                <select id="mensalMes" onchange="renderMensal()" style="display:none"></select>
-                <select id="mensalAno" onchange="renderMensal()" style="display:none"></select>
             </div>
         </div>
         <div class="kpis" style="margin-bottom:20px">
@@ -2126,7 +2117,6 @@ function renderMobList() {
     const { m, a } = filtro();
     const busca = $('busca').value.toLowerCase();
     let lista = txMes(m, a).filter(t =>
-        !t.fixo &&
         (activeTab === 'all' || t.tipo === activeTab) &&
         (t.desc.toLowerCase().includes(busca) || catLabel(t).toLowerCase().includes(busca))
     );
@@ -2305,8 +2295,8 @@ function init() {
     const now = new Date();
     const curM = now.getMonth(), curA = now.getFullYear();
 
-    const mesSelectors = ['filtroMes', 'mensalMes', 'mobFiltroMes'];
-    const anoSelectors = ['filtroAno', 'mensalAno', 'mobFiltroAno'];
+    const mesSelectors = ['filtroMes', 'mobFiltroMes'];
+    const anoSelectors = ['filtroAno', 'mobFiltroAno'];
 
     mesSelectors.forEach(id => {
         const sel = $(id);
@@ -2374,8 +2364,11 @@ function onFiltroChange() {
 }
 
 function goToMensal(m, a) {
-    $('mensalMes').value = m;
-    $('mensalAno').value = a;
+    $('filtroMes').value = m;
+    $('filtroAno').value = a;
+    const mobM = $('mobFiltroMes'), mobA = $('mobFiltroAno');
+    if (mobM) mobM.value = m;
+    if (mobA) mobA.value = a;
     // Sync desktop nav pill
     const pills = document.querySelectorAll('.nav-pill');
     pills.forEach(p => p.classList.remove('active'));
@@ -2964,7 +2957,6 @@ function renderTabela() {
     const { m, a } = filtro();
     const busca = $('busca').value.toLowerCase();
     let lista = txMes(m, a).filter(t =>
-        !t.fixo &&
         (activeTab === 'all' || t.tipo === activeTab) &&
         (t.desc.toLowerCase().includes(busca) || catLabel(t).toLowerCase().includes(busca))
     );
@@ -3322,7 +3314,56 @@ function toggleFaturaCard(idx) {
     if (el) el.classList.toggle('open');
 }
 
-// ── FIXOS TABLE ──────────────────────────────────────────────────────────────
+// ── DÉBITO TABLE ──────────────────────────────────────────────────────────────
+function renderDebito() {
+    const { m, a } = filtro();
+    const debitos = txMes(m, a).filter(t => t.tipo === 'saida' && (t.pagamento || 'debito') === 'debito');
+    const section = $('debitoSection');
+    const div = $('txSectionDivider');
+
+    if (!debitos.length) {
+        section.style.display = 'none';
+        if (div) div.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+    if (div) div.style.display = '';
+
+    const total = debitos.reduce((s, t) => s + t.valor, 0);
+    $('debitoCountBadge').textContent = debitos.length;
+    $('debitoTotal').textContent = fmt(total);
+
+    const body = $('debitoBody');
+    const sorted2 = [...debitos].sort((a, b) => b.valor - a.valor);
+
+    if (IS_MOBILE) {
+        body.innerHTML = sorted2.map(t => {
+            const [y, mo, d] = t.data.split('-');
+            return `<div class="mob-fixo-item" onclick="openMobEdit(${t.id})" style="cursor:pointer">
+                <div style="flex:1;min-width:0">
+                    <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(t.desc)}${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}</div>
+                    <div style="font-size:11px;color:var(--text-3)">${d}/${mo} · ${escHtml(catLabel(t))}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-weight:700;color:var(--danger);font-size:13px;white-space:nowrap">− ${fmt(t.valor)}</div>
+                </div>
+            </div>`;
+        }).join('');
+        return;
+    }
+
+    body.innerHTML = `<table class="fixos-table">${sorted2.map(t => {
+        const [y, mo, d] = t.data.split('-');
+        return `<tr onclick="openInlineEdit(${t.id})" style="cursor:pointer">
+            <td style="color:var(--text-3);font-size:12px;white-space:nowrap;width:1%">${d}/${mo}</td>
+            <td><span style="font-weight:500">${escHtml(t.desc)}</span>${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}</td>
+            <td style="font-size:12px;color:var(--text-3)">${escHtml(catLabel(t))}</td>
+            <td style="font-weight:600;color:var(--danger);white-space:nowrap;text-align:right">− ${fmt(t.valor)}</td>
+        </tr>`;
+    }).join('')}</table>`;
+}
+
+// ── FIXOS TABLE (não usado mais — mantido apenas por segurança) ────────────────
 let _openFixoEditId = null;
 
 function renderFixosTable() {
@@ -3617,7 +3658,7 @@ function atualizar() {
         renderOverlapBanner(m, a);
         renderVencimentos();
         renderFaturas();
-        renderFixosTable();
+        renderDebito();
         renderCartoesMini();
         renderTabela();
     } else {
@@ -3767,29 +3808,9 @@ function renderAnual() {
     }).join('');
 }
 
-function mensalChangeMonth(delta) {
-    const selM = $('mensalMes'), selA = $('mensalAno');
-    let m = parseInt(selM.value) + delta;
-    let a = parseInt(selA.value);
-    if (m < 0)  { m = 11; a--; }
-    if (m > 11) { m = 0;  a++; }
-    const opts = Array.from(selA.options).map(o => parseInt(o.value));
-    if (!opts.includes(a)) {
-        const o = document.createElement('option');
-        o.value = a; o.text = a;
-        if (delta > 0) selA.add(o); else selA.insertBefore(o, selA.firstChild);
-    }
-    selM.value = m;
-    selA.value = a;
-    renderMensal();
-}
-
 // ── MONTHLY ANALYSIS VIEW ─────────────────────────────────────────────────────
 function renderMensal() {
-    const m = parseInt($('mensalMes').value);
-    const a = parseInt($('mensalAno').value);
-    const lbl = $('mensalMonthLabel');
-    if (lbl) lbl.textContent = MESES[m] + ' ' + a;
+    const { m, a } = filtro();
     const lista  = txMes(m, a);
     // Single pass: partition saidas into debit/credit while aggregating
     let ent = 0, gas = 0, cred = 0, deb = 0;
@@ -4852,6 +4873,10 @@ function onPagChange() {
 }
 
 function onCartaoChange() {
+    if ($('tipo').value !== 'saida' || $('pagamento').value !== 'credito') {
+        $('faturaInfo').style.display = 'none';
+        return;
+    }
     const cartaoId = $('cartao')?.value;
     const data     = $('data').value;
     const html     = _faturaInfoHtml(cartaoId, data);
@@ -4873,6 +4898,10 @@ function mobOnPagChange() {
 }
 
 function mobOnCartaoChange() {
+    if ($('mob-tipo').value !== 'saida' || $('mob-pagamento').value !== 'credito') {
+        $('mobFaturaInfo').style.display = 'none';
+        return;
+    }
     const cartaoId = $('mob-cartao')?.value;
     const data     = $('mob-data').value;
     const html     = _faturaInfoHtml(cartaoId, data);
@@ -4894,6 +4923,10 @@ function mobEditPagChange() {
 }
 
 function mobEditCartaoChange() {
+    if ($('mob-edit-tipo').value !== 'saida' || $('mob-edit-pag').value !== 'credito') {
+        $('mobEditFaturaInfo').style.display = 'none';
+        return;
+    }
     const cartaoId = $('mob-edit-cartao')?.value;
     const data     = $('mob-edit-data').value;
     const html     = _faturaInfoHtml(cartaoId, data);
