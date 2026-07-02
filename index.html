@@ -1059,6 +1059,16 @@
             </div>
         </div>
         <hr style="border:none;border-top:1px solid var(--border)">
+        <div id="vencBox" style="display:none">
+            <div class="section-label">Próximos Vencimentos</div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span id="vencTotal" style="font-size:12px;font-weight:600;color:var(--danger)"></span>
+                </div>
+                <div id="vencList"></div>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin-top:16px">
+        </div>
         <div>
             <div class="section-label">Cartões de Crédito</div>
             <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px">
@@ -1804,6 +1814,11 @@ function $(id) { return document.getElementById(id); }
 
 // ── SHARED UTILITIES ──────────────────────────────────────────────────────────
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+// Data de hoje no fuso local (valueAsDate usa UTC e vira "amanhã" depois das 21h em UTC-3)
+function todayLocalISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 function parseValor(s) {
     s = String(s).trim();
     if (!s) return NaN;
@@ -2001,7 +2016,7 @@ function openMobForm() {
     $('mobFormTitle').textContent = 'Novo Lançamento';
     $('mob-desc').value = ''; $('mob-valor').value = '';
     $('mob-fixo').checked = false;
-    $('mob-data').valueAsDate = new Date();
+    $('mob-data').value = todayLocalISO();
     mobOnTipoChange();
     $('mobFormSheet').classList.add('open');
     setTimeout(() => $('mob-desc').focus(), 300);
@@ -2320,8 +2335,8 @@ function init() {
         }
     });
 
-    $('data').valueAsDate = now;
-    $('aporteData').valueAsDate = now;
+    $('data').value = todayLocalISO();
+    $('aporteData').value = todayLocalISO();
 
     if (IS_MOBILE) mobOnTipoChange();
 
@@ -2369,6 +2384,9 @@ function goToMensal(m, a) {
     const mobM = $('mobFiltroMes'), mobA = $('mobFiltroAno');
     if (mobM) mobM.value = m;
     if (mobA) mobA.value = a;
+    // Selects mudados via JS não disparam onchange — atualiza KPIs, label do
+    // topo e marca o dashboard como sujo (senão ele volta mostrando o mês antigo)
+    atualizar();
     // Sync desktop nav pill
     const pills = document.querySelectorAll('.nav-pill');
     pills.forEach(p => p.classList.remove('active'));
@@ -2471,7 +2489,7 @@ function adicionar() {
     if (idEd) {
         const oldT = tx.find(t => t.id == idEd);
         tx = tx.map(t => t.id == idEd ? { ...t, desc, valor, data, tipo, cat, fixo, pagamento, cartaoId, faturaData } : t);
-        if (fixo && !oldT.fixo) {
+        if (fixo && oldT && !oldT.fixo) {
             _showFixoRepModal(desc, valor, data, tipo, cat, pagamento, idEd, cartaoId, faturaData);
             return;
         }
@@ -2565,10 +2583,10 @@ function renderPopupFixos() {
     if (!nomes.length) { body.innerHTML = '<div class="empty-state">Nenhum fixo neste mês.</div>'; return; }
     body.innerHTML = nomes.sort((a, b) => fixosMap[b] - fixosMap[a]).map(nome => `
         <div class="fixos-popup-item">
-            <div><div class="fp-name">${escHtml(nome)}</div><div class="fp-cat">${fixosCat[nome]}</div></div>
+            <div><div class="fp-name">${escHtml(nome)}</div><div class="fp-cat">${escHtml(fixosCat[nome] || '')}</div></div>
             <div class="fp-val">${fmt(fixosMap[nome])}</div>
             <div class="fp-acts">
-                <button class="icon-btn" onclick="abrirEditFixo('${nome.replace(/'/g,"\\'")}','${fixosCat[nome].replace(/'/g,"\\'")}')">✏️</button>
+                <button class="icon-btn" onclick="abrirEditFixo('${nome.replace(/'/g,"\\'")}','${(fixosCat[nome] || '').replace(/'/g,"\\'")}')">✏️</button>
                 <button class="icon-btn" onclick="removerFixo('${nome.replace(/'/g,"\\'")}')">🗑️</button>
             </div>
         </div>`).join('');
@@ -2938,18 +2956,30 @@ function exportarCSV() {
 }
 
 function importar(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
     const r = new FileReader();
     r.onload = () => {
-        const d = JSON.parse(r.result);
-        pushUndo(tx, 'Importação');
-        if (d.t) tx = d.t; if (d.c) cats = d.c;
-        if (d.g) goals = d.g.map(g => ({ ...g, aportes: Array.isArray(g.aportes) ? g.aportes : [] }));
-        if (d.k) cards = d.k; if (d.b) budget = d.b;
-        save(); saveCats(); saveGoals(); saveCards(); saveBudget();
-        atualizar(); onTipoChange(); renderGoals();
-        toast('Importado!');
+        try {
+            const d = JSON.parse(r.result);
+            if (!d || typeof d !== 'object' || (!d.t && !d.c && !d.g && !d.k && !d.b)) {
+                toast('⚠️ Arquivo não parece ser um backup válido.', '#b45309');
+                return;
+            }
+            pushUndo(tx, 'Importação');
+            if (d.t) tx = d.t; if (d.c) cats = d.c;
+            if (d.g) goals = d.g.map(g => ({ ...g, aportes: Array.isArray(g.aportes) ? g.aportes : [] }));
+            if (d.k) cards = d.k; if (d.b) budget = d.b;
+            save(); saveCats(); saveGoals(); saveCards(); saveBudget();
+            atualizar(); onTipoChange(); renderGoals(); renderCartoesMini(); _fbPush();
+            toast('Importado!');
+        } catch (e) {
+            toast('❌ Erro ao ler o backup: ' + e.message, '#dc2626');
+        } finally {
+            input.value = ''; // permite reimportar o mesmo arquivo
+        }
     };
-    r.readAsText(input.files[0]);
+    r.readAsText(file);
 }
 
 // ── TABLE ─────────────────────────────────────────────────────────────────────
@@ -2976,7 +3006,7 @@ function renderTabela() {
         const isEditing = _openInlineId === t.id;
         const tipoOpts = ['saida','entrada','investimento'].map(v =>
             `<option value="${v}" ${t.tipo === v ? 'selected' : ''}>${v === 'saida' ? 'Gasto' : v === 'entrada' ? 'Ganho' : 'Investimento'}</option>`).join('');
-        const catOpts  = (cats[t.tipo] || []).map(c => `<option value="${c}" ${t.cat === c ? 'selected' : ''}>${c}</option>`).join('');
+        const catOpts  = (cats[t.tipo] || []).map(c => `<option value="${escHtml(c)}" ${t.cat === c ? 'selected' : ''}>${escHtml(c)}</option>`).join('');
         const pagOpts  = ['debito','credito'].map(v =>
             `<option value="${v}" ${(t.pagamento || 'debito') === v ? 'selected' : ''}>${v === 'debito' ? 'D\u00e9bito' : 'Cr\u00e9dito'}</option>`).join('');
         const cardOpts = cards.map(c => `<option value="${c.id}" ${t.cartaoId == c.id ? 'selected' : ''}>${escHtml(c.nome)}</option>`).join('');
@@ -2984,7 +3014,7 @@ function renderTabela() {
         return `<tr id="tr-${t.id}" class="${isEditing ? 'editing' : ''}">
             <td style="color:var(--text-3);font-size:12px;white-space:nowrap">${d}/${mo}</td>
             <td><span style="font-weight:500">${escHtml(t.desc)}</span>${payTag}${t.fixo ? '<span class="tag-fixo">FIXO</span>' : ''}${cardTag}</td>
-            <td style="font-size:12px;color:var(--text-3)">${groupMode === 'cat' ? '' : catLabel(t)}</td>
+            <td style="font-size:12px;color:var(--text-3)">${groupMode === 'cat' ? '' : escHtml(catLabel(t))}</td>
             <td style="font-weight:600;color:${cor};white-space:nowrap">${pre} ${fmt(t.valor)}</td>
             <td><div class="btn-row">
                 <button class="icon-btn" title="Editar" onclick="openInlineEdit(${t.id})">&#9999;&#65039;</button>
@@ -3064,7 +3094,7 @@ function renderTabela() {
                     <td colspan="5" style="padding-left:28px">
                         <div class="gh-label">
                             <span style="color:var(--text-3);font-size:10px">▸</span>
-                            <span>${cat}</span>
+                            <span>${escHtml(cat)}</span>
                             <span class="gh-count">${items.length} ${items.length === 1 ? 'item' : 'itens'}</span>
                             <span class="gh-total ${tipoClass[tipo]}">${tipoPre[tipo]} ${fmt(total)}</span>
                         </div>
@@ -3074,7 +3104,7 @@ function renderTabela() {
                 // Category subtotal row
                 html += `<tr style="background:var(--border-light)">
                     <td colspan="4" style="text-align:right;font-size:11px;font-weight:600;color:var(--text-3);padding:5px 14px">
-                        Subtotal — ${cat}
+                        Subtotal — ${escHtml(cat)}
                     </td>
                     <td style="font-weight:700;color:var(--${tipo === 'entrada' ? 'success' : 'danger'});font-size:12px;white-space:nowrap;padding:5px 14px">
                         ${tipoPre[tipo]} ${fmt(total)}
@@ -3123,7 +3153,9 @@ function ieUpdateCartao(id) {
     wrap.style.display = (pag === 'credito' && cards.length > 0) ? '' : 'none';
     if (pag === 'credito' && cards.length > 0) {
         const sel = $('ie-cartao-' + id);
-        if (sel && !sel.querySelector('option[value]')?.value) {
+        // Só popula se ainda não tem os cartões (a checagem antiga era sempre
+        // verdadeira e recriava as options, perdendo o cartão selecionado)
+        if (sel && sel.options.length <= 1) {
             sel.innerHTML = '<option value="">—</option>' + cards.map(c => `<option value="${c.id}">${escHtml(c.nome)}</option>`).join('');
         }
     }
@@ -3150,7 +3182,7 @@ function saveInlineEdit(id) {
     tx = tx.map(t => t.id == id ? { ...t, desc, valor, data, tipo, cat, fixo, pagamento, cartaoId, faturaData } : t);
     closeInlineEdit();
 
-    if (fixo && !oldT.fixo) {
+    if (fixo && oldT && !oldT.fixo) {
         _showFixoRepModal(desc, valor, data, tipo, cat, pagamento, id, cartaoId, faturaData);
         return;
     }
@@ -3209,7 +3241,8 @@ function getFaturasForMonth(m, a) {
             return parseInt(parts[1]) - 1 === m && parseInt(parts[0]) === a;
         });
         if (!items.length) return;
-        const total = items.reduce((s, t) => s + t.valor, 0);
+        // Estornos/créditos (tipo entrada) abatem da fatura em vez de somar
+        const total = items.reduce((s, t) => s + (t.tipo === 'entrada' ? -t.valor : t.valor), 0);
         // Build a display date for the fatura (vencimento day of this month)
         const maxDay = new Date(a, m + 1, 0).getDate();
         const vencDay = Math.min(card.vencimento, maxDay);
@@ -3301,7 +3334,7 @@ function renderFaturas() {
                             <div class="fatura-item-desc">${escHtml(t.desc)}</div>
                             <div class="fatura-item-meta">${d2}/${m2} · ${escHtml(catLabel(t))}</div>
                         </div>
-                        <div class="fatura-item-val">− ${fmt(t.valor)}</div>
+                        <div class="fatura-item-val" ${t.tipo === 'entrada' ? 'style="color:var(--success)"' : ''}>${t.tipo === 'entrada' ? '+' : '−'} ${fmt(t.valor)}</div>
                     </div>`;
                 }).join('')}
             </div>
@@ -3646,7 +3679,7 @@ function atualizar() {
     $('fixosMiniTotal').textContent = nomes.length ? fmt(totalF) : '';
     $('fixosMiniList').innerHTML = nomes.length
         ? nomes.sort((a, b) => fixosMap[b] - fixosMap[a]).slice(0, 5).map(n =>
-            `<div class="fixos-mini-item"><span class="n">${n}</span><span class="v">${fmt(fixosMap[n])}</span></div>`).join('')
+            `<div class="fixos-mini-item"><span class="n">${escHtml(n)}</span><span class="v">${fmt(fixosMap[n])}</span></div>`).join('')
             + (nomes.length > 5 ? `<div style="text-align:center;margin-top:6px"><button class="link-btn" onclick="abrirPopupFixos()">ver todos (${nomes.length})</button></div>` : '')
         : '<span style="font-size:12px;color:var(--text-3)">Nenhum fixo.</span>';
 
@@ -4046,7 +4079,7 @@ function abrirAporte(id) {
     $('aporteConfirmBtn').textContent = 'Adicionar';
     $('aporteValor').value    = '';
     $('aporteNota').value     = '';
-    $('aporteData').valueAsDate = new Date();
+    $('aporteData').value = todayLocalISO();
     $('ovAporte').classList.add('open');
 }
 
@@ -4789,8 +4822,8 @@ function _showConflict(local, remote) {
     $('conflictMsg').textContent =
         'Você tem mudanças locais e o Firebase foi atualizado em outro dispositivo.';
     $('conflictDetails').innerHTML = `
-        <div><strong>💾 Local</strong><br>${local.t.length} transações<br><span style="color:var(--text-3)">${lDate}</span></div>
-        <div><strong>🔥 Firebase</strong><br>${remote.t.length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
+        <div><strong>💾 Local</strong><br>${(local.t || []).length} transações<br><span style="color:var(--text-3)">${lDate}</span></div>
+        <div><strong>🔥 Firebase</strong><br>${(remote.t || []).length} transações<br><span style="color:var(--text-3)">${rDate}</span></div>`;
     $('ovConflict').classList.add('open');
     window._pendingConflict = { local, remote };
 }
@@ -4962,13 +4995,13 @@ function renderCartoesMini() {
             if (t.cartaoId != c.id || t.pagamento !== 'credito') return false;
             const p = t.data.split('-');
             return parseInt(p[1]) - 1 === m && parseInt(p[0]) === a;
-        }).reduce((s, t) => s + t.valor, 0);
+        }).reduce((s, t) => s + (t.tipo === 'entrada' ? -t.valor : t.valor), 0);
         // Also check fatura due this month
         const faturaTotal = tx.filter(t => {
             if (t.cartaoId != c.id || t.pagamento !== 'credito' || !t.faturaData) return false;
             const p = t.faturaData.split('-');
             return parseInt(p[1]) - 1 === m && parseInt(p[0]) === a;
-        }).reduce((s, t) => s + t.valor, 0);
+        }).reduce((s, t) => s + (t.tipo === 'entrada' ? -t.valor : t.valor), 0);
         const faturaLabel = faturaTotal > 0 ? `fatura: ${fmt(faturaTotal)}` : '';
         const spendLabel  = monthSpend > 0 ? `gastos: ${fmt(monthSpend)}` : '';
         const sub = [spendLabel, faturaLabel].filter(Boolean).join(' · ') || '—';
@@ -4976,7 +5009,7 @@ function renderCartoesMini() {
             <div style="display:flex;justify-content:space-between;align-items:center">
                 <span class="n" style="display:flex;align-items:center;gap:6px">
                     <span style="width:8px;height:8px;border-radius:50%;background:${c.cor};display:inline-block;flex-shrink:0"></span>
-                    ${c.nome}
+                    ${escHtml(c.nome)}
                 </span>
             </div>
             <div style="font-size:10px;color:var(--text-3);padding-left:14px">${sub}</div>
@@ -5639,6 +5672,7 @@ const EXT_TRANSFER_KW = [
     'aplicação automática','aplicacao automatica','resgate automático','resgate automatico',
     'resgate aplicação','resgate aplicacao','aplicação','aplicacao','aporte invest',
     'pagamento de fatura','pgto fatura','pagto cartao','pag cartao','pag fatura',
+    'pagamento recebido',
     'tarifa','iof','anuidade','juros mora','multa atraso',
     'saldo anterior','saldo do dia',
 ];
@@ -5880,6 +5914,15 @@ function extHandleFile(file) {
             return;
         }
 
+        // Fatura de cartão: normaliza sinais. CSV da Nubank traz compras com valor
+        // POSITIVO (viravam "Ganho"); OFX traz compras negativas. O sinal majoritário
+        // numa fatura é compra → vira saída; o minoritário (estorno/pagamento) → entrada.
+        if ($('extAccType').value === 'credito') {
+            const positivos = raw.filter(r => r.valor > 0).length;
+            const buySign = positivos >= raw.length - positivos ? 1 : -1;
+            raw.forEach(r => { r.valor = (r.valor * buySign > 0) ? -Math.abs(r.valor) : Math.abs(r.valor); });
+        }
+
         // Process each transaction
         _extParsed = raw.map((r, i) => {
             const absVal = Math.abs(r.valor);
@@ -5942,10 +5985,10 @@ function _extRenderPreview() {
 
         // Category options
         const catList = cats[r.tipo] || cats.saida || [];
-        let catOpts = catList.map(c => `<option value="${c}" ${r.cat === c ? 'selected' : ''}>${c}</option>`).join('');
+        let catOpts = catList.map(c => `<option value="${escHtml(c)}" ${r.cat === c ? 'selected' : ''}>${escHtml(c)}</option>`).join('');
         // If auto-cat not in list, add it
         if (r.cat && !catList.includes(r.cat)) {
-            catOpts = `<option value="${r.cat}" selected>${r.cat}</option>` + catOpts;
+            catOpts = `<option value="${escHtml(r.cat)}" selected>${escHtml(r.cat)}</option>` + catOpts;
         }
 
         // Flag badge
@@ -5983,7 +6026,7 @@ function _extChangeType(idx, tipo) {
     const sel = $('extCat-' + idx);
     if (sel) {
         const prevCat = _extParsed[idx].cat;
-        sel.innerHTML = catList.map(c => `<option value="${c}" ${c === prevCat ? 'selected' : ''}>${c}</option>`).join('');
+        sel.innerHTML = catList.map(c => `<option value="${escHtml(c)}" ${c === prevCat ? 'selected' : ''}>${escHtml(c)}</option>`).join('');
         if (catList.length) _extParsed[idx].cat = sel.value;
     }
 }
@@ -6056,8 +6099,8 @@ function extConfirmImport() {
             cat: r.cat,
             fixo: false,
             pagamento: isCredit ? 'credito' : (r.tipo === 'saida' ? 'debito' : null),
-            cartaoId: cardId ? parseInt(cardId) : null,
-            faturaData: (isCredit && cardId) ? calcFaturaData(parseInt(cardId), r.date) : null,
+            cartaoId: cardId || null,
+            faturaData: (isCredit && cardId) ? calcFaturaData(cardId, r.date) : null,
         };
         tx.push(entry);
     });
